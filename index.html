@@ -122,11 +122,9 @@ h3{font-size:15px;margin:18px 0 4px}
 .day.done small,.day.done b{color:#45290a}
 .day.today{border-color:var(--gold);animation:pulse 1.6s infinite}
 .day.today b{color:var(--gold2)}
-/* withdraw */
 .wd-input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:14px;padding:14px;font-family:inherit;font-size:14px;margin-bottom:8px}
 .wd-input::placeholder{color:var(--muted)}
 .wd-chip{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-/* spin */
 .spin-wrap{position:relative;width:min(80vw,300px);aspect-ratio:1;margin:16px auto 6px}
 .wheel{width:100%;height:100%;border-radius:50%;position:relative;
   background:conic-gradient(from -22.5deg,#f6b73c 0 45deg,#dd9118 0 90deg,#f6b73c 0 135deg,#dd9118 0 180deg,#f6b73c 0 225deg,#dd9118 0 270deg,#f6b73c 0 315deg,#dd9118 0 360deg);
@@ -155,7 +153,6 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
 #confetti i{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{transform:translate(var(--x),108vh) rotate(var(--r));opacity:.7}}
 .fly{position:fixed;z-index:99;font-weight:800;font-size:18px;color:var(--gold2);text-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none}
-/* ban / lock screen */
 #banScreen{position:fixed;inset:0;background:var(--bg);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px}
 #banScreen.show{display:flex}
 .ban-ic{font-size:58px;margin-bottom:10px}
@@ -318,15 +315,15 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
 <div id="toast"></div>
 
 <script>
-/* ================= CONFIG — EDIT THESE ================= */
+/* ================= CONFIG ================= */
 const CONFIG = {
-  api: 'https://tanv.ebisamagarsaa.workers.dev/',  // ← your Worker URL
+  api: 'https://tanv.ebisamagarsaa.workers.dev',
   botUsername: 'tanvexoappbot',
   appName: 'refer',
   channelUrl: 'https://t.me/ebtry0',
-  support: '',                                            // ← optional: 'https://t.me/your_username' shows Contact button on ban screen
-  withdrawMethods: ['TON Wallet', 'Telegram Stars', 'UPI', 'Other'],  // ← edit freely
-  withdrawMin: 5000,                                      // ← keep same as MIN_WITHDRAW in worker.js
+  support: '',
+  withdrawMethods: ['TON Wallet', 'Telegram Stars', 'UPI', 'Other'],
+  withdrawMin: 5000,
   pointsPerInvite: 5, tapEnergyCost: 1, energyMax: 500, energyRegenPerSec: 1,
   storageKey: 'tapcoin_v3'
 };
@@ -421,7 +418,6 @@ function toast(msg, err){
 let lastWarn = 0;
 function throttledToast(m, e){ const n = Date.now(); if (n - lastWarn > 2000){ lastWarn = n; toast(m, e); } }
 
-/* ---- ban / lock screen ---- */
 let LOCKED = false;
 function showBanScreen(msg){
   if (LOCKED) return;
@@ -501,6 +497,7 @@ async function api(path, body){
   if (!data.ok){
     const err = new Error(data.error || 'API error');
     if (data.locked) err.locked = true;
+    if (data.notJoined) err.notJoined = true;
     throw err;
   }
   return data;
@@ -724,7 +721,7 @@ function showPrize(p){
   animateWheel(idx, function(){ syncUI(); showPrize(p); });
 });
 
-/* ================= TASKS (dynamic) ================= */
+/* ================= TASKS (dynamic + channel gate) ================= */
 const LOCAL_TASKS = [
   { id:'taps100',  ic:'bolt',     title:'Tap the coin 100 times',   reward:50,  goal:100,  type:'taps' },
   { id:'taps1000', ic:'bolt',     title:'Tap the coin 1,000 times', reward:250, goal:1000, type:'taps' },
@@ -753,9 +750,12 @@ function taskRow(t, done, v, ready, isLink){
     '<div class="t-main"><b>' + t.title + '</b><small>' + Math.min(v, t.goal) + ' / ' + t.goal + ' · +' + t.reward + ' coins</small>' +
     '<div class="t-bar"><i style="width:' + (Math.min(v, t.goal) / t.goal * 100) + '%"></i></div></div>';
   const btn = document.createElement('button');
-  btn.className = 'claim' + (done ? ' done' : ready ? ' ready' : '');
+  /* link task flow: Join → opens channel → "I joined ✓" → server verifies membership live */
+  const joinedNotClaimed = isLink && t._clicked && !done;
+  btn.className = 'claim' + (done ? ' done' : (ready || joinedNotClaimed) ? ' ready' : '');
   if (done) btn.textContent = 'Done';
   else if (isLink && !t._clicked) btn.textContent = 'Join';
+  else if (joinedNotClaimed) btn.textContent = 'I joined ✓';
   else btn.textContent = '+' + t.reward;
   btn.addEventListener('click', async function(){
     if (done || LOCKED) return;
@@ -773,11 +773,11 @@ function taskRow(t, done, v, ready, isLink){
           else window.open(url, '_blank');
         }
       } catch(e){}
-      toast('Reward unlocked — claim it!');
+      toast('Joined? Come back and tap "I joined ✓"');
       renderTasks();
       return;
     }
-    if (!ready){ haptic('rigid'); return; }
+    if (!ready && !joinedNotClaimed){ haptic('rigid'); return; }
     btn.disabled = true;
     if (LIVE){
       await flushTaps();
@@ -785,7 +785,11 @@ function taskRow(t, done, v, ready, isLink){
         const r = await api('/api/task', { id: t.id });
         hNotify('success'); toast('+' + r.reward + ' coins claimed!');
         applyState(r.state);
-      } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); btn.disabled = false; }
+      } catch(e){
+        if (e && e.locked){ showBanScreen(e.message); return; }
+        if (e && e.notJoined){ haptic('rigid'); toast(e.message + ' — join, then tap again', true); btn.disabled = false; renderTasks(); return; }
+        toast(e.message, true); btn.disabled = false;
+      }
       return;
     }
     state.completedTasks.push(t.id);
