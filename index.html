@@ -26,7 +26,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Noto Sans Ethio
 .avatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(160deg,#ff9d7a,#f87171);display:grid;place-items:center;font-weight:800;color:#3d0d05;font-size:17px;overflow:hidden;flex-shrink:0}
 .avatar img{width:100%;height:100%;object-fit:cover}
 .hi{font-size:23px;font-weight:800;letter-spacing:-.4px;display:flex;align-items:center;gap:7px}
-.vbadge{width:19px;height:19px;flex-shrink:0}
+.vbadge{width:20px;height:20px;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 .sub2{color:var(--muted);font-size:13.5px;margin-top:1px}
 .topright{margin-left:auto;display:flex;gap:8px;align-items:center}
 .langbtn{background:#1d1d1d;border:1px solid var(--line);color:var(--g);font-family:inherit;font-weight:800;font-size:11px;border-radius:99px;padding:6px 12px;cursor:pointer}
@@ -128,14 +128,16 @@ h2.sec{font-size:21px;font-weight:800;margin:20px 2px 2px;letter-spacing:-.3px}
 /* wheel */
 .spin-wrap{position:relative;width:min(78vw,290px);aspect-ratio:1;margin:18px auto 8px}
 .wheel{width:100%;height:100%;border-radius:50%;position:relative;border:5px solid #2a2a2a;
-  box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05);
-  transition:transform 4.4s cubic-bezier(.12,.72,.08,1)}
+  box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05)}
 .wl,.wdot{position:absolute;inset:0;display:flex;justify-content:center;transform:rotate(var(--a))}
 .wl b{margin-top:14px;font-size:13.5px;font-weight:800}
 .wdot i{width:6px;height:6px;margin-top:6px;border-radius:50%;background:#e8e8e8}
 .spin-hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:92px;height:92px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#242424,#0d0d0d);border:3px solid #333;z-index:2;display:grid;place-items:center;
-  font-weight:900;font-size:17px;letter-spacing:1px;color:#fff;box-shadow:0 8px 22px rgba(0,0,0,.6)}
+  font-weight:900;font-size:17px;letter-spacing:1px;color:#fff;box-shadow:0 8px 22px rgba(0,0,0,.6);
+  cursor:pointer;border:none;font-family:inherit;transition:transform .1s}
+.spin-hub:active{transform:translate(-50%,-50%) scale(.92)}
+.spin-hub:disabled{opacity:.6}
 .spin-pointer{position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:0;height:0;z-index:3;
   border-left:11px solid transparent;border-right:11px solid transparent;border-top:20px solid var(--g);
   filter:drop-shadow(0 2px 5px rgba(0,0,0,.6))}
@@ -152,6 +154,16 @@ input.wd-input::placeholder{color:#5c5c60;font-weight:500}
 .chip:active{transform:scale(.95)}
 .lbl2{font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:800;margin:2px 0 8px}
 .fine{font-size:11.5px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.6}
+/* spin history */
+.sh{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.sh:last-child{border-bottom:none}
+.sh-ic{width:36px;height:36px;border-radius:12px;background:var(--tile);display:grid;place-items:center;flex-shrink:0;color:var(--g)}
+.sh-ic.neg{color:var(--red)}
+.sh-ic .ic{width:16px;height:16px}
+.sh-main{flex:1;min-width:0}
+.sh-main b{font-size:13.5px;display:block}
+.sh-main small{color:var(--muted);font-size:11px}
+.sh-amt{font-weight:800;font-size:13.5px;white-space:nowrap}
 /* wallet */
 .wd-hero{background:linear-gradient(160deg,#0e1a12,#121212);border:1px solid rgba(74,222,128,.14);border-radius:26px;padding:24px 20px;text-align:center;margin-top:6px}
 .wh-num{font-size:40px;font-weight:900;letter-spacing:-1px;margin:8px 0 10px}
@@ -203,7 +215,6 @@ nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:calc(10
 #adOverlay .ad-ic .ic{width:38px;height:38px}
 #adOverlay .ad-count{font-size:56px;font-weight:900;color:var(--g);margin:14px 0}
 #adOverlay p{color:var(--muted);font-size:14px;line-height:1.6;max-width:280px}
-/* ban screen */
 #banScreen{position:fixed;inset:0;background:var(--bg);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px}
 #banScreen.show{display:flex}
 .ban-ic{width:76px;height:76px;border-radius:24px;background:var(--tile);display:grid;place-items:center;margin-bottom:14px;color:var(--red)}
@@ -211,7 +222,6 @@ nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:calc(10
 #banScreen h1{font-size:22px;margin-bottom:8px}
 #banReason{color:var(--muted);font-size:14px;line-height:1.6;max-width:300px}
 #banContact{display:none;margin-top:18px;color:var(--g);font-weight:700;text-decoration:none;border:1px solid rgba(74,222,128,.4);padding:10px 18px;border-radius:14px}
-/* channel gate popup card */
 #gateWrap{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
 #gateWrap.show{display:flex}
 .gate-card{width:100%;max-width:340px;background:var(--card);border:1px solid rgba(74,222,128,.18);border-radius:26px;padding:24px 20px;text-align:center;animation:popin .3s cubic-bezier(.2,.9,.3,1.2)}
@@ -238,7 +248,7 @@ nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:calc(10
     <div class="avatar" id="avatar">?</div>
     <div>
       <div class="hi">Hi, <span id="firstName">there</span>
-        <svg class="vbadge" viewBox="0 0 24 24" fill="#4ade80"><path d="M12 1.7l2.4 2.1 3.2-.4 1.2 3 3 1.2-.4 3.2L23.5 12l-2.1 2.4.4 3.2-3 1.2-1.2 3-3.2-.4L12 23.5l-2.4-2.1-3.2.4-1.2-3-3-1.2.4-3.2L.5 12l2.1-2.4-.4-3.2 3-1.2 1.2-3 3.2.4L12 1.7z"/><path d="M10.6 15.7l-2.8-2.8 1.2-1.2 1.6 1.6 4-4 1.2 1.2-5.2 5.2z" fill="#052e14"/></svg>
+        <svg class="vbadge" viewBox="0 0 16 16" fill="#4ade80"><path d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.622.638-.89-.011a2.89 2.89 0 0 0-2.924 2.924l.011.89-.638.622a2.89 2.89 0 0 0 0 4.134l.638.622-.011.89a2.89 2.89 0 0 0 2.924 2.924l.89-.011.622.638a2.89 2.89 0 0 0 4.134 0l.622-.638.89.011a2.89 2.89 0 0 0 2.924-2.924l-.011-.89.638-.622a2.89 2.89 0 0 0 0-4.134l-.638-.622.011-.89a2.89 2.89 0 0 0-2.924-2.924l-.89.011-.622-.638zm.287 5.984-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 8.793l2.646-2.647a.5.5 0 0 1 .708.708z"/></svg>
       </div>
       <div class="sub2" data-i18n="letsub">Let's earn together</div>
     </div>
@@ -315,7 +325,8 @@ nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:calc(10
         <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg> <span data-i18n="lucky">Lucky Wheel</span></div>
         <div class="spin-wrap">
           <div class="spin-pointer"></div>
-          <div class="wheel" id="wheel"><div id="wheelDeco"></div><div class="spin-hub" id="spinHub">SPIN</div></div>
+          <div class="wheel" id="wheel"><div id="wheelDeco"></div></div>
+          <button class="spin-hub" id="spinHub">SPIN</button>
         </div>
         <div class="spin-result" id="spinResult"></div>
         <div class="lbl2" data-i18n="your_bet">YOUR BET</div>
@@ -326,6 +337,10 @@ nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:calc(10
         <div class="chips" id="betChips"></div>
         <button class="btn green big" id="spinBtn" data-i18n="spin_wheel">Spin the Wheel</button>
         <p class="fine" data-i18n="fine_game"></p>
+      </div>
+      <div class="card">
+        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v17a1 1 0 0 0 1 1h17"/><path d="M7 14l4-4 3 3 5-6"/></svg> <span data-i18n="spin_hist">Spin History</span></div>
+        <div id="spinHistList"></div>
       </div>
     </section>
 
@@ -459,7 +474,9 @@ const ICON_PATHS = {
   wallet:'<path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/><path d="M17 12h4"/><circle cx="16" cy="12" r="1" fill="currentColor"/>',
   gift:'<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
   megaphone:'<path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
-  star:'<path d="M12 2l3.1 6.3 6.9.9-5 4.8 1.2 6.9L12 17.8 5.8 20.9 7 14 2 9.2l6.9-.9L12 2z"/>'
+  star:'<path d="M12 2l3.1 6.3 6.9.9-5 4.8 1.2 6.9L12 17.8 5.8 20.9 7 14 2 9.2l6.9-.9L12 2z"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  chart:'<path d="M3 3v17a1 1 0 0 0 1 1h17"/><path d="M7 14l4-4 3 3 5-6"/>'
 };
 function ic(n, size){
   return '<svg class="ic" style="width:' + (size || 18) + 'px;height:' + (size || 18) + 'px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICON_PATHS[n] + '</svg>';
@@ -484,7 +501,9 @@ const STR = {
     ref_bonus:"Referral bonus",
     ref_txt:"Invite friends and earn +50 ETB each — they get a +25 ETB welcome bonus after joining our channels. Share your link from the Friends tab!",
     lucky:"Lucky Wheel", your_bet:"YOUR BET", spin_wheel:"Spin the Wheel",
-    fine_game:"Multipliers: ×1.5 · ×2 · ×3 — results are decided on the server and cannot be manipulated. Play for fun.",
+    fine_game:"Tap the wheel or the button to spin. Multipliers: ×1.5 · ×2 · ×3 — results are decided on the server. Play for fun.",
+    spin_hist:"Spin History", no_spins:"No spins yet — place your first bet!",
+    hist_win:"Win ×{m}", hist_lose:"Bet lost", hist_bet:"Bet {n}",
     your_link:"Your referral link", copy:"Copy", share:"Share",
     fr_txt:"You get +50 ETB when your friend joins both channels. They get a +25 ETB welcome bonus.",
     s_friends:"Friends", s_pending:"Pending", s_earned:"ETB earned", your_friends:"Your friends",
@@ -501,7 +520,7 @@ const STR = {
     banned_h:"Account locked", contact:"Contact support",
     gate_h:"Join to continue", gate_p:"Join both channels to unlock TanveXo and your +25 ETB welcome bonus.",
     gate_check:"I joined — Verify", gate_fail:"Please join both channels first",
-    t_claimed:"+{r} ETB claimed!", t_copied:"Invite link copied!", t_join_back:"Join, come back and tap Verify",
+    t_claimed:"+{r} ETB claimed!", t_copied:"Invite link copied!", t_join_back:"Visit the link, come back and tap Verify",
     t_not_enough:"Not enough ETB for that bet", t_submitted:"Request submitted! Paid within 24–48h.",
     t_locked_req:"Locked — meet the requirements first (25 ads · 15 friends)",
     t_min_wd:"Minimum is {n} ETB", t_enter_acc:"Enter your account details",
@@ -524,7 +543,9 @@ const STR = {
     ref_bonus:"የጋብዣ ቦነስ",
     ref_txt:"ጓደኞችዎን ይጋብዙ — ለእያንዳንዱ +50 ETB ያገኛሉ፤ ጓደኛዎ ቻናሎችን ከተቀላቀለ +25 ETB የእንጋቢ ስጦታ ይቀበላል።",
     lucky:"ሎኪ ዊል", your_bet:"የእርስዎ መደጋ", spin_wheel:"ዊሉን ያሽከርክሩ",
-    fine_game:"×1.5 · ×2 · ×3 — ውጤቱ በሰርቨር ላይ ይወሰናል። ለመዝናናት ብቻ!",
+    fine_game:"ዊሉን ወይም አዝራሩን ይንኩ። ×1.5 · ×2 · ×3 — ውጤቱ በሰርቨር ላይ ይወሰናል። ለመዝናናት ብቻ!",
+    spin_hist:"የመንኪያ ታሪክ", no_spins:"ገና አልተጫወተም — የመጀመሪያ መደጋዎን ይጥሉ!",
+    hist_win:"አሸነፈ ×{m}", hist_lose:"መደጋ አልተሳካም", hist_bet:"መደጋ {n}",
     your_link:"የጋብዣ ሊንክዎ", copy:"ቅዳ", share:"አጋራ",
     fr_txt:"ጓደኛዎ ሁለቱንም ቻናሎች ሲቀላቀል +50 ETB ያገኛሉ፤ እሱም +25 ETB ይቀበላል።",
     s_friends:"ጓደኞች", s_pending:"በመጠባበቅ ላይ", s_earned:"ያትረፉት ETB", your_friends:"የእርስዎ ጓደኞች",
@@ -541,7 +562,7 @@ const STR = {
     banned_h:"መለያ ተዘግቷል", contact:"ድጋፍ ያግኙ",
     gate_h:"ለመቀጠል ይቀላቀሉ", gate_p:"TanveXoን ለመክፈት እና +25 ETB የእንጋቢ ስጦታ ለማግኘት ሁለቱንም ቻናሎች ይቀላቀሉ።",
     gate_check:"ተቀላቅያለሁ — አረጋግጥ", gate_fail:"እባክዎ ሁለቱንም ቻናሎች ይቀላቀሉ",
-    t_claimed:"+{r} ETB ተቀብለዋል!", t_copied:"ሊንክ ተቀድቷል!", t_join_back:"ይቀላቀሉ፣ ተመለስተው አረጋግጥ ይንኩ",
+    t_claimed:"+{r} ETB ተቀብለዋል!", t_copied:"ሊንክ ተቀድቷል!", t_join_back:"ሊንኩን ይጎብኙ፣ ተመለስተው አረጋግጥ ይንኩ",
     t_not_enough:"ለዚህ መደጋ በቂ ETB የለም", t_submitted:"ጥያቄ ተልኳል! በ24–48 ሰዓት ይከፈላል።",
     t_locked_req:"ተዘግቷል — መስፈርቱን ይሙሉ (25 ማስታወቂያ • 15 ጓደኛ)",
     t_min_wd:"አነስተኛው {n} ETB ነው", t_enter_acc:"የመለያ መረጃዎን ያስገቡ",
@@ -554,8 +575,8 @@ let LANG = 'en';
 try { LANG = localStorage.getItem('tx_lang') || 'en'; } catch(e){}
 function t(k, a, b){
   let s = (STR[LANG] && STR[LANG][k] != null) ? STR[LANG][k] : (STR.en[k] != null ? STR.en[k] : k);
-  if (a != null) s = s.replace('{a}', a).replace('{r}', a).replace('{n}', a);
-  if (b != null) s = s.replace('{b}', b).replace('{m}', b).replace('{t}', b);
+  if (a != null) s = s.replace('{a}', a).replace('{r}', a).replace('{n}', a).replace('{m}', a);
+  if (b != null) s = s.replace('{b}', b).replace('{t}', b);
   return s;
 }
 function ago(ts){
@@ -573,7 +594,7 @@ document.getElementById('langBtn').addEventListener('click', function(){
   LANG = LANG === 'en' ? 'am' : 'en';
   try { localStorage.setItem('tx_lang', LANG); } catch(e){}
   this.textContent = LANG === 'en' ? 'አማ' : 'EN';
-  applyStatic(); renderAll(); renderTasksPage();
+  applyStatic(); renderAll(); renderTasksPage(); renderSpinHistory();
 });
 
 /* ================= TELEGRAM ================= */
@@ -607,15 +628,22 @@ function deviceId(){
     return d;
   } catch(e){ return 'dev_unknown'; }
 }
-/* direct miniapp invite link — gate happens inside the app as a popup */
 function referralLink(){ return 'https://t.me/' + CONFIG.botUsername + '/refer?startapp=ref_' + myId; }
+function isTgLink(u){ return /t\.me\//i.test(String(u || '')); }
+function openUrl(url){
+  try {
+    if (isTgLink(url)){ if (tg && tg.openTelegramLink) { tg.openTelegramLink(url); return; } }
+    if (tg && tg.openLink){ tg.openLink(url); return; }
+  } catch(e){}
+  window.open(url, '_blank');
+}
 
 /* ================= STATE ================= */
 const STREAK_REWARDS = [10,30,40,60,70,80,100];
 const DEFAULTS = { balance:0, totalEarned:0, referrals:0, friends:[],
   dailyStreak:0, lastDailyTs:0, dailyClaims:0, claimedTasks:[],
   adsWatched:0, adsToday:0, lastAdTs:0, spins:0,
-  reqAds:0, reqFriends:0, activities:[], withdrawals:[], reviews:[], serverTasks:[] };
+  reqAds:0, reqFriends:0, activities:[], withdrawals:[], reviews:[], serverTasks:[], spinHistory:[] };
 function load(){
   try {
     const raw = localStorage.getItem(CONFIG.storageKey);
@@ -670,9 +698,6 @@ function actDate(ts){
   const d = new Date(ts);
   return d.toLocaleDateString('en', { month:'short', day:'numeric' }) + ' • ' + d.toLocaleTimeString('en', { hour:'numeric', minute:'2-digit' });
 }
-function openTg(url){
-  try { if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank'); } catch(e){}
-}
 
 /* ================= NAV ================= */
 let currentPage = 'home';
@@ -682,6 +707,7 @@ function go(page){
   document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.page === page); });
   if (page === 'home'){ renderHome(); loadReviews(); }
   if (page === 'tasks') renderTasksPage();
+  if (page === 'game'){ renderSpinHistory(); if (LIVE) loadSpinHistory(); }
   if (page === 'friends') renderFriends();
   if (page === 'wallet'){ renderWallet(); if (LIVE) loadWithdrawals(); }
   window.scrollTo(0, 0);
@@ -771,7 +797,7 @@ function showGate(channels){
     b.className = 'btn dark big';
     b.style.padding = '13px';
     b.innerHTML = ic('megaphone', 17) + ' ' + h;
-    b.addEventListener('click', function(){ openTg('https://t.me/' + h.replace('@','')); });
+    b.addEventListener('click', function(){ openUrl('https://t.me/' + h.replace('@','')); });
     wrap.appendChild(b);
   });
   $('#gateErr').textContent = '';
@@ -967,7 +993,7 @@ const LOCAL_TASKS = [
   { id:5, title:'Claim a daily bonus', reward:25, goal:1, type:'daily' },
   { id:6, title:'Join our Channel', reward:50, goal:1, type:'link' }
 ];
-const TI = { invites:'userplus', daily:'gift', ads:'play', link:'megaphone' };
+const TI = { invites:'userplus', daily:'gift', ads:'play', link:'link' };
 function taskProgressOf(t_){
   switch (t_.type){
     case 'invites': return state.referrals;
@@ -994,7 +1020,10 @@ function taskRow(t_, done, v, ready, isLink){
     if (isLink && !t_._opened){
       t_._opened = true;
       const url = LIVE ? t_.link : CONFIG.channelUrl;
-      if (url) openTg(url);
+      if (LIVE){
+        try { await api('/api/task', { id: t_.id, click: true }); } catch(e){}
+      }
+      if (url) openUrl(url);
       toast(t('t_join_back'));
       renderTasksPage();
       return;
@@ -1061,7 +1090,7 @@ function renderTasksPage(){ renderStreak(); renderTasksList(); }
   renderTasksPage(); renderAll();
 });
 
-/* ================= GAME ================= */
+/* ================= GAME (hub-tap wheel + history) ================= */
 const SEGV = [
   { t:'×1.5', c:'d1' },{ t:'+', c:'d2' },{ t:'×1.5', c:'d1' },{ t:'+', c:'d2' },
   { t:'×3', c:'g' },{ t:'+', c:'d2' },{ t:'×2', c:'w' },{ t:'+', c:'d2' }
@@ -1095,15 +1124,19 @@ function segForMult(m){
   return [1,3,5,7][Math.floor(Math.random() * 4)];
 }
 function animateWheel(idx, done){
-  const base = Math.ceil(wheelRot / 360) * 360 + 360 * 5;
-  let target = base - idx * SEG + (Math.floor(Math.random() * 26) - 13);
+  const wheel = $('#wheel');
+  const turns = 6 + Math.floor(Math.random() * 2);
+  const dur = 4200 + Math.floor(Math.random() * 900);
+  const base = Math.ceil(wheelRot / 360) * 360 + 360 * turns;
+  let target = base - idx * SEG + (Math.floor(Math.random() * 20) - 10);
   if (target <= wheelRot) target += 360;
   wheelRot = target;
-  $('#wheel').style.transform = 'rotate(' + target + 'deg)';
+  wheel.style.transition = 'transform ' + dur + 'ms cubic-bezier(.12,.72,.08,1)';
+  wheel.style.transform = 'rotate(' + target + 'deg)';
   let fired = false;
   const fin = function(){ if (fired) return; fired = true; spinning = false; done(); };
-  $('#wheel').addEventListener('transitionend', fin, { once:true });
-  setTimeout(fin, 4800);
+  wheel.addEventListener('transitionend', fin, { once:true });
+  setTimeout(fin, dur + 200);
 }
 function showSpinResult(m, payout, bet){
   const el = $('#spinResult');
@@ -1111,6 +1144,26 @@ function showSpinResult(m, payout, bet){
   if (m === 0){ el.textContent = t('t_spin_lose', bet); el.classList.add('lose'); }
   else { el.textContent = t('t_spin_win', payout - bet, m); el.classList.add('win'); if (m >= 2) confetti(); }
   el.classList.add('pop');
+}
+function renderSpinHistory(){
+  const list = $('#spinHistList');
+  const h = state.spinHistory || [];
+  if (!h.length){
+    list.innerHTML = '<div class="empty">' + t('no_spins') + '</div>';
+    return;
+  }
+  list.innerHTML = h.map(function(s){
+    const win = s.mult > 0;
+    return '<div class="sh"><div class="sh-ic' + (win ? '' : ' neg') + '">' + ic('target', 16) + '</div>' +
+      '<div class="sh-main"><b>' + (win ? t('hist_win', s.mult) : t('hist_lose')) + '</b>' +
+      '<small>' + t('hist_bet', fmt(s.bet)) + ' · ' + ago(s.ts) + '</small></div>' +
+      '<div class="sh-amt" style="color:' + (win ? 'var(--g)' : 'var(--red)') + '">' +
+      (win ? '+' + fmt(s.payout - s.bet) : '-' + fmt(s.bet)) + ' ETB</div></div>';
+  }).join('');
+}
+async function loadSpinHistory(){
+  if (!LIVE) return;
+  try { const r = await api('/api/spin_history'); state.spinHistory = r.history || []; save(); renderSpinHistory(); } catch(e){}
 }
 function betVal(){
   let b = parseInt($('#betInput').value, 10) || 0;
@@ -1127,23 +1180,27 @@ function betVal(){
     wrap.appendChild(c);
   });
 })();
- $('#spinBtn').addEventListener('click', async function(){
+async function doSpin(){
   if (spinning || LOCKED || GATED) return;
   const bet = betVal();
   if (state.balance < bet){ toast(t('t_not_enough'), true); haptic('rigid'); return; }
-  spinning = true; this.disabled = true; haptic('medium');
+  spinning = true;
+  $('#spinBtn').disabled = true; $('#spinHub').disabled = true;
+  haptic('medium');
   $('#spinResult').textContent = '';
   if (LIVE){
     try {
       const r = await api('/api/spin', { bet: bet });
       animateWheel(segForMult(r.mult), function(){
         applyState(r.state);
+        if (r.spinHistory){ state.spinHistory = r.spinHistory; save(); renderSpinHistory(); }
         showSpinResult(r.mult, r.payout, bet);
         hNotify(r.mult === 0 ? 'error' : 'success');
-        $('#spinBtn').disabled = false;
+        $('#spinBtn').disabled = false; $('#spinHub').disabled = false;
       });
     } catch(e){
-      spinning = false; this.disabled = false;
+      spinning = false;
+      $('#spinBtn').disabled = false; $('#spinHub').disabled = false;
       if (e && e.locked){ showBanScreen(e.message); return; }
       if (e && e.gate){ showGate(e.channels); return; }
       toast(e.message, true);
@@ -1155,14 +1212,18 @@ function betVal(){
   state.balance += payout - bet;
   if (payout > bet) state.totalEarned += payout - bet;
   state.spins++;
+  state.spinHistory.unshift({ bet: bet, mult: m, payout: payout, ts: Date.now() });
+  state.spinHistory = state.spinHistory.slice(0, 12);
   state.activities.unshift({ type:'game', title: m === 0 ? 'Lucky Wheel — bet lost' : 'Lucky Wheel win ×' + m, amount: m === 0 ? -bet : payout - bet, ts:Date.now() });
   dirty = true; save();
   animateWheel(segForMult(m), function(){
-    renderAll(); showSpinResult(m, payout, bet);
+    renderAll(); renderSpinHistory(); showSpinResult(m, payout, bet);
     hNotify(m === 0 ? 'error' : 'success');
-    $('#spinBtn').disabled = false;
+    $('#spinBtn').disabled = false; $('#spinHub').disabled = false;
   });
-});
+}
+ $('#spinBtn').addEventListener('click', doSpin);
+ $('#spinHub').addEventListener('click', doSpin);
 
 /* ================= FRIENDS ================= */
 function renderFriends(){
@@ -1177,9 +1238,10 @@ function renderFriends(){
     return;
   }
   list.innerHTML = state.friends.map(function(f){
+    const initial = (f.name || '?').charAt(0).toUpperCase();
     const av = f.photo
-      ? '<div class="f-av"><img src="' + f.photo + '" alt="" onerror="this.parentNode.textContent=\'' + (f.name || '?').charAt(0).toUpperCase() + '\'"></div>'
-      : '<div class="f-av">' + (f.name || '?').charAt(0).toUpperCase() + '</div>';
+      ? '<div class="f-av"><img src="' + f.photo + '" alt="" onerror="this.remove()"></div>'
+      : '<div class="f-av">' + initial + '</div>';
     const right = f.status === 'pending'
       ? '<span class="fpill pend">' + t('st_pending') + '</span>'
       : '<span class="fpill rcv">+' + CONFIG.referralReward + ' ETB</span>';
@@ -1318,9 +1380,10 @@ document.addEventListener('visibilitychange', function(){
 applyStatic();
 buildWheel();
 renderAll();
+renderSpinHistory();
 loadReviews();
 go('home');
 bootLive();
 </script>
 </body>
-</html>
+  </html>
