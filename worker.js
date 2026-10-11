@@ -1,8 +1,9 @@
-/* TapCoin API v4 — dynamic tasks, withdrawals, device cap, admin */
+/* TapCoin API v5 — real channel membership gate, dynamic tasks, withdrawals */
 const ENERGY_MAX = 500, ENERGY_REGEN = 1, TAP_COST = 1, MAX_TAPS_SEC = 12;
 const POINTS_PER_INVITE = 5, BOOST_MAX = 10, DAY = 86400, SPIN_COST = 100;
 const MAX_ACCOUNTS_PER_DEVICE = 2;
-const MIN_WITHDRAW = 5000; /* ← minimum coins to withdraw */
+const MIN_WITHDRAW = 5000;
+const DEFAULT_CHANNEL = 'https://t.me/ebtry0'; /* ← used to seed link tasks with empty links */
 const STREAK_REWARDS = [10, 25, 50, 75, 100, 150, 250];
 const SPIN_PRIZES = [
   { coins:5, w:28 }, { coins:10, w:22 }, { coins:15, w:18 }, { coins:25, w:12 },
@@ -64,10 +65,10 @@ function initDb(env) {
         'ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN ban_reason TEXT',
         'ALTER TABLE users ADD COLUMN last_spin INTEGER NOT NULL DEFAULT 0',
-        'ALTER TABLE users ADD COLUMN migrated INTEGER NOT NULL DEFAULT 0'
+        'ALTER TABLE users ADD COLUMN migrated INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE task_clicks ADD COLUMN verified INTEGER NOT NULL DEFAULT 0'
       ];
       for (const a of alters) { try { await env.DB.prepare(a).run(); } catch(e) {} }
-      /* seed the 7 classic tasks once */
       const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM tasks').first();
       if (!c || c.n === 0) {
         const seed = [
@@ -78,8 +79,11 @@ function initDb(env) {
         ];
         for (let i = 0; i < seed.length; i++) {
           await env.DB.prepare('INSERT OR IGNORE INTO tasks (id,title,type,reward,goal,link,active,created_at) VALUES (?,?,?,?,?,?,1,?)')
-            .bind(i + 1, seed[i][0], seed[i][1], seed[i][2], seed[i][3], seed[i][1] === 'link' ? '' : null, t0).run();
+            .bind(i + 1, seed[i][0], seed[i][1], seed[i][2], seed[i][3], seed[i][1] === 'link' ? DEFAULT_CHANNEL : null, t0).run();
         }
+      } else {
+        /* fill empty links on link tasks with the default channel */
+        try { await env.DB.prepare("UPDATE tasks SET link = ? WHERE type = 'link' AND (link IS NULL OR link = '')").bind(DEFAULT_CHANNEL).run(); } catch(e) {}
       }
     })().catch(e => { dbReady = null; throw e; });
   }
@@ -105,6 +109,44 @@ async function verifyInitData(initData, botToken) {
     const u = JSON.parse(p.get('user') || 'null');
     return u && u.id ? u : null;
   } catch (e) { return null; }
+}
+
+/* ================= TELEGRAM BOT API (membership gate) ================= */
+async function botCall(env, method, params) {
+  if (!env.BOT_TOKEN) return { ok: false, description: 'BOT_TOKEN not set' };
+  try {
+    const r = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/' + method, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params || {})
+    });
+    return await r.json();
+  } catch (e) { return { ok: false, description: String(e && e.message || e) }; }
+}
+
+/* extract @chat from a task link: t.me/ebtry0 → @ebtry0 (public links only) */
+function extractChat(link) {
+  if (!link) return null;
+  const s = String(link).trim();
+  if (/^@?[A-Za-z][A-Za-z0-9_]{2,}$/.test(s)) return s.charAt(0) === '@' ? s : '@' + s;
+  if (/^-100?\d+$/.test(s)) return s;
+  const m = s.match(/t\.me\/(?:s\/)?([A-Za-z][A-Za-z0-9_]{2,})(?:[/?#]|$)/i);
+  if (m && !/^joinchat$/i.test(m[1])) return '@' + m[1];
+  return null;
+}
+
+const MEMBER_STATUSES = ['creator', 'administrator', 'member', 'restricted'];
+async function isMember(env, chat, userId) {
+  const r = await botCall(env, 'getChatMember', { chat_id: chat, user_id: userId });
+  if (!r || r.ok !== true) {
+    const d = (r && r.description) || 'unknown error';
+    if (/administrator|rights|admin/i.test(d))
+      return { ok: false, error: 'Verification setup error: add the bot as admin in ' + chat };
+    return { ok: false, error: 'Could not verify membership — try again' };
+  }
+  const m = r.result || {};
+  if (m.status === 'restricted') return { ok: m.is_member === true };
+  return { ok: MEMBER_STATUSES.includes(m.status) };
 }
 
 function regen(row) {
@@ -156,7 +198,6 @@ function toClient(row, friends, claimed, clicked) {
   };
 }
 
-/* one-time migration of old hardcoded task ids (1..7 match seeded ids) */
 async function migrateUser(env, row) {
   if (row.migrated) return;
   const order = ['taps100','taps1000','daily','invite1','invite5','boost1','channel'];
@@ -166,7 +207,7 @@ async function migrateUser(env, row) {
     const i = order.indexOf(o);
     if (i >= 0) await env.DB.prepare('INSERT OR IGNORE INTO task_claims (user_id, task_id, claimed_at) VALUES (?,?,?)').bind(row.user_id, i + 1, t).run();
   }
-  if (row.channel_clicked) await env.DB.prepare('INSERT OR IGNORE INTO task_clicks (user_id, task_id, clicked_at) VALUES (?,?,?)').bind(row.user_id, 7, t).run();
+  if (row.channel_clicked) await env.DB.prepare('INSERT OR IGNORE INTO task_clicks (user_id, task_id, clicked_at, verified) VALUES (?,?,?,1)').bind(row.user_id, 7, t).run();
   row.tasks = []; row.migrated = 1;
 }
 
@@ -278,17 +319,30 @@ async function apiTask(env, tgUser, body) {
   const t = await env.DB.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first();
   if (!t || !t.active) return { ok: false, error: 'Task not found' };
   const tnow = now();
-  /* link task: record the click first */
+  /* link task: record the click (opens the channel) */
   if (t.type === 'link' && body.click) {
     if (!t.link) return { ok: false, error: 'Task link is not set yet' };
     const ex = await env.DB.prepare('SELECT user_id FROM task_clicks WHERE user_id = ? AND task_id = ?').bind(tgUser.id, id).first();
-    if (!ex) await env.DB.prepare('INSERT INTO task_clicks (user_id, task_id, clicked_at) VALUES (?,?,?)').bind(tgUser.id, id, tnow).run();
+    if (!ex) await env.DB.prepare('INSERT INTO task_clicks (user_id, task_id, clicked_at, verified) VALUES (?,?,?,0)').bind(tgUser.id, id, tnow).run();
     return { ok: true, clicked: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await clicksOf(env, tgUser.id)) };
   }
   const claimed = await claimsOf(env, tgUser.id);
   if (claimed.includes(id)) return { ok: false, error: 'Already claimed' };
-  const clicked = (await clicksOf(env, tgUser.id)).includes(id);
-  if (dynProgress(row, t, clicked) < t.goal) return { ok: false, error: 'Task not finished yet' };
+  if (t.type === 'link') {
+    /* real-time membership gate */
+    const clickRow = await env.DB.prepare('SELECT verified FROM task_clicks WHERE user_id = ? AND task_id = ?').bind(tgUser.id, id).first();
+    if (!clickRow) return { ok: false, error: 'Tap Join first', notJoined: true };
+    if (!clickRow.verified) {
+      const chat = extractChat(t.link);
+      if (!chat) return { ok: false, error: 'Admin: this task needs a public t.me link to verify joins', notJoined: true };
+      const v = await isMember(env, chat, tgUser.id);
+      if (!v.ok) return { ok: false, error: v.error || 'You must join the channel first', notJoined: true };
+      await env.DB.prepare('UPDATE task_clicks SET verified = 1 WHERE user_id = ? AND task_id = ?').bind(tgUser.id, id).run();
+    }
+  } else {
+    const clicked = (await clicksOf(env, tgUser.id)).includes(id);
+    if (dynProgress(row, t, clicked) < t.goal) return { ok: false, error: 'Task not finished yet' };
+  }
   await env.DB.prepare('INSERT INTO task_claims (user_id, task_id, claimed_at) VALUES (?,?,?)').bind(tgUser.id, id, tnow).run();
   row.balance += t.reward; row.total_earned += t.reward; row.updated_at = tnow;
   await saveRow(env, row);
@@ -331,7 +385,6 @@ async function apiSpin(env, tgUser) {
   return { ok: true, prize, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await clicksOf(env, tgUser.id)) };
 }
 
-/* ================= WITHDRAWALS (user) ================= */
 async function apiWithdraw(env, tgUser, body) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
@@ -448,7 +501,7 @@ export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url = new URL(request.url).pathname;
-    if (url === '/') return j({ ok: true, msg: 'TapCoin API v4 is running' });
+    if (url === '/') return j({ ok: true, msg: 'TapCoin API v5 is running' });
     let body = {};
     if (request.method === 'POST') { try { body = await request.json(); } catch (e) {} }
     try {
