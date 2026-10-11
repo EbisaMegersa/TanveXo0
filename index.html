@@ -24,7 +24,6 @@
   --accent:#007AFF; --accent-hi:#3B9EFF; --accent-deep:#0066D6;
   --on-accent:#FFFFFF; --accent-tint:rgba(0,122,255,.13); --accent-glow:rgba(0,122,255,.32);
   --red:#FF3B30; --red-tint:rgba(255,59,48,.12);
-  --gold:#F2B01E;
   --glass:rgba(255,255,255,.55);
   --glass-strong:rgba(255,255,255,.72);
   --glass-blur:blur(28px) saturate(190%) brightness(1.06);
@@ -53,7 +52,6 @@
   --accent:#30D158; --accent-hi:#4FE375; --accent-deep:#24B84A;
   --accent-tint:rgba(48,209,88,.16); --accent-glow:rgba(48,209,88,.3);
   --red:#FF453A; --red-tint:rgba(255,69,58,.15);
-  --gold:#FFD75E;
   --glass:rgba(24,24,27,.58);
   --glass-strong:rgba(30,30,34,.8);
   --glass-ring:linear-gradient(160deg, rgba(255,255,255,.55), rgba(255,255,255,.14) 30%, rgba(255,255,255,.04) 55%, rgba(255,255,255,.28) 100%);
@@ -76,7 +74,6 @@
     --accent:#30D158; --accent-hi:#4FE375; --accent-deep:#24B84A;
     --accent-tint:rgba(48,209,88,.16); --accent-glow:rgba(48,209,88,.3);
     --red:#FF453A; --red-tint:rgba(255,69,58,.15);
-    --gold:#FFD75E;
     --glass:rgba(24,24,27,.58);
     --glass-strong:rgba(30,30,34,.8);
     --glass-ring:linear-gradient(160deg, rgba(255,255,255,.55), rgba(255,255,255,.14) 30%, rgba(255,255,255,.04) 55%, rgba(255,255,255,.28) 100%);
@@ -90,7 +87,9 @@
     --seg-w:#F2F2F7; --seg-t-w:#111;
   }
 }
-@media (prefers-reduced-transparency: reduce){ :root{ --glass:var(--card); --glass-strong:var(--card); --glass-blur:none; } }
+@media (prefers-reduced-transparency: reduce){
+  :root{ --glass:var(--card); --glass-strong:var(--card); --glass-blur:none; }
+}
 @media (prefers-contrast: more){
   :root{ --label2:rgba(0,0,0,.85); --sep:rgba(0,0,0,.5); }
   :root[data-theme="dark"]{ --label2:rgba(255,255,255,.85); --sep:rgba(255,255,255,.5); }
@@ -109,24 +108,30 @@ body{
   font-size:1rem; user-select:none;-webkit-user-select:none;touch-action:manipulation;
   overflow-x:hidden;overscroll-behavior:none;-webkit-font-smoothing:antialiased;
 }
+/* first-open gate hides the whole app behind the popup card */
 body.gated #app, body.gated .topnav, body.gated nav.tabbar{ display:none!important }
 #app{max-width:480px;margin:0 auto;min-height:100dvh;padding:0 16px calc(116px + env(safe-area-inset-bottom))}
 .ic{width:22px;height:22px;flex-shrink:0}
 svg{display:block}
 
 /* ============================================================
-   LIQUID GLASS — MORPHISM
+   LIQUID GLASS — MORPHISM (chrome only)
    ============================================================ */
 .lg{position:relative;
   background:var(--glass);
-  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
   box-shadow:var(--glass-inner), var(--glass-shadow);
 }
-.lg::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:var(--glass-sheen)}
-.lg::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1.2px;
+.lg::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:var(--glass-sheen)}
+.lg::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  padding:1.2px;
   background:var(--glass-ring);
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);mask-composite:exclude}
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite:exclude}
 
 /* ================= FLOATING TOP NAV ================= */
 .topnav{
@@ -156,7 +161,8 @@ svg{display:block}
 .icon-glass:active{transform:scale(.9);opacity:.75}
 
 /* ================= HEADER ================= */
-.top{display:flex;align-items:center;gap:12px;padding:calc(var(--tg-top) + 12px) 2px 12px}
+.top{display:flex;align-items:center;gap:12px;
+  padding:calc(var(--tg-top) + 12px) 2px 12px}
 .avatar{width:48px;height:48px;border-radius:var(--r-capsule);
   background:linear-gradient(160deg,#7AB8FF,#007AFF);
   display:grid;place-items:center;font-weight:700;color:#fff;font-size:1.05rem;overflow:hidden;flex-shrink:0;
@@ -229,9 +235,7 @@ h2.sec .sic .ic{width:20px;height:20px}
 .btn:disabled{background:var(--fill2);color:var(--label3);box-shadow:none;pointer-events:none}
 .btn.half{flex:1;padding:0 10px;min-height:48px}
 
-/* ============================================================
-   HERO + LIVE STATS PANEL (replaces Quick Actions)
-   ============================================================ */
+/* ================= HERO ================= */
 .hero{position:relative;background:var(--card);border-radius:var(--r-xl);
   padding:24px 20px;margin-top:8px;overflow:hidden;
   box-shadow:var(--card-edge), var(--card-shadow)}
@@ -245,37 +249,17 @@ h2.sec .sic .ic{width:20px;height:20px}
 .hero .hsub i{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
 .hidden-bal{filter:blur(10px)}
 
-.statsgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:14px}
-.stat-tile{background:var(--card);border-radius:var(--r-lg);padding:15px 16px;cursor:pointer;
+/* ================= QUICK ACTIONS ================= */
+.qa{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:14px}
+.qac{background:var(--card);border-radius:var(--r-lg);padding:16px 8px;text-align:center;cursor:pointer;
   box-shadow:var(--card-edge), var(--card-shadow);
   transition:transform var(--dur-press) var(--spring)}
-.stat-tile:active{transform:scale(.96)}
-.st-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.st-top .ic{width:17px;height:17px;color:var(--accent)}
-.st-top small{font-size:.72rem;font-weight:600;color:var(--label2);letter-spacing:.02em;text-transform:uppercase}
-.st-val{font-size:1.45rem;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
-.st-val small{font-size:.8rem;font-weight:600;color:var(--label2);margin-left:3px}
-.st-sub{font-size:.7rem;color:var(--label3);font-weight:500;margin-top:5px}
-
-/* daily quests strip */
-.quests{margin-top:14px}
-.quests .card{padding:16px}
-.q-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.q-ring{position:relative;width:44px;height:44px;flex-shrink:0}
-.q-ring svg{width:44px;height:44px;transform:rotate(-90deg)}
-.q-ring .q-bg{fill:none;stroke:var(--fill);stroke-width:5}
-.q-ring .q-fg{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .6s var(--ease-out)}
-.q-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:.62rem;font-weight:700;color:var(--accent)}
-.q-head .q-t{flex:1}
-.q-head .q-t b{display:block;font-size:.95rem;font-weight:700;letter-spacing:-.02em}
-.q-head .q-t small{color:var(--label2);font-size:.75rem;font-weight:500}
-.q-row{display:flex;align-items:center;gap:8px;padding:7px 0}
-.q-row .ic{width:15px;height:15px;color:var(--label2)}
-.q-row span{flex:1;font-size:.82rem;font-weight:500;color:var(--label)}
-.q-row b{font-size:.8rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--label2)}
-.q-row b.ok{color:var(--accent)}
-.q-bar{height:5px;border-radius:99px;background:var(--fill);overflow:hidden;flex-shrink:0;width:70px}
-.q-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s var(--ease-out)}
+.qac:active{transform:scale(.95)}
+.qac .qic{width:46px;height:46px;border-radius:var(--r-md);background:var(--accent-tint);
+  display:grid;place-items:center;margin:0 auto 10px;color:var(--accent)}
+.qac .qic .ic{width:21px;height:21px}
+.qac b{display:block;font-size:.84rem;font-weight:600}
+.qac small{display:block;color:var(--accent);font-size:.7rem;font-weight:600;margin-top:3px}
 
 /* ================= DOTS ================= */
 .dots{display:flex;gap:4px;margin:4px 0 10px}
@@ -284,37 +268,24 @@ h2.sec .sic .ic{width:20px;height:20px}
 .adline{font-size:.82rem;color:var(--label2);margin-bottom:12px;font-weight:500}
 .adline b{color:var(--label);font-weight:600}
 
-/* ============================================================
-   REVIEWS — new mini-card design
-   ============================================================ */
-.reviews-wrap{display:flex;flex-direction:column;gap:10px;margin-top:2px}
-.rev-card{background:var(--card);border-radius:var(--r-md);padding:14px 14px 14px 18px;position:relative;
-  box-shadow:var(--card-edge), var(--card-shadow);overflow:hidden}
-.rev-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
-  background:linear-gradient(180deg,var(--accent-hi),var(--accent-deep));opacity:.75}
-.rev-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.rev-av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.85rem;flex-shrink:0;color:#fff;overflow:hidden}
-.rev-av img{width:100%;height:100%;object-fit:cover}
-.rev-id{flex:1;min-width:0}
-.rev-id b{display:block;font-size:.9rem;font-weight:700;letter-spacing:-.01em}
-.rev-id small{display:block;color:var(--label2);font-size:.7rem;font-weight:500;margin-top:1px}
-.rev-stars{display:flex;gap:2px;flex-shrink:0}
-.rev-stars svg{width:13px;height:13px}
-.rev-msg{font-size:.88rem;color:var(--label);line-height:1.5;font-weight:500;word-wrap:break-word}
-.rev-msg::before{content:'“';color:var(--label3);font-weight:700;margin-right:1px}
-.rev-msg::after{content:'”';color:var(--label3);font-weight:700;margin-left:1px}
-.empty{color:var(--label2);font-size:.84rem;text-align:center;padding:16px 0;line-height:1.5;font-weight:500}
-
-/* ================= LISTS (activity etc.) ================= */
-.act,.sh,.hist,.friend,.task{display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 0}
-.act + .act,.sh + .sh,.hist + .hist,.friend + .friend,.task + .task{border-top:.5px solid var(--sep)}
+/* ================= LISTS ================= */
+.act,.rev,.sh,.hist,.friend,.task{display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 0}
+.act + .act,.rev + .rev,.sh + .sh,.hist + .hist,.friend + .friend,.task + .task{border-top:.5px solid var(--sep)}
 .act-ic,.sh-ic{width:36px;height:36px;border-radius:11px;background:var(--fill);display:grid;place-items:center;flex-shrink:0;color:var(--accent)}
 .act-ic.neg,.sh-ic.neg{color:var(--red)}
 .act-ic .ic,.sh-ic .ic{width:17px;height:17px}
-.act-main,.sh-main,.hist-main{flex:1;min-width:0}
+.act-main,.sh-main,.rev-main,.hist-main{flex:1;min-width:0}
 .act-main b,.sh-main b,.hist-main b{font-size:.87rem;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.act-main small,.sh-main small,.hist-main small{color:var(--label2);font-size:.72rem;font-weight:500}
+.act-main small,.sh-main small,.hist-main small,.rev-time{color:var(--label2);font-size:.72rem;font-weight:500}
 .act-amt{font-weight:600;font-size:.9rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+.act-amt small{display:block;text-align:right;font-size:.62rem;color:var(--label2);font-weight:500}
+.rev{align-items:flex-start}
+.rev-av{width:38px;height:38px;border-radius:50%;background:var(--fill);display:grid;place-items:center;font-weight:600;font-size:.85rem;flex-shrink:0;color:var(--label2)}
+.rev-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rev-top b{font-size:.87rem;font-weight:600}
+.rev-stars{color:var(--accent);font-size:.72rem;letter-spacing:.12em}
+.rev-msg{font-size:.83rem;color:var(--label);margin-top:2px;line-height:1.45;word-wrap:break-word}
+.rev-time{margin-top:3px;display:block}
 
 /* ================= STREAK ================= */
 .streak{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin:4px 0 14px}
@@ -353,9 +324,10 @@ h2.sec .sic .ic{width:20px;height:20px}
 .fpill{flex-shrink:0;padding:5px 11px;border-radius:var(--r-capsule);font-size:.7rem;font-weight:600;white-space:nowrap}
 .fpill.pend{background:var(--fill);color:var(--label2)}
 .fpill.rcv{background:var(--accent-tint);color:var(--accent)}
+.empty{color:var(--label2);font-size:.84rem;text-align:center;padding:16px 0;line-height:1.5;font-weight:500}
 
 /* ============================================================
-   GAME — 8 clean multiplier segments, honest math display
+   GAME — metallic ring wheel + glass hub
    ============================================================ */
 .spin-wrap{position:relative;width:min(76vw,288px);aspect-ratio:1;margin:18px auto 10px}
 .wheel-ring{position:absolute;inset:-9px;border-radius:50%;z-index:0;
@@ -386,7 +358,7 @@ h2.sec .sic .ic{width:20px;height:20px}
   border-left:11px solid transparent;border-right:11px solid transparent;border-top:22px solid var(--accent);
   filter:drop-shadow(0 2px 6px var(--accent-glow))}
 .spin-result{min-height:38px;text-align:center;margin-bottom:8px}
-.spin-result .sr-line{font-weight:700;font-size:1.3rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.spin-result .sr-line{font-weight:700;font-size:1.3rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums;display:block}
 .spin-result.win .sr-line{color:var(--accent)} .spin-result.lose .sr-line{color:var(--label2)}
 .spin-result .sr-detail{display:block;font-size:.75rem;font-weight:600;color:var(--label2);margin-top:2px}
 .spin-result.pop{animation:pop .7s var(--spring)}
@@ -400,11 +372,6 @@ h2.sec .sic .ic{width:20px;height:20px}
 .chip:active{transform:scale(.93)}
 .lbl2{font-size:.68rem;letter-spacing:.12em;color:var(--label2);font-weight:600;margin:2px 0 8px;text-transform:uppercase}
 .fine{font-size:.72rem;color:var(--label2);text-align:center;margin-top:12px;line-height:1.6;font-weight:500}
-
-/* spin history — honest amounts */
-.sh-main b .shx{color:var(--label2);font-weight:600}
-.sh-amt{font-weight:600;font-size:.9rem;white-space:nowrap;font-variant-numeric:tabular-nums}
-.sh-amt small{display:block;text-align:right;font-size:.62rem;color:var(--label2);font-weight:500}
 
 /* ================= INPUTS ================= */
 input.wd-input{width:100%;background:var(--fill);border:1.5px solid transparent;color:var(--label);
@@ -442,7 +409,7 @@ input.wd-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3p
 .hist-amt{font-weight:600;font-size:.92rem;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 
 /* ============================================================
-   TAB BAR
+   TAB BAR — Liquid Glass capsule
    ============================================================ */
 nav.tabbar{
   position:fixed;bottom:calc(var(--tg-bot) + 10px);left:50%;
@@ -462,7 +429,7 @@ nav.tabbar{
 .nav-btn:active .nv-ic{transform:scale(.9)}
 
 /* ============================================================
-   GATE — centered popup card, app hidden
+   FIRST-OPEN CHANNEL GATE — centered popup card, no skip
    ============================================================ */
 #gateWrap{position:fixed;inset:0;background:rgba(0,0,0,.55);
   -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
@@ -488,7 +455,7 @@ nav.tabbar{
 .g-err{color:var(--red);font-size:.82rem;margin-top:12px;min-height:20px;font-weight:600}
 
 /* ============================================================
-   BANNED
+   BANNED — "You're banned" alert
    ============================================================ */
 #banScreen{position:fixed;inset:0;background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   z-index:130;display:none;align-items:center;justify-content:center;padding:28px}
@@ -524,6 +491,7 @@ nav.tabbar{
 #toast.err{color:var(--red)}
 #toast.err .t-ic{color:var(--red)}
 
+/* confetti + ad overlay */
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:95;overflow:hidden}
 #confetti i{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{transform:translate(var(--x),108vh) rotate(var(--r));opacity:.7}}
@@ -544,6 +512,7 @@ nav.tabbar{
   <p><b>Advertisement</b><br>Your reward unlocks when the ad finishes.</p>
 </div>
 
+<!-- Liquid Glass: collapsible top nav -->
 <div class="topnav lg" id="topnav">
   <b>TanveXo</b>
   <button class="icon-glass" id="menuBtn2" aria-label="Menu">
@@ -578,45 +547,19 @@ nav.tabbar{
         <div class="hsub"><i></i><span data-i18n="earn_daily">Earn daily — check-in, ads &amp; invites</span></div>
       </div>
 
-      <!-- LIVE STATS (replaces Quick Actions) -->
-      <div class="statsgrid" id="statsGrid">
-        <div class="stat-tile" data-go="friends">
-          <div class="st-top"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><small data-i18n="s_friends">Friends</small></div>
-          <div class="st-val" id="sqFriends">0</div>
-          <div class="st-sub" data-i18n="st_ref">+50 ETB each</div>
+      <h2 class="sec"><span class="sic" id="boltIc"></span><span data-i18n="quick">Quick Actions</span></h2>
+      <div class="qa">
+        <div class="qac" id="qaCheck">
+          <div class="qic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="M9 15l2 2 4-4"/></svg></div>
+          <b data-i18n="checkin">Check-in</b><small data-i18n="up_to">up to +100 ETB</small>
         </div>
-        <div class="stat-tile" data-go="home">
-          <div class="st-top"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/></svg><small data-i18n="s_ads">Ads today</small></div>
-          <div class="st-val" id="sqAds">0<small>/25</small></div>
-          <div class="st-sub" data-i18n="st_ad">+5 ETB each</div>
+        <div class="qac" id="qaAd">
+          <div class="qic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/></svg></div>
+          <b data-i18n="watch_ads">Watch Ads</b><small data-i18n="per_ad">+5 ETB each</small>
         </div>
-        <div class="stat-tile" data-go="game">
-          <div class="st-top"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><small data-i18n="s_spins">Spins</small></div>
-          <div class="st-val" id="sqSpins">0</div>
-          <div class="st-sub" data-i18n="st_spin">Lucky Wheel plays</div>
-        </div>
-        <div class="stat-tile" data-go="wallet">
-          <div class="st-top"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/><path d="M17 12h4"/><circle cx="16" cy="12" r="1" fill="currentColor"/></svg><small data-i18n="s_total">Total earned</small></div>
-          <div class="st-val" id="sqEarned">0<small> ETB</small></div>
-          <div class="st-sub" data-i18n="st_life">Lifetime</div>
-        </div>
-      </div>
-
-      <!-- DAILY QUESTS STRIP -->
-      <div class="quests">
-        <div class="card">
-          <div class="q-head">
-            <div class="q-ring">
-              <svg viewBox="0 0 44 44"><circle class="q-bg" cx="22" cy="22" r="19"/><circle class="q-fg" id="qRing" cx="22" cy="22" r="19" stroke-dasharray="119.4" stroke-dashoffset="119.4"/></svg>
-              <b id="qPct">0%</b>
-            </div>
-            <div class="q-t">
-              <b data-i18n="q_title">Withdrawal progress</b>
-              <small data-i18n="q_sub">Complete both to unlock withdrawals</small>
-            </div>
-          </div>
-          <div class="q-row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/></svg><span data-i18n="r_ads">Ads watched</span><b id="qAds">0/25</b><div class="q-bar"><i id="qAdsBar" style="width:0%"></i></div></div>
-          <div class="q-row"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span data-i18n="r_fr">Friends invited</span><b id="qFr">0/15</b><div class="q-bar"><i id="qFrBar" style="width:0%"></i></div></div>
+        <div class="qac" id="qaInvite">
+          <div class="qic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg></div>
+          <b data-i18n="invite">Invite</b><small data-i18n="per_ref">+50 ETB each</small>
         </div>
       </div>
 
@@ -631,7 +574,7 @@ nav.tabbar{
       <div class="card" id="activityList" style="padding:6px 18px"></div>
 
       <h2 class="sec"><span class="sic" id="starIc"></span><span data-i18n="reviews">User Reviews</span></h2>
-      <div class="reviews-wrap" id="reviewList"></div>
+      <div class="card" id="reviewList" style="padding:6px 18px"></div>
     </section>
 
     <!-- TASKS -->
@@ -743,6 +686,7 @@ nav.tabbar{
     </section>
   </main>
 
+  <!-- Liquid Glass: floating tab bar -->
   <nav class="tabbar lg" id="tabbar">
     <button class="nav-btn active" data-page="home"><span class="nv-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/></svg></span><span data-i18n="nav_home">Home</span></button>
     <button class="nav-btn" data-page="tasks"><span class="nv-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5.5"/></svg></span><span data-i18n="nav_tasks">Tasks</span></button>
@@ -752,6 +696,7 @@ nav.tabbar{
   </nav>
 </div>
 
+<!-- Liquid Glass: ⋯ dropdown menu -->
 <div id="menuOverlay">
   <div class="menu lg" id="menuPanel">
     <div class="menu-status"><i id="menuDot"></i><span id="menuStatus">PREVIEW</span></div>
@@ -769,11 +714,11 @@ nav.tabbar{
         </span>
       </span>
     </div>
-    <div class="menu-info">TanveXo • v1.5</div>
+    <div class="menu-info">TanveXo • v1.6</div>
   </div>
 </div>
 
-<!-- FIRST-OPEN CHANNEL GATE -->
+<!-- FIRST-OPEN CHANNEL GATE — popup card, no skip -->
 <div id="gateWrap">
   <div class="gate-card">
     <div class="g-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
@@ -786,7 +731,7 @@ nav.tabbar{
   </div>
 </div>
 
-<!-- BANNED -->
+<!-- BANNED — "You're banned" -->
 <div id="banScreen">
   <div class="alert">
     <div class="ban-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg></div>
@@ -796,6 +741,7 @@ nav.tabbar{
   </div>
 </div>
 
+<!-- Toast -->
 <div id="toast"><span class="t-ic" id="toastIc"></span><span id="toastText"></span></div>
 
 <script>
@@ -824,7 +770,7 @@ const CONFIG = {
   storageKey: 'tanvexo_v2'
 };
 
-/* ================= SVG ICONS ================= */
+/* ================= SVG ICONS (SF Symbols style) ================= */
 const ICON_PATHS = {
   play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/>',
   check:'<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5.5"/>',
@@ -839,13 +785,10 @@ const ICON_PATHS = {
   list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1" fill="currentColor"/><circle cx="3.5" cy="12" r="1" fill="currentColor"/><circle cx="3.5" cy="18" r="1" fill="currentColor"/>',
   chart:'<path d="M3 3v17a1 1 0 0 0 1 1h17"/><path d="M7 14l4-4 3 3 5-6"/>',
   bolt:'<path d="M13 2 4.5 13.5h5.4L11 22l8.5-11.5h-5.4L13 2z"/>',
-  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-  starFill:'<path d="M12 2l3.1 6.3 6.9.9-5 4.8 1.2 6.9L12 17.8 5.8 20.9 7 14 2 9.2l6.9-.9L12 2z"/>'
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
 };
 const TOAST_OK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.53 7.53-5.25 5.25a.75.75 0 0 1-1.06 0L7.97 12.53a.75.75 0 1 1 1.06-1.06l1.72 1.72 4.72-4.72a.75.75 0 1 1 1.06 1.06z"/></svg>';
 const TOAST_ERR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.53 12.03a.75.75 0 1 1-1.06 1.06L12 12.56l-2.47 2.53a.75.75 0 1 1-1.06-1.06L11 11.5 8.47 8.97a.75.75 0 0 1 1.06-1.06L12 10.44l2.47-2.53a.75.75 0 1 1 1.06 1.06L13 11.5l2.53 2.53z"/></svg>';
-const STAR_FULL = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.1 6.3 6.9.9-5 4.8 1.2 6.9L12 17.8 5.8 20.9 7 14 2 9.2l6.9-.9L12 2z"/></svg>';
-const STAR_EMPTY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.1 6.3 6.9.9-5 4.8 1.2 6.9L12 17.8 5.8 20.9 7 14 2 9.2l6.9-.9L12 2z"/></svg>';
 function ic(n, size){
   return '<svg class="ic" style="width:' + (size || 18) + 'px;height:' + (size || 18) + 'px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICON_PATHS[n] + '</svg>';
 }
@@ -855,11 +798,12 @@ document.getElementById('linkIc').innerHTML = ic('link', 20);
 document.getElementById('usersIc').innerHTML = ic('users', 20);
 document.getElementById('histIc').innerHTML = ic('list', 20);
 document.getElementById('chartIc').innerHTML = ic('chart', 20);
+document.getElementById('boltIc').innerHTML = ic('bolt', 20);
 document.getElementById('clockIc').innerHTML = ic('clock', 20);
 document.getElementById('starIc').innerHTML = ic('star', 20);
 
 /* ============================================================
-   TELEGRAM HEADER FIX
+   TELEGRAM HEADER FIX — real insets as CSS vars
    ============================================================ */
 const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 let tgUser = null;
@@ -939,7 +883,8 @@ document.getElementById('menuThemeRow').addEventListener('click', function(e){
 const STR = {
   en: {
     letsub:"Let's earn together", your_balance:"Your Balance", earn_daily:"Earn daily — check-in, ads & invites",
-    watch_earn:"Watch & Earn",
+    quick:"Quick Actions", checkin:"Check-in", up_to:"up to +100 ETB", watch_ads:"Watch Ads", per_ad:"+5 ETB each",
+    invite:"Invite", per_ref:"+50 ETB each", watch_earn:"Watch & Earn",
     adline:"ads today • {b} left • watch a short video, get paid",
     watch_btn:"Watch Ad — +{r} ETB", limit_reached:"Daily limit reached", next_ad:"Next ad in {t}",
     recent_activity:"Recent Activity", reviews:"User Reviews",
@@ -959,9 +904,6 @@ const STR = {
     fr_txt:"You get +50 ETB when your friend joins both channels. They get a +25 ETB welcome bonus.",
     s_friends:"Friends", s_pending:"Pending", s_earned:"ETB earned", your_friends:"Your friends",
     no_friends:"No friends yet — share your link to earn +50 ETB per friend.",
-    s_ads:"Ads today", s_spins:"Spins", s_total:"Total earned",
-    st_ref:"+50 ETB each", st_ad:"+5 ETB each", st_spin:"Lucky Wheel plays", st_life:"Lifetime",
-    q_title:"Withdrawal progress", q_sub:"Complete both to unlock withdrawals",
     avail:"Available to withdraw", req_done:"Requirements complete — you can withdraw ✓",
     req_left:"{n} of 2 requirements left", wd_reqs:"Withdrawal Requirements",
     r_ads:"Ads watched", r_fr:"Friends invited",
@@ -985,7 +927,8 @@ const STR = {
   },
   am: {
     letsub:"አብረን እናትርፍ!", your_balance:"ቀሪ ሂሳብ", earn_daily:"በየቀኑ ያትርፉ — ቼክ-ኢን፣ ማስታወቂያና ጋብዣ",
-    watch_earn:"ተመልከት & አትርፍ",
+    quick:"ፈጣን ተግባራት", checkin:"ቼክ-ኢን", up_to:"እስከ +100 ETB", watch_ads:"ማስታወቂያ", per_ad:"+5 ETB ለእያንዳንዱ",
+    invite:"ጋብዝ", per_ref:"+50 ETB ለእያንዳንዱ", watch_earn:"ተመልከት & አትርፍ",
     adline:"ማስታወቂያ ዛሬ • {b} ቀሪ • አጭር ቪዲዮ ይመልከቱ፣ ይከፈልዎታል",
     watch_btn:"ማስታወቂያ — +{r} ETB", limit_reached:"የዕለት ገደብ ደርሷል", next_ad:"ቀጣዩ ማስታወቂያ {t}",
     recent_activity:"የቅርብ እንቅስቃሴ", reviews:"የተጠቃሚ አስተያየቶች",
@@ -1005,9 +948,6 @@ const STR = {
     fr_txt:"ጓደኛዎ ሁለቱንም ቻናሎች ሲቀላቀል +50 ETB ያገኛሉ፤ እሱም +25 ETB ይቀበላል።",
     s_friends:"ጓደኞች", s_pending:"በመጠባበቅ ላይ", s_earned:"ያትረፉት ETB", your_friends:"የእርስዎ ጓደኞች",
     no_friends:"ገና ጓደኛ የለም — ሊንክዎን ያጋሩ!",
-    s_ads:"ማስታወቂያ ዛሬ", s_spins:"መንኪያዎች", s_total:"ጠቅላላ የተቀበሉት",
-    st_ref:"+50 ETB ለእያንዳንዱ", st_ad:"+5 ETB ለእያንዳንዱ", st_spin:"የሎኪ ዊል ጨዋታዎች", st_life:"በሙሉ ሂወት",
-    q_title:"የማውጣት ሂደት", q_sub:"ሁለቱንም ሙለው — ማውጣት ይከፈታል",
     avail:"ለማውጣት የሚገኝ", req_done:"መስፈርቶቹ ተሟልተዋል — ማውጣት ትችላለህ ✓",
     req_left:"ከ2 መስፈርቶች {n} ቀሪዋል", wd_reqs:"የማውጣት መስፈርቶች",
     r_ads:"የታዩ ማስታወቂያዎች", r_fr:"የተጋበዙ ጓደኞች",
@@ -1057,7 +997,7 @@ function setSeg(){
 function switchLang(l){
   LANG = l;
   try { localStorage.setItem('tx_lang', LANG); } catch(e){}
-  applyStatic(); renderAll(); renderTasksPage(); renderSpinHistory();
+  applyStatic(); renderAll(); renderTasksPage(); renderSpinHistory(); renderReviews();
   haptic('light');
 }
 document.getElementById('segEnM').addEventListener('click', function(e){ e.stopPropagation(); switchLang('en'); });
@@ -1112,7 +1052,6 @@ function save(){ try{ localStorage.setItem(CONFIG.storageKey, JSON.stringify(sta
 /* ================= HELPERS ================= */
 const $ = s => document.querySelector(s);
 const fmt = n => Math.round(n).toLocaleString('en-US');
-const AV_GRADS = ['linear-gradient(160deg,#7AB8FF,#007AFF)','linear-gradient(160deg,#FFB08A,#FF6482)','linear-gradient(160deg,#4FE375,#24B84A)','linear-gradient(160deg,#C4A5FF,#7C4DFF)','linear-gradient(160deg,#FFD75E,#F2A01E)','linear-gradient(160deg,#7DE3E0,#1BA8A4)'];
 function haptic(t_){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t_); }catch(e){} }
 function hNotify(t_){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(t_); }catch(e){} }
 let toastT = null;
@@ -1178,9 +1117,6 @@ function go(page){
 document.querySelectorAll('.nav-btn').forEach(function(b){
   b.addEventListener('click', function(){ haptic('light'); go(b.dataset.page); });
 });
-document.querySelectorAll('.stat-tile').forEach(function(b){
-  b.addEventListener('click', function(){ haptic('light'); go(b.dataset.go); });
-});
 try { if (tg && tg.BackButton) tg.BackButton.onClick(function(){ go('home'); }); } catch(e){}
 
 /* ================= BACKEND ================= */
@@ -1216,23 +1152,6 @@ function applyState(s){
 function renderAll(){
   $('#balance').textContent = fmt(state.balance);
   $('#wdBal').textContent = fmt(state.balance);
-  /* live stats tiles */
-  $('#sqFriends').textContent = fmt(state.referrals);
-  $('#sqAds').innerHTML = fmt(state.adsToday) + '<small>/' + CONFIG.adMaxPerDay + '</small>';
-  $('#sqSpins').textContent = fmt(state.spins);
-  $('#sqEarned').innerHTML = fmt(state.totalEarned) + '<small> ETB</small>';
-  /* quests strip */
-  const adsPct = Math.min(100, state.reqAds / CONFIG.reqAds * 100);
-  const frPct = Math.min(100, state.reqFriends / CONFIG.reqFriends * 100);
-  const total = Math.round((Math.min(adsPct, 100) + Math.min(frPct, 100)) / 2);
-  $('#qPct').textContent = total + '%';
-  $('#qRing').style.strokeDashoffset = (119.4 * (1 - total / 100)).toFixed(1);
-  $('#qAds').textContent = Math.min(state.reqAds, CONFIG.reqAds) + '/' + CONFIG.reqAds;
-  $('#qAdsBar').style.width = adsPct + '%';
-  $('#qAds').classList.toggle('ok', state.reqAds >= CONFIG.reqAds);
-  $('#qFr').textContent = Math.min(state.reqFriends, CONFIG.reqFriends) + '/' + CONFIG.reqFriends;
-  $('#qFrBar').style.width = frPct + '%';
-  $('#qFr').classList.toggle('ok', state.reqFriends >= CONFIG.reqFriends);
   if (currentPage === 'home') renderHome();
   if (currentPage === 'tasks') renderTasksPage();
   if (currentPage === 'friends') renderFriends();
@@ -1267,7 +1186,7 @@ async function refreshState(){
   }
 }
 
-/* ================= FIRST-OPEN CHANNEL GATE ================= */
+/* ================= FIRST-OPEN CHANNEL GATE — popup card, no skip ================= */
 function showGate(channels){
   GATED = true;
   document.body.classList.add('gated');
@@ -1312,7 +1231,7 @@ let hideBal = false;
   $('#balance').classList.toggle('hidden-bal', hideBal);
   haptic('light');
 });
-const ACT_TYPE_IC = { ad:'play', task:'check', game:'target', daily:'flame', ref:'users', wd:'megaphone', bonus:'gift' };
+const ACT_TYPE_IC = { ad:'play', task:'check', game:'target', daily:'flame', ref:'users', wd:'wallet', bonus:'gift' };
 function renderActivity(){
   const list = $('#activityList');
   const acts = state.activities || [];
@@ -1332,12 +1251,6 @@ const DEMO_REVIEWS = [
   { name:'Hanna', message:'The wheel is so fun, won ×3 twice!', stars:5, ts:Date.now() - 25*60000 },
   { name:'Kebede', message:'Invite friends, it really pays.', stars:4, ts:Date.now() - 3*3600000 }
 ];
-function starRow(n){
-  let h = '';
-  for (let i = 0; i < 5; i++) h += i < n ? STAR_FULL : STAR_EMPTY;
-  return h;
-}
-/* NEW REVIEW DESIGN — gradient avatar, star SVGs, quote card */
 function renderReviews(){
   const list = $('#reviewList');
   const revs = state.reviews || [];
@@ -1345,32 +1258,12 @@ function renderReviews(){
     list.innerHTML = '<div class="empty">' + t('no_reviews') + '</div>';
     return;
   }
-  list.innerHTML = revs.slice(0, 15).map(function(r, i){
-    const initial = (r.name || '?').charAt(0).toUpperCase();
-    const av = '<div class="rev-av" style="background:' + AV_GRADS[i % AV_GRADS.length] + '">' + initial + '</div>';
-    return '<div class="rev-card">' + av.replace('class="rev-av" style="background:', 'class="rev-av" data-g="') +
-      '</div>'.replace('</div>', '') ;
-  }).join('');
-}
-/* (proper builder below — the map above is replaced in renderReviewsReal) */
-function renderReviewsReal(){
-  const list = $('#reviewList');
-  const revs = state.reviews || [];
-  if (!revs.length){
-    list.innerHTML = '<div class="empty">' + t('no_reviews') + '</div>';
-    return;
-  }
-  list.innerHTML = revs.slice(0, 15).map(function(r, i){
-    const initial = (r.name || '?').charAt(0).toUpperCase();
-    const grad = AV_GRADS[i % AV_GRADS.length];
-    return '<div class="rev-card">' +
-      '<div class="rev-head">' +
-        '<div class="rev-av" style="background:' + grad + '">' + initial + '</div>' +
-        '<div class="rev-id"><b>' + r.name + '</b><small>' + ago(r.ts) + '</small></div>' +
-        '<div class="rev-stars">' + starRow(r.stars) + '</div>' +
-      '</div>' +
+  list.innerHTML = revs.slice(0, 15).map(function(r){
+    const stars = '★'.repeat(r.stars) + '☆'.repeat(5 - r.stars);
+    return '<div class="rev"><div class="rev-av">' + (r.name || '?').charAt(0).toUpperCase() + '</div>' +
+      '<div class="rev-main"><div class="rev-top"><b>' + r.name + '</b><span class="rev-stars">' + stars + '</span></div>' +
       '<div class="rev-msg">' + r.message + '</div>' +
-    '</div>';
+      '<span class="rev-time">' + ago(r.ts) + '</span></div></div>';
   }).join('');
 }
 async function loadReviews(){
@@ -1379,7 +1272,7 @@ async function loadReviews(){
   } else if (!(state.reviews || []).length){
     state.reviews = DEMO_REVIEWS;
   }
-  renderReviewsReal();
+  renderReviews();
 }
 function adReady(){
   return (Date.now() - (state.lastAdTs || 0) >= CONFIG.adCooldownSec * 1000) && state.adsToday < CONFIG.adMaxPerDay;
@@ -1408,7 +1301,7 @@ function renderHome(){ renderActivity(); renderEarn(); }
  $('#qaInvite').addEventListener('click', function(){ haptic('light'); go('friends'); });
  $('#qaAd').addEventListener('click', function(){ haptic('light'); watchAd(); });
 
-/* ================= ADS ================= */
+/* ================= ADS — Monetag rewarded interstitial ================= */
 let adShowing = false;
 async function showRealAd(){
   for (let i = 0; i < 60; i++){
@@ -1597,8 +1490,7 @@ function renderTasksPage(){ renderStreak(); renderTasksList(); }
   renderTasksPage(); renderAll();
 });
 
-/* ================= GAME — 8 honest segments ================= */
-/* order: ×1.5, ×2, ×1.5, ×2, ×3, ×2, ×1.5, ×2 — losing result lands on a "✕" segment */
+/* ================= GAME — original wheel layout, honest amounts ================= */
 const SEGV = [
   { t:'×1.5', c:'d1' },{ t:'✕', c:'d2' },{ t:'×1.5', c:'d1' },{ t:'✕', c:'d2' },
   { t:'×3', c:'g' },{ t:'✕', c:'d2' },{ t:'×2', c:'w' },{ t:'✕', c:'d2' }
@@ -1625,8 +1517,8 @@ function buildWheel(){
 }
 function segForMult(m){
   if (m === 3) return 4;
-  if (m === 2) return [3,5,7][Math.floor(Math.random() * 3)];
-  if (m === 1.5) return [0,2,6][Math.floor(Math.random() * 3)];
+  if (m === 2) return 6;
+  if (m === 1.5) return Math.random() < .5 ? 0 : 2;
   return [1,3,5,7][Math.floor(Math.random() * 4)];
 }
 function animateWheel(idx, done){
@@ -1651,7 +1543,7 @@ function showSpinResult(m, payout, bet){
     el.innerHTML = '<span class="sr-line">' + t('t_spin_lose', bet) + '</span>';
     el.classList.add('lose');
   } else {
-    /* honest math: profit + full breakdown (50 × 3 = 150) */
+    /* honest math: 50 × 3 = 150 */
     el.innerHTML = '<span class="sr-line">' + t('t_spin_win', payout - bet, m) + '</span>' +
       '<span class="sr-detail">' + fmt(bet) + ' × ' + m + ' = ' + fmt(payout) + ' ETB</span>';
     el.classList.add('win');
