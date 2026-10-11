@@ -122,6 +122,10 @@ h3{font-size:15px;margin:18px 0 4px}
 .day.done small,.day.done b{color:#45290a}
 .day.today{border-color:var(--gold);animation:pulse 1.6s infinite}
 .day.today b{color:var(--gold2)}
+/* withdraw */
+.wd-input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:14px;padding:14px;font-family:inherit;font-size:14px;margin-bottom:8px}
+.wd-input::placeholder{color:var(--muted)}
+.wd-chip{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
 /* spin */
 .spin-wrap{position:relative;width:min(80vw,300px);aspect-ratio:1;margin:16px auto 6px}
 .wheel{width:100%;height:100%;border-radius:50%;position:relative;
@@ -218,6 +222,11 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
         <div><b>🎡 Lucky spin</b><small id="spinCardSub">Free spin ready!</small></div>
         <button class="btn gold" id="spinGo">Open</button>
       </div>
+
+      <div class="boost-card mt">
+        <div><b>💰 Withdraw</b><small>Turn coins into real rewards</small></div>
+        <button class="btn gold" id="wdGo">Open</button>
+      </div>
     </section>
 
     <section class="page" id="page-spin">
@@ -263,6 +272,22 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
       <div id="friendList"></div>
     </section>
 
+    <section class="page" id="page-withdraw">
+      <h2>Withdraw coins</h2>
+      <p class="hint">Requests are reviewed manually and paid within 24h. Coins are deducted when you request.</p>
+      <div class="boost-card"><div><b>Available</b><small><span id="wdBal">0</span> coins · min <span id="wdMin">5000</span></small></div></div>
+      <div class="link-box" style="margin-top:14px"><span style="color:var(--muted);font-weight:700">Choose method</span></div>
+      <div class="wd-chip" id="wdMethods"></div>
+      <input id="wdAddress" class="wd-input" placeholder="Your wallet / account address">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input id="wdAmount" class="wd-input" type="number" placeholder="Amount in coins" style="flex:1;min-width:0">
+        <button class="btn ghost" id="wdMax" style="width:auto;padding:0 16px">MAX</button>
+      </div>
+      <button class="btn gold big" id="wdBtn">Request withdrawal</button>
+      <h3>Your requests</h3>
+      <div id="wdList"></div>
+    </section>
+
     <section class="page" id="page-bonus">
       <h2>Daily bonus</h2>
       <p class="hint">Claim every day to grow your streak. Miss a day and it resets.</p>
@@ -299,7 +324,9 @@ const CONFIG = {
   botUsername: 'tanvexoappbot',
   appName: 'refer',
   channelUrl: 'https://t.me/ebtry0',
-  support: '',                              // ← optional: 'https://t.me/your_username' shows a Contact button on the ban screen
+  support: '',                                            // ← optional: 'https://t.me/your_username' shows Contact button on ban screen
+  withdrawMethods: ['TON Wallet', 'Telegram Stars', 'UPI', 'Other'],  // ← edit freely
+  withdrawMin: 5000,                                      // ← keep same as MIN_WITHDRAW in worker.js
   pointsPerInvite: 5, tapEnergyCost: 1, energyMax: 500, energyRegenPerSec: 1,
   storageKey: 'tapcoin_v3'
 };
@@ -359,7 +386,8 @@ const LEVELS = [0,500,2000,5000,12000,25000,50000,100000,200000,500000];
 const STREAK_REWARDS = [10,25,50,75,100,150,250];
 const DEFAULTS = { balance:0, totalEarned:0, taps:0, energy:CONFIG.energyMax, lastEnergyTs:0,
   boost:1, referrals:0, friends:[], dailyStreak:0, lastDailyTs:0, dailyClaims:0,
-  completedTasks:[], channelClicked:false, lastSpinTs:0 };
+  completedTasks:[], channelClicked:false, lastSpinTs:0,
+  serverTasks:[], claimedTasks:[], taskClicks:[], withdrawals:[] };
 
 function load(){
   try {
@@ -445,6 +473,7 @@ function go(page){
   if (page === 'tasks') renderTasks();
   if (page === 'bonus') renderBonus();
   if (page === 'invite') renderInvite();
+  if (page === 'withdraw'){ renderWithdraw(); if (LIVE) loadWithdrawals(); }
   window.scrollTo(0, 0);
   try {
     if (tg && tg.BackButton){ if (page === 'home') tg.BackButton.hide(); else tg.BackButton.show(); }
@@ -455,6 +484,7 @@ document.querySelectorAll('.nav-btn').forEach(function(b){
 });
 try { if (tg && tg.BackButton) tg.BackButton.onClick(function(){ go('home'); }); } catch(e){}
  $('#spinGo').addEventListener('click', function(){ go('spin'); });
+ $('#wdGo').addEventListener('click', function(){ go('withdraw'); });
 
 /* ================= BACKEND ================= */
 let LIVE = false;
@@ -481,7 +511,9 @@ function applyState(s){
   state.energy = s.energy; state.boost = s.boost; state.referrals = s.referrals;
   state.friends = s.friends || []; state.dailyStreak = s.dailyStreak;
   state.lastDailyTs = s.lastDaily; state.dailyClaims = s.dailyClaims;
-  state.completedTasks = s.completedTasks || []; state.channelClicked = s.channelClicked;
+  state.claimedTasks = s.tasksClaimed || [];
+  state.taskClicks = s.tasksClicked || [];
+  state.channelClicked = s.channelClicked;
   state.lastSpinTs = s.lastSpin || 0;
   state.lastEnergyTs = Date.now();
   pendingTaps = 0;
@@ -489,6 +521,7 @@ function applyState(s){
   if (currentPage === 'tasks') renderTasks();
   if (currentPage === 'invite') renderInvite();
   if (currentPage === 'bonus') renderBonus();
+  if (currentPage === 'withdraw') renderWithdraw();
 }
 
 async function bootLive(){
@@ -502,6 +535,11 @@ async function bootLive(){
     b.style.color = '#34d399';
     b.style.borderColor = 'rgba(52,211,153,.4)';
     $('#simCard').style.display = 'none';
+    try {
+      const tr = await api('/api/tasks');
+      state.serverTasks = tr.tasks || [];
+      if (currentPage === 'tasks') renderTasks();
+    } catch(e2){}
   } catch(e){
     if (e && e.locked){ showBanScreen(e.message); return; }
     toast('Backend: ' + e.message + ' — preview mode', true);
@@ -517,6 +555,7 @@ async function syncTaps(){
   } catch(e){ if (e && e.locked) showBanScreen(e.message); }
   syncing = false;
 }
+async function flushTaps(){ if (LIVE && pendingTaps > 0) await syncTaps(); }
 
 /* ================= TAP TO EARN ================= */
 const coinEl = $('#coin');
@@ -571,6 +610,7 @@ function boostCost(){ return Math.round(100 * Math.pow(1.8, state.boost - 1) / 1
  $('#boostBtn').addEventListener('click', async function(){
   if (state.boost >= 10 || LOCKED) return;
   if (LIVE){
+    await flushTaps();
     const c = boostCost();
     if (state.balance < c){ haptic('rigid'); toast('Need ' + fmt(c - state.balance) + ' more coins', true); return; }
     this.disabled = true;
@@ -668,6 +708,7 @@ function showPrize(p){
     return;
   }
   if (LIVE){
+    await flushTaps();
     try {
       const r = await api('/api/spin');
       animateWheel(r.prize.index, function(){ applyState(r.state); showPrize(r.prize); });
@@ -683,63 +724,102 @@ function showPrize(p){
   animateWheel(idx, function(){ syncUI(); showPrize(p); });
 });
 
-/* ================= TASKS ================= */
-const TASKS = [
-  { id:'taps100',  ic:'bolt',     title:'Tap the coin 100 times',   reward:50,  goal:100,  val:s=>s.taps },
-  { id:'taps1000', ic:'bolt',     title:'Tap the coin 1,000 times', reward:250, goal:1000, val:s=>s.taps },
-  { id:'daily',    ic:'gift',     title:'Claim a daily bonus',      reward:25,  goal:1,    val:s=>s.dailyClaims },
-  { id:'invite1',  ic:'userplus', title:'Invite your first friend', reward:100, goal:1,    val:s=>s.referrals },
-  { id:'invite5',  ic:'userplus', title:'Invite 5 friends',         reward:500, goal:5,    val:s=>s.referrals },
-  { id:'boost1',   ic:'up',       title:'Upgrade your tap boost',   reward:75,  goal:1,    val:s=>s.boost-1 },
-  { id:'channel',  ic:'bell',     title:'Join our news channel',    reward:50,  goal:1,    val:s=>s.channelClicked?1:0, link:true }
+/* ================= TASKS (dynamic) ================= */
+const LOCAL_TASKS = [
+  { id:'taps100',  ic:'bolt',     title:'Tap the coin 100 times',   reward:50,  goal:100,  type:'taps' },
+  { id:'taps1000', ic:'bolt',     title:'Tap the coin 1,000 times', reward:250, goal:1000, type:'taps' },
+  { id:'daily',    ic:'gift',     title:'Claim a daily bonus',      reward:25,  goal:1,    type:'daily' },
+  { id:'invite1',  ic:'userplus', title:'Invite your first friend', reward:100, goal:1,    type:'invites' },
+  { id:'invite5',  ic:'userplus', title:'Invite 5 friends',         reward:500, goal:5,    type:'invites' },
+  { id:'boost1',   ic:'up',       title:'Upgrade your tap boost',   reward:75,  goal:1,    type:'boost' },
+  { id:'channel',  ic:'bell',     title:'Join our news channel',    reward:50,  goal:1,    type:'link' }
 ];
+const TICONS = { taps:'bolt', invites:'userplus', daily:'gift', boost:'up', link:'bell' };
+function taskProgressOf(t){
+  switch (t.type){
+    case 'taps': return state.taps;
+    case 'invites': return state.referrals;
+    case 'daily': return state.dailyClaims;
+    case 'boost': return state.boost - 1;
+    case 'link': return t._clicked ? 1 : 0;
+    default: return 0;
+  }
+}
+
+function taskRow(t, done, v, ready, isLink){
+  const row = document.createElement('div'); row.className = 'task';
+  row.innerHTML =
+    '<div class="t-ic">' + icon(TICONS[t.type] || 'tasks') + '</div>' +
+    '<div class="t-main"><b>' + t.title + '</b><small>' + Math.min(v, t.goal) + ' / ' + t.goal + ' · +' + t.reward + ' coins</small>' +
+    '<div class="t-bar"><i style="width:' + (Math.min(v, t.goal) / t.goal * 100) + '%"></i></div></div>';
+  const btn = document.createElement('button');
+  btn.className = 'claim' + (done ? ' done' : ready ? ' ready' : '');
+  if (done) btn.textContent = 'Done';
+  else if (isLink && !t._clicked) btn.textContent = 'Join';
+  else btn.textContent = '+' + t.reward;
+  btn.addEventListener('click', async function(){
+    if (done || LOCKED) return;
+    if (isLink && !t._clicked){
+      if (LIVE){
+        try {
+          const r = await api('/api/task', { id: t.id, click: true });
+          applyState(r.state);
+        } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); return; }
+      } else { t._clicked = true; }
+      try {
+        const url = LIVE ? t.link : CONFIG.channelUrl;
+        if (url){
+          if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
+          else window.open(url, '_blank');
+        }
+      } catch(e){}
+      toast('Reward unlocked — claim it!');
+      renderTasks();
+      return;
+    }
+    if (!ready){ haptic('rigid'); return; }
+    btn.disabled = true;
+    if (LIVE){
+      await flushTaps();
+      try {
+        const r = await api('/api/task', { id: t.id });
+        hNotify('success'); toast('+' + r.reward + ' coins claimed!');
+        applyState(r.state);
+      } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); btn.disabled = false; }
+      return;
+    }
+    state.completedTasks.push(t.id);
+    state.balance += t.reward; state.totalEarned += t.reward; dirty = true;
+    hNotify('success'); toast('+' + t.reward + ' coins claimed!');
+    syncUI(); renderTasks();
+  });
+  row.appendChild(btn);
+  return row;
+}
 
 function renderTasks(){
   const wrap = $('#taskList'); wrap.innerHTML = '';
-  TASKS.forEach(function(t){
-    const done = state.completedTasks.includes(t.id);
-    const v = Math.min(t.val(state), t.goal);
-    const ready = !done && v >= t.goal;
-    const row = document.createElement('div'); row.className = 'task';
-    row.innerHTML =
-      '<div class="t-ic">' + icon(t.ic) + '</div>' +
-      '<div class="t-main"><b>' + t.title + '</b><small>' + v + ' / ' + t.goal + ' · +' + t.reward + ' coins</small>' +
-      '<div class="t-bar"><i style="width:' + (v / t.goal * 100) + '%"></i></div></div>';
-    const btn = document.createElement('button');
-    btn.className = 'claim' + (done ? ' done' : ready ? ' ready' : '');
-    if (done) btn.textContent = 'Done';
-    else if (t.link && !state.channelClicked) btn.textContent = 'Join';
-    else btn.textContent = '+' + t.reward;
-    btn.addEventListener('click', async function(){
-      if (done || LOCKED) return;
-      if (t.link && !state.channelClicked){
-        if (LIVE){ try { await api('/api/task', { id: 'channel', click: true }); } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } } }
-        else { state.channelClicked = true; dirty = true; }
-        try {
-          if (tg && tg.openTelegramLink) tg.openTelegramLink(CONFIG.channelUrl);
-          else window.open(CONFIG.channelUrl, '_blank');
-        } catch(e){}
-        toast('Reward unlocked — claim it!');
-        if (LIVE) syncTaps(); else renderTasks();
-        return;
-      }
-      if (!ready){ haptic('rigid'); return; }
-      btn.disabled = true;
-      if (LIVE){
-        try {
-          const r = await api('/api/task', { id: t.id });
-          hNotify('success'); toast('+' + r.reward + ' coins claimed!');
-          applyState(r.state);
-        } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); btn.disabled = false; }
-        return;
-      }
-      state.completedTasks.push(t.id);
-      state.balance += t.reward; state.totalEarned += t.reward; dirty = true;
-      hNotify('success'); toast('+' + t.reward + ' coins claimed!');
-      syncUI(); renderTasks();
+  if (LIVE){
+    const tasks = state.serverTasks || [];
+    if (!tasks.length){
+      wrap.innerHTML = '<div class="empty">No tasks right now — check back later!</div>';
+      return;
+    }
+    tasks.forEach(function(t){
+      t._clicked = state.taskClicks.includes(t.id);
+      const done = state.claimedTasks.includes(t.id);
+      const v = taskProgressOf(t);
+      const ready = !done && v >= t.goal;
+      wrap.appendChild(taskRow(t, done, v, ready, t.type === 'link'));
     });
-    row.appendChild(btn);
-    wrap.appendChild(row);
+    return;
+  }
+  LOCAL_TASKS.forEach(function(t){
+    t._clicked = t.type === 'link' ? state.channelClicked : false;
+    const done = state.completedTasks.includes(t.id);
+    const v = taskProgressOf(t);
+    const ready = !done && v >= t.goal;
+    wrap.appendChild(taskRow(t, done, v, ready, t.type === 'link'));
   });
 }
 
@@ -800,6 +880,62 @@ const DEMO_NAMES = ['Amina','Rustam','Leyla','Diyor','Sardor','Kamola','Jasur','
   syncUI(); renderInvite();
 });
 
+/* ================= WITHDRAW ================= */
+let wdMethod = CONFIG.withdrawMethods[0];
+function renderWithdraw(){
+  $('#wdBal').textContent = fmt(state.balance);
+  $('#wdMin').textContent = fmt(CONFIG.withdrawMin);
+  const mWrap = $('#wdMethods');
+  if (!mWrap.childElementCount){
+    CONFIG.withdrawMethods.forEach(function(m){
+      const b = document.createElement('button');
+      b.className = 'btn ghost'; b.textContent = m;
+      b.addEventListener('click', function(){
+        wdMethod = m;
+        [...mWrap.children].forEach(function(c){ c.style.borderColor = 'var(--border)'; c.style.color = 'var(--text)'; });
+        b.style.borderColor = 'var(--gold)'; b.style.color = 'var(--gold)';
+      });
+      mWrap.appendChild(b);
+    });
+    if (mWrap.firstElementChild){ mWrap.firstElementChild.style.borderColor = 'var(--gold)'; mWrap.firstElementChild.style.color = 'var(--gold)'; }
+  }
+  const list = $('#wdList');
+  if (!state.withdrawals.length){
+    list.innerHTML = '<div class="empty">No withdrawal requests yet.</div>';
+    return;
+  }
+  const chip = { pending:'⏳ Pending', paid:'✅ Paid', rejected:'❌ Rejected' };
+  list.innerHTML = state.withdrawals.map(function(w){
+    return '<div class="task"><div class="t-main"><b>' + fmt(w.amount) + ' coins · ' + w.method + '</b>' +
+      '<small>' + w.address + '</small></div><span class="f-pts" style="color:' +
+      (w.status === 'paid' ? 'var(--green)' : w.status === 'rejected' ? 'var(--red)' : 'var(--gold)') + '">' +
+      chip[w.status] + '</span></div>';
+  }).join('');
+}
+async function loadWithdrawals(){
+  if (!LIVE) return;
+  try { const r = await api('/api/withdrawals'); state.withdrawals = r.withdrawals || []; renderWithdraw(); } catch(e){}
+}
+ $('#wdMax').addEventListener('click', function(){ $('#wdAmount').value = Math.floor(state.balance); });
+ $('#wdBtn').addEventListener('click', async function(){
+  if (LOCKED) return;
+  if (!LIVE){ toast('Withdrawals work in LIVE mode — open from Telegram', true); return; }
+  const amount = parseInt($('#wdAmount').value, 10);
+  const address = $('#wdAddress').value.trim();
+  if (!address || address.length < 4){ toast('Enter your wallet / account details', true); return; }
+  if (!amount || amount < CONFIG.withdrawMin){ toast('Minimum is ' + fmt(CONFIG.withdrawMin) + ' coins', true); return; }
+  this.disabled = true;
+  try {
+    await flushTaps();
+    const r = await api('/api/withdraw', { amount: amount, method: wdMethod, address: address });
+    applyState(r.state);
+    $('#wdAmount').value = ''; $('#wdAddress').value = '';
+    hNotify('success'); toast('Request submitted! Check status here anytime.');
+    loadWithdrawals();
+  } catch(e){ if (e && e.locked){ showBanScreen(e.message); } else toast(e.message, true); }
+  this.disabled = false;
+});
+
 /* ================= DAILY BONUS ================= */
 function dailyReady(){ return Date.now() - state.lastDailyTs >= 86400e3 + 2000; }
 function nextDay(){
@@ -837,6 +973,7 @@ function updateBonusBtn(){
  $('#claimBtn').addEventListener('click', async function(){
   if (!dailyReady() || LOCKED) return;
   if (LIVE){
+    await flushTaps();
     this.disabled = true;
     try {
       const r = await api('/api/daily');
