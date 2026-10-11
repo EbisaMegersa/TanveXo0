@@ -10,8 +10,7 @@
 <script src='//libtl.com/sdk.js' data-zone='10937696' data-sdk='show_10937696'></script>
 <style>
 /* ============================================================
-   iOS 27 LIQUID GLASS — DESIGN TOKENS
-   Accent: BLUE in light, GREEN in dark
+   iOS 27 LIQUID GLASS — DESIGN TOKENS (blue light / green dark)
    ============================================================ */
 :root{
   color-scheme: light;
@@ -172,7 +171,7 @@ svg{display:block}
 .sub2{color:var(--label2);font-size:.85rem;margin-top:1px;font-weight:500}
 
 /* ============================================================
-   ⋯ MENU (rows are DIVs — no nested-button bug)
+   ⋯ MENU
    ============================================================ */
 #menuOverlay{position:fixed;inset:0;z-index:80;display:none}
 #menuOverlay.show{display:block}
@@ -187,7 +186,7 @@ svg{display:block}
 .menu-status span.ok{color:var(--accent)}
 .menu-item{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 12px;
   color:var(--label);font-size:.95rem;font-weight:500;cursor:pointer;user-select:none}
-.menu-item + .menu-item, .menu-sep{border-top:.5px solid var(--sep)}
+.menu-item + .menu-item{border-top:.5px solid var(--sep)}
 .menu-item .ic{width:19px;height:19px;color:var(--label2)}
 .mi-right{margin-left:auto;display:flex;align-items:center}
 .menu-info{padding:9px 12px;font-size:.72rem;color:var(--label3);font-weight:500}
@@ -425,32 +424,34 @@ nav.tabbar{
 .nav-btn.active .nv-ic{background:var(--accent-tint)}
 .nav-btn:active .nv-ic{transform:scale(.9)}
 
-/* ================= SHEET (glass) ================= */
-#gateWrap{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:85;display:none;align-items:flex-end;justify-content:center;
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-#gateWrap.show{display:flex;animation:fadein .25s}
-.sheet{width:100%;max-width:480px;border-radius:var(--r-xl) var(--r-xl) 0 0;
-  padding:8px 20px calc(24px + env(safe-area-inset-bottom));
+/* ============================================================
+   MANDATORY GATE SHEET — full cover, no skip, no drag
+   ============================================================ */
+#gateWrap{position:fixed;inset:0;background:var(--bg);z-index:110;display:none;align-items:stretch;justify-content:center;overflow:hidden}
+#gateWrap.show{display:flex;animation:fadein .3s var(--ease-out)}
+.sheet{width:100%;max-width:480px;margin:0 auto;
+  border-radius:var(--r-xl) var(--r-xl) 0 0;
+  padding:28px 22px calc(28px + env(safe-area-inset-bottom));
   background:var(--glass-strong);
   -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
   box-shadow:var(--glass-inner), 0 -8px 40px rgba(0,0,0,.25);
-  animation:sheetup .45s var(--spring);touch-action:none;position:relative}
+  animation:sheetup .5s var(--spring);position:relative;
+  display:flex;flex-direction:column;justify-content:center;min-height:60dvh}
 .sheet::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1.2px;
   background:var(--glass-ring);
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);mask-composite:exclude}
-.sheet.dragging{transition:none}
 @keyframes sheetup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.grabber{width:38px;height:5px;border-radius:99px;background:var(--label3);margin:4px auto 16px;cursor:grab}
 .gate-card{text-align:center}
-.g-ic{width:62px;height:62px;border-radius:19px;background:var(--accent-tint);display:grid;place-items:center;margin:0 auto 14px;color:var(--accent)}
-.g-ic .ic{width:30px;height:30px}
-.gate-card h2{font-size:1.2rem;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
-.gate-card .g-p{color:var(--label2);font-size:.84rem;line-height:1.5;margin-bottom:16px;font-weight:500}
-#gateChannels{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
-#gateChannels .btn{min-height:48px}
+.g-ic{width:66px;height:66px;border-radius:20px;background:var(--accent-tint);display:grid;place-items:center;margin:0 auto 16px;color:var(--accent)}
+.g-ic .ic{width:32px;height:32px}
+.gate-card h2{font-size:1.3rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.gate-card .g-p{color:var(--label2);font-size:.88rem;line-height:1.55;margin-bottom:20px;font-weight:500}
+#gateChannels{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+#gateChannels .btn{min-height:52px}
 #gateChannels .btn .ic{width:16px;height:16px}
-.g-err{color:var(--red);font-size:.8rem;margin-top:10px;min-height:18px;font-weight:600}
+.g-req{font-size:.72rem;color:var(--label3);margin-bottom:14px;font-weight:600;letter-spacing:.02em}
+.g-err{color:var(--red);font-size:.82rem;margin-top:12px;min-height:20px;font-weight:600}
 
 /* ================= ALERT (glass) ================= */
 #banScreen{position:fixed;inset:0;background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
@@ -472,7 +473,7 @@ nav.tabbar{
 #banContact{display:none;margin:16px auto 0;color:var(--accent);font-weight:600;text-decoration:none;
   background:var(--accent-tint);padding:11px 22px;border-radius:var(--r-capsule);font-size:.85rem}
 
-/* ================= TOAST — glass capsule + SF-style status icon ============ */
+/* ================= TOAST ================= */
 #toast{position:fixed;left:50%;bottom:calc(var(--tg-bot) + 92px);transform:translate(-50%,20px) scale(.95);
   border-radius:var(--r-capsule);color:var(--label);
   font-size:.84rem;font-weight:600;padding:11px 20px 11px 14px;opacity:0;pointer-events:none;
@@ -480,7 +481,7 @@ nav.tabbar{
   background:var(--glass-strong);
   -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
   box-shadow:var(--glass-inner), var(--glass-shadow);
-  transition:.35s var(--spring);z-index:100;max-width:86vw;text-align:left}
+  transition:.35s var(--spring);z-index:120;max-width:86vw;text-align:left}
 #toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
 #toast .t-ic{width:22px;height:22px;flex-shrink:0;display:grid;place-items:center;color:var(--accent)}
 #toast .t-ic svg{width:22px;height:22px}
@@ -710,19 +711,19 @@ nav.tabbar{
         </span>
       </span>
     </div>
-    <div class="menu-info">TanveXo • v1.2</div>
+    <div class="menu-info">TanveXo • v1.3</div>
   </div>
 </div>
 
-<!-- Liquid Glass: bottom sheet w/ grabber (channel gate) -->
+<!-- MANDATORY CHANNEL GATE — full cover, no skip, no drag-dismiss -->
 <div id="gateWrap">
-  <div class="sheet" id="gateSheet">
-    <div class="grabber" id="gateGrabber"></div>
+  <div class="sheet">
     <div class="gate-card">
       <div class="g-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
       <h2 data-i18n="gate_h">Join to continue</h2>
       <p class="g-p" data-i18n="gate_p"></p>
       <div id="gateChannels"></div>
+      <div class="g-req" data-i18n="gate_req">Required to use TanveXo — no skip</div>
       <button class="btn green big" id="gateCheck" data-i18n="gate_check">I joined — Verify</button>
       <div class="g-err" id="gateErr"></div>
     </div>
@@ -739,7 +740,7 @@ nav.tabbar{
   </div>
 </div>
 
-<!-- Toast: glass capsule with SF-style status icon -->
+<!-- Toast -->
 <div id="toast"><span class="t-ic" id="toastIc"></span><span id="toastText"></span></div>
 
 <script>
@@ -749,7 +750,7 @@ const CONFIG = {
   botUsername: 'tanvexoappbot',
   channelUrl: 'https://t.me/ebtry0',
   support: '',
-  adSdk: 'show_10937696',   /* Monetag rewarded interstitial (SDK loaded in <head>) */
+  adSdk: 'show_10937696',
   referralReward: 50, welcomeBonus: 25, adReward: 5,
   adMaxPerDay: 25, adCooldownSec: 1800,
   betMin: 50, betMax: 5000,
@@ -768,7 +769,7 @@ const CONFIG = {
   storageKey: 'tanvexo_v2'
 };
 
-/* ================= SVG ICONS (SF Symbols style) ================= */
+/* ================= SVG ICONS ================= */
 const ICON_PATHS = {
   play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/>',
   check:'<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5.5"/>',
@@ -783,9 +784,9 @@ const ICON_PATHS = {
   list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1" fill="currentColor"/><circle cx="3.5" cy="12" r="1" fill="currentColor"/><circle cx="3.5" cy="18" r="1" fill="currentColor"/>',
   chart:'<path d="M3 3v17a1 1 0 0 0 1 1h17"/><path d="M7 14l4-4 3 3 5-6"/>',
   bolt:'<path d="M13 2 4.5 13.5h5.4L11 22l8.5-11.5h-5.4L13 2z"/>',
-  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'
 };
-/* filled status glyphs for the toast */
 const TOAST_OK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.53 7.53-5.25 5.25a.75.75 0 0 1-1.06 0L7.97 12.53a.75.75 0 1 1 1.06-1.06l1.72 1.72 4.72-4.72a.75.75 0 1 1 1.06 1.06z"/></svg>';
 const TOAST_ERR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.53 12.03a.75.75 0 1 1-1.06 1.06L12 12.56l-2.47 2.53a.75.75 0 1 1-1.06-1.06L11 11.5 8.47 8.97a.75.75 0 0 1 1.06-1.06L12 10.44l2.47-2.53a.75.75 0 1 1 1.06 1.06L13 11.5l2.53 2.53z"/></svg>';
 function ic(n, size){
@@ -912,7 +913,8 @@ const STR = {
     st_paid:"Paid", st_pending:"Pending", st_rej:"Rejected",
     nav_home:"Home", nav_tasks:"Tasks", nav_game:"Game", nav_friends:"Friends", nav_wallet:"Wallet",
     banned_h:"Account locked", contact:"Contact support",
-    gate_h:"Join to continue", gate_p:"Join both channels to unlock TanveXo and your +25 ETB welcome bonus.",
+    gate_h:"Join both channels", gate_p:"Everyone must join our two channels to use TanveXo. Invited friends also unlock their +25 ETB welcome bonus here.",
+    gate_req:"Required to continue — no skip",
     gate_check:"I joined — Verify", gate_fail:"Please join both channels first",
     t_claimed:"+{r} ETB claimed!", t_copied:"Invite link copied!", t_join_back:"Visit the link, come back and tap Verify",
     t_not_enough:"Not enough ETB for that bet", t_submitted:"Request submitted! Paid within 24–48h.",
@@ -954,7 +956,8 @@ const STR = {
     st_paid:"ተከፍሏል", st_pending:"በመጠባበቅ ላይ", st_rej:"ተቀንቋዋል",
     nav_home:"መነሻ", nav_tasks:"ተግባራት", nav_game:"ጨዋታ", nav_friends:"ጓደኞች", nav_wallet:"ዋሌት",
     banned_h:"መለያ ተዘግቷል", contact:"ድጋፍ ያግኙ",
-    gate_h:"ለመቀጠል ይቀላቀሉ", gate_p:"TanveXoን ለመክፈት እና +25 ETB የእንጋቢ ስጦታ ለማግኘት ሁለቱንም ቻናሎች ይቀላቀሉ።",
+    gate_h:"ሁለቱንም ቻናሎች ይቀላቀሉ", gate_p:"TanveXoን ለመጠቀም ሁለቱንም ቻናሎች መቀላቀል ያስፈልጋል። የተጋቡ ጓደኞች +25 ETB ቦነሳቸውን ከዚህ ያገኛሉ።",
+    gate_req:"ለመቀጠል ያስፈልጋል — መዝለል አይቻልም",
     gate_check:"ተቀላቅያለሁ — አረጋግጥ", gate_fail:"እባክዎ ሁለቱንም ቻናሎች ይቀላቀሉ",
     t_claimed:"+{r} ETB ተቀብለዋል!", t_copied:"ሊንክ ተቀድቷል!", t_join_back:"ሊንኩን ይጎብኙ፣ ተመለስተው አረጋግጥ ይንኩ",
     t_not_enough:"ለዚህ መደጋ በቂ ETB የለም", t_submitted:"ጥያቄ ተልኳል! በ24–48 ሰዓት ይከፈላል።",
@@ -1064,6 +1067,7 @@ function showBanScreen(msg){
   if (LOCKED) return;
   LOCKED = true;
   closeMenu();
+  $('#gateWrap').classList.remove('show');
   $('#banReason').textContent = msg || t('banned_h');
   const c = $('#banContact');
   if (CONFIG.support){ c.style.display = 'inline-block'; c.href = CONFIG.support; }
@@ -1153,6 +1157,7 @@ function renderAll(){
 async function tryInit(){
   const r = await api('/api/init', { ref: startRef, dev: deviceId() });
   LIVE = true; GATED = false;
+  $('#gateWrap').classList.remove('show');
   applyState(r.state);
   const ms = $('#menuStatus'); ms.textContent = 'LIVE'; ms.classList.add('ok');
   $('#menuDot').classList.add('ok');
@@ -1177,13 +1182,13 @@ async function refreshState(){
   }
 }
 
-/* ================= REFERRAL GATE — glass bottom sheet ================= */
+/* ================= MANDATORY CHANNEL GATE — no skip, no dismiss ================= */
 function showGate(channels){
   GATED = true;
   closeMenu();
   const wrap = $('#gateChannels');
   wrap.innerHTML = '';
-  (channels && channels.length ? channels : ['@ebtry0']).forEach(function(h){
+  (channels && channels.length ? channels : ['@ebtry0', '@ebisa_emoji']).forEach(function(h){
     const b = document.createElement('button');
     b.className = 'btn dark big';
     b.innerHTML = ic('megaphone', 16) + ' ' + h;
@@ -1196,7 +1201,7 @@ function showGate(channels){
  $('#gateCheck').addEventListener('click', async function(){
   this.disabled = true;
   try {
-    const r = await api('/api/verify_ref');
+    const r = await api('/api/verify_channels');
     GATED = false;
     $('#gateWrap').classList.remove('show');
     LIVE = true;
@@ -1212,32 +1217,6 @@ function showGate(channels){
   }
   this.disabled = false;
 });
-/* sheet drag — rubber-band, snaps back */
-(function(){
-  const sheet = $('#gateSheet'), grab = $('#gateGrabber');
-  let startY = 0, dy = 0, dragging = false;
-  function down(e){ if (!$('#gateWrap').classList.contains('show')) return; dragging = true; startY = (e.touches ? e.touches[0].clientY : e.clientY); dy = 0; sheet.classList.add('dragging'); }
-  function move(e){
-    if (!dragging) return;
-    dy = Math.max(0, (e.touches ? e.touches[0].clientY : e.clientY) - startY);
-    sheet.style.transform = 'translateY(' + dy * 0.9 + 'px)';
-  }
-  function up(){
-    if (!dragging) return;
-    dragging = false;
-    sheet.classList.remove('dragging');
-    sheet.style.transition = 'transform .45s cubic-bezier(.34,1.28,.48,1)';
-    sheet.style.transform = 'translateY(0)';
-    setTimeout(function(){ sheet.style.transition = ''; }, 460);
-    if (dy > 60) haptic('light');
-  }
-  grab.addEventListener('touchstart', down, {passive:true});
-  grab.addEventListener('touchmove', move, {passive:true});
-  grab.addEventListener('touchend', up);
-  grab.addEventListener('mousedown', down);
-  window.addEventListener('mousemove', move);
-  window.addEventListener('mouseup', up);
-})();
 
 /* ================= HOME ================= */
 let hideBal = false;
@@ -1319,14 +1298,13 @@ function renderHome(){ renderActivity(); renderEarn(); }
 /* ================= ADS — Monetag rewarded interstitial ================= */
 let adShowing = false;
 async function showRealAd(){
-  /* wait up to 6s for the Monetag SDK (show_10937696) to be ready */
   for (let i = 0; i < 60; i++){
     if (typeof window[CONFIG.adSdk] === 'function') break;
     await new Promise(function(r){ setTimeout(r, 100); });
   }
   const fn = window[CONFIG.adSdk];
   if (typeof fn !== 'function') throw new Error('Ad failed to load — check your connection');
-  await fn(); /* resolves only when the rewarded interstitial completes */
+  await fn();
 }
 function demoAd(){
   return new Promise(function(res){
@@ -1361,6 +1339,7 @@ async function watchAd(){
       await demoAd();
       state.balance += CONFIG.adReward; state.totalEarned += CONFIG.adReward;
       state.adsToday++; state.reqAds = (state.reqAds||0)+1;
+      state.lastAdTs = Date.now();
       state.activities.unshift({ type:'ad', title:'Ad Watch Reward', amount:CONFIG.adReward, ts:Date.now() });
       dirty = true; save();
       confetti(); toast(t('t_ad_ok', CONFIG.adReward));
