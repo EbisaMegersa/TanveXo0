@@ -241,10 +241,11 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
 <div id="toast"></div>
 
 <script>
-/* ================= CONFIG — EDIT THESE 3 ================= */
+/* ================= CONFIG — EDIT THESE ================= */
 const CONFIG = {
-  api: 'https://tanv.ebisamagarsaa.workers.dev/',                                  // ← paste your Worker URL: 'https://tapcoin-api.your-name.workers.dev'
-  botUsername: 'tanvexoappbot',         // ← your bot's username from BotFather (without @)
+  api: 'https://tanv.ebisamagarsaa.workers.dev/',  // ← your Worker URL
+  botUsername: 'tanvexoappbot',             // ← your bot username (without @)
+  appName: 'refer',                         // ← the app short name in BotFather (/myapps)
   channelUrl: 'https://t.me/ebtry0',  // ← your news channel link
   pointsPerInvite: 5, tapEnergyCost: 1, energyMax: 500, energyRegenPerSec: 1,
   storageKey: 'tapcoin_v2'
@@ -271,7 +272,7 @@ const startRef = (function(){
     return m ? parseInt(m[1], 10) : null;
   } catch(e){ return null; }
 })();
-function referralLink(){ return 'https://t.me/' + CONFIG.botUsername + '?startapp=ref_' + myId; }
+function referralLink(){ return 'https://t.me/' + CONFIG.botUsername + '/' + CONFIG.appName + '?startapp=ref_' + myId; }
 
 /* ================= ICONS ================= */
 const ICONS = {
