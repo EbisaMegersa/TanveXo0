@@ -1,0 +1,9 @@
+name = "tanv"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tanvexo0-db"
+database_id = "d466cf79-3630-410d-9989-81bf1550f55a"
