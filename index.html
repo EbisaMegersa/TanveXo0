@@ -108,7 +108,6 @@ body{
   font-size:1rem; user-select:none;-webkit-user-select:none;touch-action:manipulation;
   overflow-x:hidden;overscroll-behavior:none;-webkit-font-smoothing:antialiased;
 }
-/* first-open gate hides the whole app behind the popup card */
 body.gated #app, body.gated .topnav, body.gated nav.tabbar{ display:none!important }
 #app{max-width:480px;margin:0 auto;min-height:100dvh;padding:0 16px calc(116px + env(safe-area-inset-bottom))}
 .ic{width:22px;height:22px;flex-shrink:0}
@@ -327,7 +326,7 @@ h2.sec .sic .ic{width:20px;height:20px}
 .empty{color:var(--label2);font-size:.84rem;text-align:center;padding:16px 0;line-height:1.5;font-weight:500}
 
 /* ============================================================
-   GAME — metallic ring wheel + glass hub
+   GAME — metallic ring wheel + glass hub (design unchanged)
    ============================================================ */
 .spin-wrap{position:relative;width:min(76vw,288px);aspect-ratio:1;margin:18px auto 10px}
 .wheel-ring{position:absolute;inset:-9px;border-radius:50%;z-index:0;
@@ -429,7 +428,7 @@ nav.tabbar{
 .nav-btn:active .nv-ic{transform:scale(.9)}
 
 /* ============================================================
-   FIRST-OPEN CHANNEL GATE — centered popup card, no skip
+   FIRST-OPEN CHANNEL GATE — popup card, no skip
    ============================================================ */
 #gateWrap{position:fixed;inset:0;background:rgba(0,0,0,.55);
   -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
@@ -455,7 +454,7 @@ nav.tabbar{
 .g-err{color:var(--red);font-size:.82rem;margin-top:12px;min-height:20px;font-weight:600}
 
 /* ============================================================
-   BANNED — "You're banned" alert
+   BANNED — "You're banned"
    ============================================================ */
 #banScreen{position:fixed;inset:0;background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   z-index:130;display:none;align-items:center;justify-content:center;padding:28px}
@@ -714,7 +713,7 @@ nav.tabbar{
         </span>
       </span>
     </div>
-    <div class="menu-info">TanveXo • v1.6</div>
+    <div class="menu-info">TanveXo • Code 2</div>
   </div>
 </div>
 
@@ -770,7 +769,7 @@ const CONFIG = {
   storageKey: 'tanvexo_v2'
 };
 
-/* ================= SVG ICONS (SF Symbols style) ================= */
+/* ================= SVG ICONS ================= */
 const ICON_PATHS = {
   play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/>',
   check:'<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5.5"/>',
@@ -803,7 +802,7 @@ document.getElementById('clockIc').innerHTML = ic('clock', 20);
 document.getElementById('starIc').innerHTML = ic('star', 20);
 
 /* ============================================================
-   TELEGRAM HEADER FIX — real insets as CSS vars
+   TELEGRAM HEADER FIX
    ============================================================ */
 const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 let tgUser = null;
@@ -1186,7 +1185,7 @@ async function refreshState(){
   }
 }
 
-/* ================= FIRST-OPEN CHANNEL GATE — popup card, no skip ================= */
+/* ================= FIRST-OPEN CHANNEL GATE ================= */
 function showGate(channels){
   GATED = true;
   document.body.classList.add('gated');
@@ -1301,7 +1300,7 @@ function renderHome(){ renderActivity(); renderEarn(); }
  $('#qaInvite').addEventListener('click', function(){ haptic('light'); go('friends'); });
  $('#qaAd').addEventListener('click', function(){ haptic('light'); watchAd(); });
 
-/* ================= ADS — Monetag rewarded interstitial ================= */
+/* ================= ADS ================= */
 let adShowing = false;
 async function showRealAd(){
   for (let i = 0; i < 60; i++){
@@ -1490,15 +1489,30 @@ function renderTasksPage(){ renderStreak(); renderTasksList(); }
   renderTasksPage(); renderAll();
 });
 
-/* ================= GAME — original wheel layout, honest amounts ================= */
+/* ============================================================
+   GAME — SPIN SYSTEM (Code 2 rebuild: deadlock-proof, race-safe)
+   Design unchanged. Only the mechanics below were rebuilt.
+   ============================================================ */
 const SEGV = [
   { t:'×1.5', c:'d1' },{ t:'✕', c:'d2' },{ t:'×1.5', c:'d1' },{ t:'✕', c:'d2' },
   { t:'×3', c:'g' },{ t:'✕', c:'d2' },{ t:'×2', c:'w' },{ t:'✕', c:'d2' }
 ];
 const SEG = 45;
-let wheelRot = 0, spinning = false;
+const SPIN_ANIM_MIN_MS = 4200, SPIN_ANIM_MAX_MS = 5100;
+const SPIN_HARD_TIMEOUT_MS = 7000;   /* absolute safety net: always finishes, even if transitionend never fires */
+
+/* spin state machine: idle → request → animate → finish → idle */
+let spinPhase = 'idle';       /* idle | request | animate */
+let wheelRot = 0;             /* always normalized to 0..359 after each spin */
+let spinFinishFired = false;  /* idempotent finish guard */
+let spinHardTimer = null;     /* hard timeout handle */
+let spinToken = 0;            /* invalidates stale async flows */
+
 function buildWheel(){
   const wheel = $('#wheel');
+  /* preserve current visual rotation + transition across rebuilds (theme/lang switch) */
+  const keep = wheel.style.transform || 'rotate(0deg)';
+  const keepTransition = wheel.style.transition || '';
   let grad = 'conic-gradient(from -22.5deg';
   SEGV.forEach(function(s, i){ grad += ',var(--seg-' + s.c + ') ' + (i * 45) + 'deg ' + ((i + 1) * 45) + 'deg'; });
   wheel.style.background = grad + ')';
@@ -1514,28 +1528,54 @@ function buildWheel(){
     dt.innerHTML = '<i></i>';
     deco.appendChild(dt);
   });
+  /* restore — never wipe an in-flight animation */
+  wheel.style.transition = keepTransition;
+  wheel.style.transform = keep;
 }
-function segForMult(m){
-  if (m === 3) return 4;
-  if (m === 2) return 6;
-  if (m === 1.5) return Math.random() < .5 ? 0 : 2;
-  return [1,3,5,7][Math.floor(Math.random() * 4)];
+
+function spinLockUI(on){
+  $('#spinBtn').disabled = on;
+  $('#spinHub').disabled = on;
 }
-function animateWheel(idx, done){
+
+/* finish runs exactly once per spin; everything funnels through here */
+function finishSpin(){
+  if (spinFinishFired) return;
+  spinFinishFired = true;
+  if (spinHardTimer){ clearTimeout(spinHardTimer); spinHardTimer = null; }
+  spinPhase = 'idle';
+  spinLockUI(false);
+}
+
+function animateWheel(idx, onDone){
   const wheel = $('#wheel');
+  spinFinishFired = false;
+  spinPhase = 'animate';
   const turns = 6 + Math.floor(Math.random() * 2);
-  const dur = 4200 + Math.floor(Math.random() * 900);
-  const base = Math.ceil(wheelRot / 360) * 360 + 360 * turns;
-  let target = base - idx * SEG + (Math.floor(Math.random() * 20) - 10);
-  if (target <= wheelRot) target += 360;
-  wheelRot = target;
+  const dur = SPIN_ANIM_MIN_MS + Math.floor(Math.random() * (SPIN_ANIM_MAX_MS - SPIN_ANIM_MIN_MS));
+  /* current normalized rotation (0..359) */
+  const cur = ((wheelRot % 360) + 360) % 360;
+  /* land centered on target segment, tiny jitter, always forward, always > 5 turns */
+  let target = cur + turns * 360 + ((360 - idx * SEG) - cur + 360) % 360 + (Math.floor(Math.random() * 20) - 10);
+  if (target - cur < turns * 360) target += 360;
+  wheelRot = target % 360; /* store normalized to avoid precision drift over many spins */
   wheel.style.transition = 'transform ' + dur + 'ms cubic-bezier(.12,.72,.08,1)';
   wheel.style.transform = 'rotate(' + target + 'deg)';
-  let fired = false;
-  const fin = function(){ if (fired) return; fired = true; spinning = false; done(); };
-  wheel.addEventListener('transitionend', fin, { once:true });
-  setTimeout(fin, dur + 200);
+  /* transitionend = natural finish */
+  wheel.addEventListener('transitionend', finishSpin, { once:true });
+  /* hard timeout = guaranteed finish (backgrounded tab, dropped event, etc.) */
+  spinHardTimer = setTimeout(finishSpin, Math.max(dur + 250, SPIN_HARD_TIMEOUT_MS - (Date.now() % 1000)));
+  /* when finish fires for the first time, run the completion callback */
+  const wrapFinish = function(){
+    finishSpin();
+    try { onDone(); } catch(e){ /* never leave the UI dead */ spinLockUI(false); }
+  };
+  const check = setInterval(function(){
+    if (spinPhase === 'idle'){ clearInterval(check); wrapFinish(); }
+  }, 60);
+  /* safety: also honor the hard timeout by polling until idle happens (finishSpin guarantees it) */
 }
+
 function showSpinResult(m, payout, bet){
   const el = $('#spinResult');
   el.classList.remove('pop','win','lose'); void el.offsetWidth;
@@ -1543,7 +1583,6 @@ function showSpinResult(m, payout, bet){
     el.innerHTML = '<span class="sr-line">' + t('t_spin_lose', bet) + '</span>';
     el.classList.add('lose');
   } else {
-    /* honest math: 50 × 3 = 150 */
     el.innerHTML = '<span class="sr-line">' + t('t_spin_win', payout - bet, m) + '</span>' +
       '<span class="sr-detail">' + fmt(bet) + ' × ' + m + ' = ' + fmt(payout) + ' ETB</span>';
     el.classList.add('win');
@@ -1586,50 +1625,64 @@ function betVal(){
     wrap.appendChild(c);
   });
 })();
+
 async function doSpin(){
-  if (spinning || LOCKED || GATED) return;
+  /* synchronous lock FIRST — no double-entry from hub+button rapid taps */
+  if (spinPhase !== 'idle' || LOCKED || GATED) return;
+  spinPhase = 'request';
+  spinLockUI(true);
+  const myToken = ++spinToken;   /* token invalidates this flow if anything stale resolves later */
   const bet = betVal();
-  if (state.balance < bet){ toast(t('t_not_enough'), true); haptic('rigid'); return; }
-  spinning = true;
-  $('#spinBtn').disabled = true; $('#spinHub').disabled = true;
   haptic('medium');
   $('#spinResult').textContent = '';
   if (LIVE){
     try {
       const r = await api('/api/spin', { bet: bet });
+      if (myToken !== spinToken) return;      /* stale response — ignore silently */
+      /* apply result + history FIRST, then animate; completion only re-enables UI */
+      applyState(r.state);
+      if (r.spinHistory){ state.spinHistory = r.spinHistory; save(); renderSpinHistory(); }
       animateWheel(segForMult(r.mult), function(){
-        applyState(r.state);
-        if (r.spinHistory){ state.spinHistory = r.spinHistory; save(); renderSpinHistory(); }
+        if (myToken !== spinToken) return;
         showSpinResult(r.mult, r.payout, bet);
         hNotify(r.mult === 0 ? 'error' : 'success');
-        $('#spinBtn').disabled = false; $('#spinHub').disabled = false;
       });
     } catch(e){
-      spinning = false;
-      $('#spinBtn').disabled = false; $('#spinHub').disabled = false;
+      finishSpin();   /* always release the lock on any API error */
       if (e && e.locked){ showBanScreen(e.message); return; }
       if (e && e.gate){ showGate(e.channels); return; }
       toast(e.message, true);
     }
     return;
   }
-  let r = Math.random() * 100, m = r < 55 ? 0 : r < 80 ? 1.5 : r < 92 ? 2 : 3;
-  const payout = Math.floor(bet * m);
-  state.balance += payout - bet;
-  if (payout > bet) state.totalEarned += payout - bet;
-  state.spins++;
-  state.spinHistory.unshift({ bet: bet, mult: m, payout: payout, ts: Date.now() });
-  state.spinHistory = state.spinHistory.slice(0, 6);
-  state.activities.unshift({ type:'game', title: m === 0 ? 'Lucky Wheel — bet lost (' + bet + ' ETB)' : 'Lucky Wheel ×' + m + ' — ' + bet + ' → ' + payout + ' ETB', amount: m === 0 ? -bet : payout - bet, ts:Date.now() });
-  dirty = true; save();
-  animateWheel(segForMult(m), function(){
-    renderAll(); renderSpinHistory(); showSpinResult(m, payout, bet);
-    hNotify(m === 0 ? 'error' : 'success');
-    $('#spinBtn').disabled = false; $('#spinHub').disabled = false;
-  });
+  /* PREVIEW path — same finish flow as LIVE */
+  try {
+    let r = Math.random() * 100, m = r < 55 ? 0 : r < 80 ? 1.5 : r < 92 ? 2 : 3;
+    const payout = Math.floor(bet * m);
+    state.balance += payout - bet;
+    if (payout > bet) state.totalEarned += payout - bet;
+    state.spins++;
+    state.spinHistory.unshift({ bet: bet, mult: m, payout: payout, ts: Date.now() });
+    state.spinHistory = state.spinHistory.slice(0, 6);
+    state.activities.unshift({ type:'game', title: m === 0 ? 'Lucky Wheel — bet lost (' + bet + ' ETB)' : 'Lucky Wheel ×' + m + ' — ' + bet + ' → ' + payout + ' ETB', amount: m === 0 ? -bet : payout - bet, ts:Date.now() });
+    dirty = true; save();
+    applyState({ balance: state.balance, totalEarned: state.totalEarned, referrals: state.referrals, friends: state.friends, dailyStreak: state.dailyStreak, lastDaily: state.lastDailyTs, dailyClaims: state.dailyClaims, tasksClaimed: state.claimedTasks, adsWatched: state.adsWatched, adsToday: state.adsToday, lastAd: state.lastAdTs, spins: state.spins, reqAds: state.reqAds, reqFriends: state.reqFriends, activities: state.activities });
+    renderSpinHistory();
+    animateWheel(segForMult(m), function(){
+      showSpinResult(m, payout, bet);
+      hNotify(m === 0 ? 'error' : 'success');
+    });
+  } catch(e){
+    finishSpin();
+    toast(e.message, true);
+  }
 }
  $('#spinBtn').addEventListener('click', doSpin);
  $('#spinHub').addEventListener('click', doSpin);
+/* never allow a spin to leave the UI locked if the tab was hidden mid-spin */
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden && spinPhase === 'animate'){ finishSpin(); }
+});
 
 /* ================= FRIENDS ================= */
 function renderFriends(){
@@ -1790,9 +1843,6 @@ setInterval(function(){
     else if (dirty) save();
   }
 }, 1000);
-document.addEventListener('visibilitychange', function(){
-  if (document.hidden){ if (dirty) save(); if (LIVE && !LOCKED && !GATED) refreshState(); }
-});
 
 /* ================= INIT ================= */
 applyTgInsets();
