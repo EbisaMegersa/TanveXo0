@@ -108,6 +108,8 @@ body{
   font-size:1rem; user-select:none;-webkit-user-select:none;touch-action:manipulation;
   overflow-x:hidden;overscroll-behavior:none;-webkit-font-smoothing:antialiased;
 }
+/* FIRST-OPEN GATE: hide all app content behind the popup card */
+body.gated #app, body.gated .topnav, body.gated nav.tabbar{ display:none!important }
 #app{max-width:480px;margin:0 auto;min-height:100dvh;padding:0 16px calc(116px + env(safe-area-inset-bottom))}
 .ic{width:22px;height:22px;flex-shrink:0}
 svg{display:block}
@@ -425,37 +427,36 @@ nav.tabbar{
 .nav-btn:active .nv-ic{transform:scale(.9)}
 
 /* ============================================================
-   MANDATORY GATE SHEET — full cover, no skip, no drag
+   FIRST-OPEN CHANNEL GATE — centered popup card, app hidden
    ============================================================ */
-#gateWrap{position:fixed;inset:0;background:var(--bg);z-index:110;display:none;align-items:stretch;justify-content:center;overflow:hidden}
+#gateWrap{position:fixed;inset:0;background:rgba(0,0,0,.55);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  z-index:110;display:none;align-items:center;justify-content:center;padding:24px}
 #gateWrap.show{display:flex;animation:fadein .3s var(--ease-out)}
-.sheet{width:100%;max-width:480px;margin:0 auto;
-  border-radius:var(--r-xl) var(--r-xl) 0 0;
-  padding:28px 22px calc(28px + env(safe-area-inset-bottom));
+.gate-card{width:100%;max-width:340px;border-radius:var(--r-xl);padding:28px 22px;text-align:center;position:relative;
   background:var(--glass-strong);
   -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
-  box-shadow:var(--glass-inner), 0 -8px 40px rgba(0,0,0,.25);
-  animation:sheetup .5s var(--spring);position:relative;
-  display:flex;flex-direction:column;justify-content:center;min-height:60dvh}
-.sheet::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1.2px;
+  box-shadow:var(--glass-inner), var(--glass-shadow);
+  animation:pop .5s var(--spring)}
+.gate-card::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1.2px;
   background:var(--glass-ring);
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);mask-composite:exclude}
-@keyframes sheetup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.gate-card{text-align:center}
 .g-ic{width:66px;height:66px;border-radius:20px;background:var(--accent-tint);display:grid;place-items:center;margin:0 auto 16px;color:var(--accent)}
 .g-ic .ic{width:32px;height:32px}
 .gate-card h2{font-size:1.3rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
 .gate-card .g-p{color:var(--label2);font-size:.88rem;line-height:1.55;margin-bottom:20px;font-weight:500}
-#gateChannels{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+#gateChannels{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
 #gateChannels .btn{min-height:52px}
 #gateChannels .btn .ic{width:16px;height:16px}
 .g-req{font-size:.72rem;color:var(--label3);margin-bottom:14px;font-weight:600;letter-spacing:.02em}
 .g-err{color:var(--red);font-size:.82rem;margin-top:12px;min-height:20px;font-weight:600}
 
-/* ================= ALERT (glass) ================= */
+/* ============================================================
+   BANNED — "You're banned" iOS alert
+   ============================================================ */
 #banScreen{position:fixed;inset:0;background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-  z-index:90;display:none;align-items:center;justify-content:center;padding:28px}
+  z-index:130;display:none;align-items:center;justify-content:center;padding:28px}
 #banScreen.show{display:flex;animation:fadein .25s}
 .alert{width:100%;max-width:320px;border-radius:var(--r-lg);padding:26px 22px;text-align:center;position:relative;
   background:var(--glass-strong);
@@ -466,9 +467,9 @@ nav.tabbar{
   background:var(--glass-ring);
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);mask-composite:exclude}
-.alert .ban-ic{width:64px;height:64px;border-radius:20px;background:var(--red-tint);display:grid;place-items:center;margin:0 auto 14px;color:var(--red)}
+.alert .ban-ic{width:64px;height:64px;border-radius:50%;background:var(--red-tint);display:grid;place-items:center;margin:0 auto 14px;color:var(--red)}
 .alert .ban-ic .ic{width:32px;height:32px}
-.alert h1{font-size:1.2rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
+.alert h1{font-size:1.25rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px}
 #banReason{color:var(--label2);font-size:.88rem;line-height:1.55;font-weight:500}
 #banContact{display:none;margin:16px auto 0;color:var(--accent);font-weight:600;text-decoration:none;
   background:var(--accent-tint);padding:11px 22px;border-radius:var(--r-capsule);font-size:.85rem}
@@ -711,30 +712,28 @@ nav.tabbar{
         </span>
       </span>
     </div>
-    <div class="menu-info">TanveXo • v1.3</div>
+    <div class="menu-info">TanveXo • v1.4</div>
   </div>
 </div>
 
-<!-- MANDATORY CHANNEL GATE — full cover, no skip, no drag-dismiss -->
+<!-- FIRST-OPEN CHANNEL GATE — popup card only, app hidden, no skip -->
 <div id="gateWrap">
-  <div class="sheet">
-    <div class="gate-card">
-      <div class="g-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
-      <h2 data-i18n="gate_h">Join to continue</h2>
-      <p class="g-p" data-i18n="gate_p"></p>
-      <div id="gateChannels"></div>
-      <div class="g-req" data-i18n="gate_req">Required to use TanveXo — no skip</div>
-      <button class="btn green big" id="gateCheck" data-i18n="gate_check">I joined — Verify</button>
-      <div class="g-err" id="gateErr"></div>
-    </div>
+  <div class="gate-card">
+    <div class="g-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
+    <h2 data-i18n="gate_h">Join both channels</h2>
+    <p class="g-p" data-i18n="gate_p"></p>
+    <div id="gateChannels"></div>
+    <div class="g-req" data-i18n="gate_req">Required to continue — no skip</div>
+    <button class="btn green big" id="gateCheck" data-i18n="gate_check">I joined — Verify</button>
+    <div class="g-err" id="gateErr"></div>
   </div>
 </div>
 
-<!-- Liquid Glass: iOS alert (ban) -->
+<!-- BANNED — "You're banned" alert -->
 <div id="banScreen">
   <div class="alert">
     <div class="ban-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg></div>
-    <h1 data-i18n="banned_h">Account locked</h1>
+    <h1 data-i18n="banned_h">You're banned</h1>
     <p id="banReason"></p>
     <a id="banContact" href="#" target="_blank" rel="noopener" data-i18n="contact">Contact support</a>
   </div>
@@ -752,7 +751,7 @@ const CONFIG = {
   support: '',
   adSdk: 'show_10937696',
   referralReward: 50, welcomeBonus: 25, adReward: 5,
-  adMaxPerDay: 25, adCooldownSec: 1800,
+  adMaxPerDay: 25, adCooldownSec: 3,   /* 3-second gap (server enforces; 25/day cap is the real limit) */
   betMin: 50, betMax: 5000,
   reqAds: 25, reqFriends: 15, withdrawMin: 1000,
   methods: [
@@ -784,8 +783,7 @@ const ICON_PATHS = {
   list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1" fill="currentColor"/><circle cx="3.5" cy="12" r="1" fill="currentColor"/><circle cx="3.5" cy="18" r="1" fill="currentColor"/>',
   chart:'<path d="M3 3v17a1 1 0 0 0 1 1h17"/><path d="M7 14l4-4 3 3 5-6"/>',
   bolt:'<path d="M13 2 4.5 13.5h5.4L11 22l8.5-11.5h-5.4L13 2z"/>',
-  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-  lock:'<rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
 };
 const TOAST_OK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.53 7.53-5.25 5.25a.75.75 0 0 1-1.06 0L7.97 12.53a.75.75 0 1 1 1.06-1.06l1.72 1.72 4.72-4.72a.75.75 0 1 1 1.06 1.06z"/></svg>';
 const TOAST_ERR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.53 12.03a.75.75 0 1 1-1.06 1.06L12 12.56l-2.47 2.53a.75.75 0 1 1-1.06-1.06L11 11.5 8.47 8.97a.75.75 0 0 1 1.06-1.06L12 10.44l2.47-2.53a.75.75 0 1 1 1.06 1.06L13 11.5l2.53 2.53z"/></svg>';
@@ -912,7 +910,7 @@ const STR = {
     history:"History", no_wd:"No withdrawal requests yet.",
     st_paid:"Paid", st_pending:"Pending", st_rej:"Rejected",
     nav_home:"Home", nav_tasks:"Tasks", nav_game:"Game", nav_friends:"Friends", nav_wallet:"Wallet",
-    banned_h:"Account locked", contact:"Contact support",
+    banned_h:"You're banned", contact:"Contact support",
     gate_h:"Join both channels", gate_p:"Everyone must join our two channels to use TanveXo. Invited friends also unlock their +25 ETB welcome bonus here.",
     gate_req:"Required to continue — no skip",
     gate_check:"I joined — Verify", gate_fail:"Please join both channels first",
@@ -955,7 +953,7 @@ const STR = {
     history:"ታሪክ", no_wd:"ገና የመውጣት ጥያቄ የለም።",
     st_paid:"ተከፍሏል", st_pending:"በመጠባበቅ ላይ", st_rej:"ተቀንቋዋል",
     nav_home:"መነሻ", nav_tasks:"ተግባራት", nav_game:"ጨዋታ", nav_friends:"ጓደኞች", nav_wallet:"ዋሌት",
-    banned_h:"መለያ ተዘግቷል", contact:"ድጋፍ ያግኙ",
+    banned_h:"ታግደዋል!", contact:"ድጋፍ ያግኙ",
     gate_h:"ሁለቱንም ቻናሎች ይቀላቀሉ", gate_p:"TanveXoን ለመጠቀም ሁለቱንም ቻናሎች መቀላቀል ያስፈልጋል። የተጋቡ ጓደኞች +25 ETB ቦነሳቸውን ከዚህ ያገኛሉ።",
     gate_req:"ለመቀጠል ያስፈልጋል — መዝለል አይቻልም",
     gate_check:"ተቀላቅያለሁ — አረጋግጥ", gate_fail:"እባክዎ ሁለቱንም ቻናሎች ይቀላቀሉ",
@@ -1067,6 +1065,7 @@ function showBanScreen(msg){
   if (LOCKED) return;
   LOCKED = true;
   closeMenu();
+  document.body.classList.add('gated'); /* hide app content behind the ban alert */
   $('#gateWrap').classList.remove('show');
   $('#banReason').textContent = msg || t('banned_h');
   const c = $('#banContact');
@@ -1157,6 +1156,7 @@ function renderAll(){
 async function tryInit(){
   const r = await api('/api/init', { ref: startRef, dev: deviceId() });
   LIVE = true; GATED = false;
+  document.body.classList.remove('gated');
   $('#gateWrap').classList.remove('show');
   applyState(r.state);
   const ms = $('#menuStatus'); ms.textContent = 'LIVE'; ms.classList.add('ok');
@@ -1182,9 +1182,10 @@ async function refreshState(){
   }
 }
 
-/* ================= MANDATORY CHANNEL GATE — no skip, no dismiss ================= */
+/* ================= FIRST-OPEN CHANNEL GATE — popup card, no skip ================= */
 function showGate(channels){
   GATED = true;
+  document.body.classList.add('gated'); /* hide the whole app behind the card */
   closeMenu();
   const wrap = $('#gateChannels');
   wrap.innerHTML = '';
@@ -1203,6 +1204,7 @@ function showGate(channels){
   try {
     const r = await api('/api/verify_channels');
     GATED = false;
+    document.body.classList.remove('gated');
     $('#gateWrap').classList.remove('show');
     LIVE = true;
     applyState(r.state);
@@ -1269,7 +1271,7 @@ async function loadReviews(){
   renderReviews();
 }
 function adReady(){
-  return (Date.now() - (state.lastAdTs || 0) >= CONFIG.adCooldownSec * 1000 + 2000) && state.adsToday < CONFIG.adMaxPerDay;
+  return (Date.now() - (state.lastAdTs || 0) >= CONFIG.adCooldownSec * 1000) && state.adsToday < CONFIG.adMaxPerDay;
 }
 function renderEarn(){
   const dots = $('#adDots');
@@ -1286,8 +1288,8 @@ function renderEarn(){
   else {
     btn.disabled = true;
     const ms = CONFIG.adCooldownSec * 1000 - (Date.now() - (state.lastAdTs || 0));
-    const m = Math.max(0, Math.floor(ms / 60000)), s = Math.max(0, Math.floor(ms % 60000 / 1000));
-    btn.textContent = t('next_ad', null, m + ':' + String(s).padStart(2,'0'));
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    btn.textContent = t('next_ad', null, s + 's');
   }
 }
 function renderHome(){ renderActivity(); renderEarn(); }
