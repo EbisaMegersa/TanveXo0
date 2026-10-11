@@ -1,6 +1,6 @@
 /* TanveXo API v12 — mandatory channel gate for ALL users, referral credit on gate pass */
 const REFERRAL_REWARD = 50, WELCOME_BONUS = 25;
-const AD_REWARD = 5, AD_COOLDOWN = 3, AD_MAX_PER_DAY = 55;
+const AD_REWARD = 5, AD_COOLDOWN = 3, AD_MAX_PER_DAY = 25;
 const SPIN_MIN_BET = 50, SPIN_MAX_BET = 5000;
 const WD_REQ_ADS = 25, WD_REQ_FRIENDS = 15;
 const MIN_WITHDRAW = 1000;
