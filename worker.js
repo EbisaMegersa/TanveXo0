@@ -464,4 +464,257 @@ async function apiAd(env, tgUser) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
   if (row.banned) return bannedResp(row);
-  if (!row.channel_ok)
+  if (!row.channel_ok) return gateErr();
+  const t = now();
+  const day = new Date().toISOString().slice(0, 10);
+  if (row.ad_day !== day) { row.ads_today = 0; row.ad_day = day; }
+  if (row.ads_today >= AD_MAX_PER_DAY) return { ok: false, error: 'Daily ad limit reached (' + AD_MAX_PER_DAY + '/day) — come back tomorrow' };
+  const wait = AD_COOLDOWN - (t - (row.last_ad || 0));
+  if (wait > 0) return { ok: false, error: 'Next ad in ' + Math.floor(wait / 60) + ':' + String(wait % 60).padStart(2, '0') };
+  row.ads_watched += 1; row.ads_today += 1; row.last_ad = t;
+  row.req_ads = (row.req_ads || 0) + 1;
+  row.balance += AD_REWARD; row.total_earned += AD_REWARD; row.updated_at = t;
+  await saveRow(env, row);
+  await logAct(env, tgUser.id, 'ad', 'Ad Watch Reward', AD_REWARD);
+  row._acts = await actsOf(env, tgUser.id);
+  return { ok: true, reward: AD_REWARD, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
+}
+
+async function apiReviews(env) {
+  return { ok: true, reviews: await reviewsOf(env) };
+}
+
+async function apiWithdraw(env, tgUser, body) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  if (!row.channel_ok) return gateErr();
+  if ((row.req_ads || 0) < WD_REQ_ADS || (row.req_friends || 0) < WD_REQ_FRIENDS)
+    return { ok: false, error: 'Withdrawals locked — meet the requirements first (Wallet)' };
+  const amount = Math.floor(parseInt(body.amount, 10) || 0);
+  const method = String(body.method || '').trim().slice(0, 40);
+  const address = String(body.address || '').trim().slice(0, 120);
+  if (!method) return { ok: false, error: 'Choose a withdrawal method' };
+  if (address.length < 4) return { ok: false, error: 'Enter your account details' };
+  if (!amount || amount < MIN_WITHDRAW) return { ok: false, error: 'Minimum withdrawal is ' + MIN_WITHDRAW + ' ETB' };
+  if (amount > row.balance) return { ok: false, error: 'Not enough ETB' };
+  row.req_ads = Math.max(0, (row.req_ads || 0) - WD_REQ_ADS);
+  row.req_friends = Math.max(0, (row.req_friends || 0) - WD_REQ_FRIENDS);
+  row.balance -= amount; row.updated_at = now();
+  await saveRow(env, row);
+  await env.DB.prepare('INSERT INTO withdrawals (user_id, name, amount, method, address, status, created_at) VALUES (?,?,?,?,?,\'pending\',?)')
+    .bind(tgUser.id, row.name, amount, method, address, now()).run();
+  await logAct(env, tgUser.id, 'wd', 'Withdrawal — ' + method, -amount);
+  row._acts = await actsOf(env, tgUser.id);
+  return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
+}
+async function apiWithdrawals(env, tgUser) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  return { ok: true, withdrawals: await withdrawalsOf(env, tgUser.id) };
+}
+
+/* ================= WEBHOOK ================= */
+function esc(s){ return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+async function reply(env, chatId, text, keyboard) {
+  const params = { chat_id: chatId, text, parse_mode: 'HTML' };
+  if (keyboard) params.reply_markup = { inline_keyboard: keyboard };
+  return botCall(env, 'sendMessage', params);
+}
+async function handleWebhook(env, update) {
+  try {
+    if (update.callback_query) {
+      const cq = update.callback_query;
+      if (!cq.from || cq.data !== 'verify') return;
+      const g = await passGate(env, cq.from.id);
+      if (g && g.ok) {
+        await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '✅ Verified! Welcome to TanveXo' });
+        if (cq.message && cq.message.chat) {
+          await reply(env, cq.message.chat.id,
+            '✅ <b>Verified!</b>\n\nWelcome to TanveXo — let\'s earn together!\n(Invited friends: your welcome bonus is in the app)',
+            [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
+        }
+      } else {
+        await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '❌ You haven\'t joined both channels yet', show_alert: true });
+      }
+      return;
+    }
+    const msg = update.message || update.edited_message;
+    if (!msg || !msg.from || !msg.text) return;
+    const chatId = msg.chat.id;
+    const parts = msg.text.trim().split(/\s+/);
+    const cmd = parts[0].split('@')[0].toLowerCase();
+    const payload = parts[1] || '';
+    if (cmd === '/start') {
+      const m = String(payload).match(/ref[_-]?(\d+)/i);
+      const refId = m ? parseInt(m[1], 10) : null;
+      await ensureUser(env, msg.from, refId, null);
+      const row = await getRow(env, msg.from.id);
+      if (row && !row.channel_ok && !row.banned) {
+        const kb = REQ_CHANNELS.map(h => [{ text: '📢 Join ' + h, url: 'https://t.me/' + h.slice(1) }]);
+        kb.push([{ text: '✅ I joined — Verify', callback_data: 'verify' }]);
+        await reply(env, chatId,
+          '👋 Welcome to <b>TanveXo</b>, ' + esc(msg.from.first_name) + '!\n\n📢 Join both channels to unlock the app — this is required for everyone.\n\n(Invited? Your <b>+' + WELCOME_BONUS + ' ETB</b> welcome bonus unlocks right after.)', kb);
+        return;
+      }
+      await reply(env, chatId,
+        '👋 Welcome to <b>TanveXo</b>!\n\n👥 Invite friends — earn <b>' + REFERRAL_REWARD + ' ETB</b> each\n📺 Watch ads · ✅ Tasks · 🎯 Lucky Wheel · 💸 Withdraw\n\nTap below to start!',
+        [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
+    } else if (cmd === '/balance') {
+      const row = await getRow(env, msg.from.id);
+      if (!row) await reply(env, chatId, 'You don\'t have an account yet — open the app first!', [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
+      else await reply(env, chatId, '💰 <b>' + esc(row.name) + '</b>\n\nBalance: <b>' + row.balance + ' ETB</b>\nFriends invited: <b>' + row.invited + '</b>\nAds watched: <b>' + (row.ads_watched || 0) + '</b>');
+    } else if (cmd === '/help') {
+      await reply(env, chatId, '<b>TanveXo commands:</b>\n/start — open the app\n/balance — check your ETB\n/help — this message');
+    } else {
+      await reply(env, chatId, 'Tap /start to open TanveXo 🎮');
+    }
+  } catch (e) {}
+}
+
+/* ================= ADMIN ================= */
+function adminOk(request, env) {
+  const key = request.headers.get('X-Admin-Key') || '';
+  return !!env.ADMIN_PASSWORD && key.length > 0 && key === env.ADMIN_PASSWORD;
+}
+async function adminStats(env) {
+  const agg = await env.DB.prepare('SELECT COUNT(*) AS users, COALESCE(SUM(balance),0) AS coins, COALESCE(SUM(total_earned),0) AS earned, COALESCE(SUM(invited),0) AS invites, COALESCE(SUM(ads_watched),0) AS ads FROM users').first();
+  const nd = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE created_at > ?').bind(now() - 86400).first();
+  const top = await env.DB.prepare('SELECT user_id, name, balance, invited, banned, device_id, created_at FROM users ORDER BY balance DESC LIMIT 25').all();
+  const recent = await env.DB.prepare('SELECT user_id, name, balance, invited, banned, device_id, created_at FROM users ORDER BY created_at DESC LIMIT 25').all();
+  const tasks = await env.DB.prepare('SELECT * FROM tasks ORDER BY id').all();
+  const wds = await env.DB.prepare("SELECT * FROM withdrawals ORDER BY (status = 'pending') DESC, created_at DESC LIMIT 50").all();
+  const pend = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS amt FROM withdrawals WHERE status = 'pending'").first();
+  const revs = await env.DB.prepare('SELECT * FROM reviews ORDER BY id DESC LIMIT 20').all();
+  return { ok: true,
+    stats: { users: agg.users, coins: agg.coins, earned: agg.earned, taps: agg.ads || 0, invites: agg.invites, new24: nd ? nd.n : 0 },
+    pendingWd: { n: pend ? pend.n : 0, amt: pend ? pend.amt : 0 },
+    top: top.results || [], recent: recent.results || [],
+    tasks: tasks.results || [], withdrawals: wds.results || [],
+    reviews: revs.results || [] };
+}
+async function adminReviewAction(env, body) {
+  const t = now();
+  if (body.action === 'add') {
+    const name = String(body.name || '').trim().slice(0, 40);
+    const message = String(body.message || '').trim().slice(0, 140);
+    const stars = Math.max(1, Math.min(5, Math.floor(parseInt(body.stars, 10) || 5)));
+    if (!name) return { ok: false, error: 'Name required' };
+    if (!message) return { ok: false, error: 'Message required' };
+    await env.DB.prepare('INSERT INTO reviews (name, message, stars, created_at) VALUES (?,?,?,?)').bind(name, message, stars, t).run();
+    try { await env.DB.prepare('DELETE FROM reviews WHERE id NOT IN (SELECT id FROM reviews ORDER BY id DESC LIMIT 15)').run(); } catch(e) {}
+    return { ok: true };
+  }
+  const id = parseInt(body.id, 10);
+  if (!id) return { ok: false, error: 'Review id required' };
+  if (body.action === 'delete') { await env.DB.prepare('DELETE FROM reviews WHERE id = ?').bind(id).run(); return { ok: true }; }
+  return { ok: false, error: 'Unknown action' };
+}
+async function adminTaskAction(env, body) {
+  const t = now();
+  if (body.action === 'add') {
+    const title = String(body.title || '').trim().slice(0, 80);
+    const type = String(body.type || '');
+    const reward = Math.floor(parseInt(body.reward, 10) || 0);
+    const goal = Math.max(1, Math.floor(parseInt(body.goal, 10) || 1));
+    const link = String(body.link || '').trim().slice(0, 200) || null;
+    if (!title) return { ok: false, error: 'Title required' };
+    if (!TASK_TYPES.includes(type)) return { ok: false, error: 'Type must be: ' + TASK_TYPES.join(', ') };
+    if (reward < 1 || reward > 1000000) return { ok: false, error: 'Reward must be 1..1000000' };
+    if (type === 'link' && !link) return { ok: false, error: 'Link tasks need a URL' };
+    await env.DB.prepare('INSERT INTO tasks (title, type, reward, goal, link, active, created_at) VALUES (?,?,?,?,?,1,?)')
+      .bind(title, type, reward, goal, link, t).run();
+    return { ok: true };
+  }
+  const id = parseInt(body.id, 10);
+  if (!id) return { ok: false, error: 'Task id required' };
+  if (body.action === 'toggle') { await env.DB.prepare('UPDATE tasks SET active = 1 - active WHERE id = ?').bind(id).run(); return { ok: true }; }
+  if (body.action === 'delete') { await env.DB.prepare('DELETE FROM tasks WHERE id = ?').bind(id).run(); return { ok: true }; }
+  if (body.action === 'setlink') {
+    const link = String(body.link || '').trim().slice(0, 200);
+    await env.DB.prepare('UPDATE tasks SET link = ? WHERE id = ?').bind(link || null, id).run();
+    return { ok: true };
+  }
+  return { ok: false, error: 'Unknown action' };
+}
+async function adminWdAction(env, body) {
+  const id = parseInt(body.id, 10);
+  if (!id) return { ok: false, error: 'Withdrawal id required' };
+  const w = await env.DB.prepare('SELECT * FROM withdrawals WHERE id = ?').bind(id).first();
+  if (!w) return { ok: false, error: 'Withdrawal not found' };
+  if (w.status !== 'pending') return { ok: false, error: 'Already processed' };
+  const t = now();
+  if (body.action === 'paid') {
+    await env.DB.prepare("UPDATE withdrawals SET status = 'paid', processed_at = ? WHERE id = ?").bind(t, id).run();
+    return { ok: true, result: 'paid' };
+  }
+  if (body.action === 'reject') {
+    await env.DB.prepare("UPDATE withdrawals SET status = 'rejected', processed_at = ? WHERE id = ?").bind(t, id).run();
+    await env.DB.prepare('UPDATE users SET balance = balance + ? WHERE user_id = ?').bind(w.amount, w.user_id).run();
+    return { ok: true, result: 'rejected + refunded ' + w.amount + ' ETB' };
+  }
+  return { ok: false, error: 'Unknown action' };
+}
+async function adminAction(env, body) {
+  const id = parseInt(body.userId, 10);
+  if (!id) return { ok: false, error: 'userId required' };
+  const t = now();
+  if (body.action === 'add') {
+    await env.DB.prepare('UPDATE users SET balance = MAX(0, balance + ?), updated_at=? WHERE user_id=?').bind(parseInt(body.amount, 10) || 0, t, id).run();
+  } else if (body.action === 'set') {
+    await env.DB.prepare('UPDATE users SET balance = MAX(0, ?), updated_at=? WHERE user_id=?').bind(parseInt(body.amount, 10) || 0, t, id).run();
+  } else if (body.action === 'ban') {
+    await env.DB.prepare("UPDATE users SET banned=1, ban_reason='Banned by admin', updated_at=? WHERE user_id=?").bind(t, id).run();
+  } else if (body.action === 'unban') {
+    await env.DB.prepare('UPDATE users SET banned=0, ban_reason=NULL, updated_at=? WHERE user_id=?').bind(t, id).run();
+  } else return { ok: false, error: 'Unknown action' };
+  const r = await env.DB.prepare('SELECT user_id, name, balance, banned, ban_reason FROM users WHERE user_id=?').bind(id).first();
+  return { ok: true, user: r };
+}
+
+export default {
+  async fetch(request, env) {
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+    const url = new URL(request.url).pathname;
+    if (url === '/') return j({ ok: true, msg: 'TanveXo API v12 is running' });
+    let body = {};
+    if (request.method === 'POST') { try { body = await request.json(); } catch (e) {} }
+    try {
+      if (url === '/telegram-webhook') {
+        if (env.WEBHOOK_SECRET && request.headers.get('X-Telegram-Bot-Api-Secret-Token') !== env.WEBHOOK_SECRET)
+          return j({ ok: false, error: 'Unauthorized' }, 401);
+        await initDb(env);
+        await handleWebhook(env, body);
+        return j({ ok: true });
+      }
+      if (url === '/api/admin/stats') { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminStats(env)); }
+      if (url === '/api/admin/action') { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminAction(env, body)); }
+      if (url === '/api/admin/task_action') { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminTaskAction(env, body)); }
+      if (url === '/api/admin/wd_action') { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminWdAction(env, body)); }
+      if (url === '/api/admin/review_action') { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminReviewAction(env, body)); }
+      if (request.method !== 'POST') return j({ ok: false, error: 'Use POST' }, 405);
+      await initDb(env);
+      const initData = request.headers.get('X-Telegram-Init-Data') || '';
+      const tgUser = await verifyInitData(initData, env.BOT_TOKEN || '');
+      if (!tgUser) return j({ ok: false, error: env.BOT_TOKEN ? 'Auth failed — open the app from Telegram' : 'BOT_TOKEN secret is not set in Worker settings' }, 401);
+      switch (url) {
+        case '/api/init':            return j(await apiInit(env, tgUser, body));
+        case '/api/verify_channels': return j(await apiVerifyChannels(env, tgUser));
+        case '/api/sync':            return j(await apiSync(env, tgUser));
+        case '/api/daily':           return j(await apiDaily(env, tgUser));
+        case '/api/tasks':           return j(await apiTasks(env, tgUser));
+        case '/api/task':            return j(await apiTask(env, tgUser, body));
+        case '/api/spin':            return j(await apiSpin(env, tgUser, body));
+        case '/api/spin_history':    return j(await apiSpinHistory(env, tgUser));
+        case '/api/ad':              return j(await apiAd(env, tgUser));
+        case '/api/reviews':         return j(await apiReviews(env));
+        case '/api/withdraw':        return j(await apiWithdraw(env, tgUser, body));
+        case '/api/withdrawals':     return j(await apiWithdrawals(env, tgUser));
+      }
+      return j({ ok: false, error: 'Unknown endpoint' }, 404);
+    } catch (e) {
+      return j({ ok: false, error: 'Server error: ' + (e && e.message ? e.message : String(e)) }, 500);
+    }
+  }
+};
