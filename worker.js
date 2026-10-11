@@ -1,4 +1,10 @@
-/* TanveXo API v12 — mandatory channel gate for ALL users, referral credit on gate pass */
+/* TanveXo API v13 — full backend
+   Economy: ETB · +50/invite (after channel gate) · +25 welcome · +5/ad (3s gap, 25/day)
+   Wheel: bet 50–5000, ×1.5/×2/×3 or lose · Withdraw: min 1000, req 25 ads + 15 friends
+   Mandatory channel gate for ALL users: @ebtry0 + @ebisa_emoji (bot must be admin in both)
+   Webhook: /start /balance /help · Admin: stats, users, tasks, withdrawals, reviews */
+
+/* ================= ECONOMY CONSTANTS ================= */
 const REFERRAL_REWARD = 50, WELCOME_BONUS = 25;
 const AD_REWARD = 5, AD_COOLDOWN = 3, AD_MAX_PER_DAY = 25;
 const SPIN_MIN_BET = 50, SPIN_MAX_BET = 5000;
@@ -6,14 +12,17 @@ const WD_REQ_ADS = 25, WD_REQ_FRIENDS = 15;
 const MIN_WITHDRAW = 1000;
 const MAX_ACCOUNTS_PER_DEVICE = 2;
 const DAY = 86400;
-const EXT_LINK_MIN_STAY = 8;
+const EXT_LINK_MIN_STAY = 8;             /* seconds on external (Twitter/X etc.) link tasks */
 const DEFAULT_CHANNEL = 'https://t.me/ebtry0';
 const BOT_USERNAME = 'tanvexoappbot';
 const APP_LINK = 'https://t.me/' + BOT_USERNAME + '/refer';
-/* ← BOTH channels are mandatory for every user (bot must be admin in both) */
+/* Mandatory channels — every user must join both (public handles, bot = admin) */
 const REQ_CHANNELS = ['@ebtry0', '@ebisa_emoji'];
 const STREAK_REWARDS = [10, 30, 40, 60, 70, 80, 100];
-const TASK_TYPES = ['invites','daily','ads','link'];
+const TASK_TYPES = ['invites', 'daily', 'ads', 'link'];
+/* Spin odds: lose 55% · ×1.5 25% · ×2 12% · ×3 8% (house edge ~14.5%) */
+function spinMult(){ let r = Math.random() * 100; if (r < 55) return 0; if (r < 80) return 1.5; if (r < 92) return 2; return 3; }
+
 const gateErr = () => ({ ok: false, gate: true, error: 'Join both channels to continue', channels: REQ_CHANNELS });
 
 const CORS = {
@@ -24,8 +33,9 @@ const CORS = {
 };
 const j = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 const now = () => Math.floor(Date.now() / 1000);
-const bannedResp = row => ({ ok: false, error: (row && row.ban_reason) ? row.ban_reason : 'Account banned', locked: true });
+const bannedResp = row => ({ ok: false, error: (row && row.ban_reason) ? row.ban_reason : 'You are banned', locked: true });
 
+/* ================= DATABASE ================= */
 let dbReady = null;
 function initDb(env) {
   if (!dbReady) {
@@ -40,7 +50,7 @@ function initDb(env) {
         ads_watched INTEGER NOT NULL DEFAULT 0, ads_today INTEGER NOT NULL DEFAULT 0, ad_day TEXT, last_ad INTEGER NOT NULL DEFAULT 0,
         spins INTEGER NOT NULL DEFAULT 0, last_spin INTEGER NOT NULL DEFAULT 0,
         req_ads INTEGER NOT NULL DEFAULT 0, req_friends INTEGER NOT NULL DEFAULT 0, req_spins INTEGER NOT NULL DEFAULT 0,
-        welcome INTEGER NOT NULL DEFAULT 0, migrated INTEGER NOT NULL DEFAULT 0,
+        welcome INTEGER NOT NULL DEFAULT 0, migrated INTEGER NOT NULL DEFAULT 0, channel_ok INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
       )`).run();
       await env.DB.prepare(`CREATE TABLE IF NOT EXISTS referrals (
@@ -76,6 +86,7 @@ function initDb(env) {
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
         bet INTEGER NOT NULL, mult REAL NOT NULL, payout INTEGER NOT NULL, created_at INTEGER NOT NULL
       )`).run();
+      /* migrations for pre-existing databases (safe no-ops on fresh ones) */
       const alters = [
         'ALTER TABLE users ADD COLUMN device_id TEXT',
         'ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0',
@@ -95,30 +106,32 @@ function initDb(env) {
         'ALTER TABLE referrals ADD COLUMN photo TEXT',
         "ALTER TABLE referrals ADD COLUMN status TEXT DEFAULT 'pending'"
       ];
-      for (const a of alters) { try { await env.DB.prepare(a).run(); } catch(e) {} }
+      for (const a of alters) { try { await env.DB.prepare(a).run(); } catch (e) {} }
+      /* seed tasks once */
       const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM tasks').first();
       if (!c || c.n === 0) {
         const seed = [
-          ['Invite your first friend','invites',250,1],
-          ['Invite 5 friends','invites',1000,5],
-          ['Watch your first ad','ads',50,1],
-          ['Watch 10 ads','ads',300,10],
-          ['Claim a daily bonus','daily',25,1],
-          ['Join our Channel','link',50,1]
+          ['Invite your first friend', 'invites', 250, 1],
+          ['Invite 5 friends', 'invites', 1000, 5],
+          ['Watch your first ad', 'ads', 50, 1],
+          ['Watch 10 ads', 'ads', 300, 10],
+          ['Claim a daily bonus', 'daily', 25, 1],
+          ['Join our Channel', 'link', 50, 1]
         ];
         for (let i = 0; i < seed.length; i++) {
           await env.DB.prepare('INSERT INTO tasks (title,type,reward,goal,link,active,created_at) VALUES (?,?,?,?,?,1,?)')
             .bind(seed[i][0], seed[i][1], seed[i][2], seed[i][3], seed[i][1] === 'link' ? DEFAULT_CHANNEL : null, t0).run();
         }
       } else {
-        try { await env.DB.prepare("UPDATE tasks SET active = 0 WHERE type IN ('taps','boost')").run(); } catch(e) {}
-        try { await env.DB.prepare("UPDATE tasks SET link = ? WHERE type = 'link' AND (link IS NULL OR link = '')").bind(DEFAULT_CHANNEL).run(); } catch(e) {}
+        try { await env.DB.prepare("UPDATE tasks SET active = 0 WHERE type IN ('taps','boost')").run(); } catch (e) {}
+        try { await env.DB.prepare("UPDATE tasks SET link = ? WHERE type = 'link' AND (link IS NULL OR link = '')").bind(DEFAULT_CHANNEL).run(); } catch (e) {}
       }
     })().catch(e => { dbReady = null; throw e; });
   }
   return dbReady;
 }
 
+/* ================= AUTH ================= */
 async function verifyInitData(initData, botToken) {
   try {
     const p = new URLSearchParams(initData);
@@ -140,6 +153,7 @@ async function verifyInitData(initData, botToken) {
   } catch (e) { return null; }
 }
 
+/* ================= TELEGRAM BOT API ================= */
 async function botCall(env, method, params) {
   if (!env.BOT_TOKEN) return { ok: false, description: 'BOT_TOKEN not set' };
   try {
@@ -159,9 +173,8 @@ function extractChat(link) {
   if (m && !/^joinchat$/i.test(m[1])) return '@' + m[1];
   return null;
 }
-function isTelegramLink(link) {
-  return !!link && /t\.me\//i.test(String(link));
-}
+function isTelegramLink(link) { return !!link && /t\.me\//i.test(String(link)); }
+
 const MEMBER_STATUSES = ['creator', 'administrator', 'member', 'restricted'];
 async function isMember(env, chat, userId) {
   const r = await botCall(env, 'getChatMember', { chat_id: chat, user_id: userId });
@@ -183,6 +196,7 @@ async function joinedAllChannels(env, userId) {
   return { ok: true };
 }
 
+/* ================= DB HELPERS ================= */
 async function getRow(env, id) {
   const r = await env.DB.prepare('SELECT * FROM users WHERE user_id = ?').bind(id).first();
   return r || null;
@@ -212,7 +226,7 @@ async function spinHistoryOf(env, id) {
   return (results || []).map(r => ({ bet: r.bet, mult: r.mult, payout: r.payout, ts: r.created_at * 1000 }));
 }
 async function logAct(env, uid, type, title, amount) {
-  try { await env.DB.prepare('INSERT INTO activities (user_id, type, title, amount, created_at) VALUES (?,?,?,?,?)').bind(uid, type, title, amount, now()).run(); } catch(e) {}
+  try { await env.DB.prepare('INSERT INTO activities (user_id, type, title, amount, created_at) VALUES (?,?,?,?,?)').bind(uid, type, title, amount, now()).run(); } catch (e) {}
 }
 async function saveRow(env, row) {
   await env.DB.prepare(`UPDATE users SET name=?, username=?, balance=?, total_earned=?,
@@ -240,6 +254,8 @@ function toClient(row, friends, claimed) {
   };
 }
 
+/* ================= USERS ================= */
+/* create user + record PENDING referral (credited only after channel gate) */
 async function ensureUser(env, u, refId, dev) {
   const t = now();
   let row = await getRow(env, u.id);
@@ -256,13 +272,12 @@ async function ensureUser(env, u, refId, dev) {
       lockDev ? 1 : 0,
       lockDev ? 'Device limit reached — max ' + MAX_ACCOUNTS_PER_DEVICE + ' accounts per device' : null, t, t).run();
   row = await getRow(env, u.id);
-  /* record referral as PENDING — credited only after the channel gate is passed */
   if (row && !row.banned && refId && refId !== u.id) {
     const exists = await env.DB.prepare('SELECT user_id FROM referrals WHERE user_id = ?').bind(u.id).first();
     if (!exists && !row.referred_by) {
       const referrer = await getRow(env, refId);
       if (referrer && !referrer.banned) {
-        await env.DB.prepare('INSERT OR IGNORE INTO referrals (referrer, user_id, name, photo, status, created_at) VALUES (?,?,?,?,\'pending\',?)')
+        await env.DB.prepare("INSERT OR IGNORE INTO referrals (referrer, user_id, name, photo, status, created_at) VALUES (?,?,?,?, 'pending', ?)")
           .bind(refId, u.id, name, u.photo_url || null, t).run();
         await env.DB.prepare('UPDATE users SET referred_by=? WHERE user_id=?').bind(refId, u.id).run();
         row.referred_by = refId;
@@ -273,7 +288,7 @@ async function ensureUser(env, u, refId, dev) {
   return row;
 }
 
-/* credit pending referral (referrer +50, friend +25) — called after channel gate passes */
+/* credit pending referral: referrer +50, friend +25 welcome — after channel gate */
 async function verifyReferral(env, friendId) {
   const row = await getRow(env, friendId);
   if (!row || !row.referred_by) return { ok: true, nothing: true };
@@ -303,7 +318,7 @@ async function verifyReferral(env, friendId) {
   return { ok: true };
 }
 
-/* pass the channel gate: mark verified + credit any pending referral */
+/* pass the mandatory channel gate + credit any pending referral */
 async function passGate(env, userId) {
   const gate = await joinedAllChannels(env, userId);
   if (!gate.ok) return { ok: false, channel: gate.channel };
@@ -312,13 +327,14 @@ async function passGate(env, userId) {
   return { ok: true };
 }
 
+/* ================= USER API ================= */
 async function apiInit(env, tgUser, body) {
   const dev = (body && body.dev) ? String(body.dev).slice(0, 64) : null;
   const ref = parseInt(body && body.ref, 10) || null;
   let row = await ensureUser(env, tgUser, ref, dev);
   if (!row) return { ok: false, error: 'Could not create user' };
   if (row.banned) return bannedResp(row);
-  /* MANDATORY channel gate — every user, every platform, once */
+  /* MANDATORY channel gate — every user, once, no skip */
   if (!row.channel_ok) {
     const g = await passGate(env, tgUser.id);
     if (!g.ok) return gateErr();
@@ -328,7 +344,6 @@ async function apiInit(env, tgUser, body) {
   return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
 }
 
-/* called by the in-app popup Verify button */
 async function apiVerifyChannels(env, tgUser) {
   let row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
@@ -398,17 +413,20 @@ async function apiTask(env, tgUser, body) {
   if (claimed.includes(id)) return { ok: false, error: 'Already claimed' };
 
   if (t.type === 'link') {
+    /* record the Start click (used by external-link flow) */
     if (body.click) {
       await env.DB.prepare('INSERT OR REPLACE INTO task_clicks (user_id, task_id, clicked_at) VALUES (?,?,?)')
         .bind(tgUser.id, id, now()).run();
       return { ok: true, clicked: true };
     }
     if (isTelegramLink(t.link)) {
+      /* Telegram link → real live membership verification */
       const chat = extractChat(t.link);
       if (!chat) return { ok: false, error: 'Admin: this task needs a public t.me link', notJoined: true };
       const v = await isMember(env, chat, tgUser.id);
       if (!v.ok) return { ok: false, error: v.error || 'You must join the channel first', notJoined: true, setup: !!v.setup };
     } else {
+      /* external link (Twitter/X, any URL) → click recorded + minimum stay */
       const click = await env.DB.prepare('SELECT clicked_at FROM task_clicks WHERE user_id = ? AND task_id = ?').bind(tgUser.id, id).first();
       if (!click) return { ok: false, error: 'Tap Start and visit the link first', notJoined: true };
       if (now() - click.clicked_at < EXT_LINK_MIN_STAY)
@@ -426,7 +444,7 @@ async function apiTask(env, tgUser, body) {
   return { ok: true, reward: t.reward, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
 }
 
-function spinMult(){ let r = Math.random() * 100; if (r < 55) return 0; if (r < 80) return 1.5; if (r < 92) return 2; return 3; }
+/* bet wheel: honest math — payout = bet × mult */
 async function apiSpin(env, tgUser, body) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
@@ -437,7 +455,7 @@ async function apiSpin(env, tgUser, body) {
   if (row.balance < bet) return { ok: false, error: 'Not enough ETB for that bet' };
   row.balance -= bet;
   const m = spinMult();
-  const payout = Math.floor(bet * m);
+  const payout = Math.floor(bet * m);      /* 50 × 3 = 150 — exactly as expected */
   row.balance += payout;
   if (payout > bet) row.total_earned += payout - bet;
   row.spins = (row.spins || 0) + 1;
@@ -445,6 +463,7 @@ async function apiSpin(env, tgUser, body) {
   await saveRow(env, row);
   await env.DB.prepare('INSERT INTO spin_history (user_id, bet, mult, payout, created_at) VALUES (?,?,?,?,?)')
     .bind(tgUser.id, bet, m, payout, now()).run();
+  /* activity titles show the real math */
   if (m === 0) await logAct(env, tgUser.id, 'game', 'Lucky Wheel — bet lost (' + bet + ' ETB)', -bet);
   else await logAct(env, tgUser.id, 'game', 'Lucky Wheel ×' + m + ' — ' + bet + ' → ' + payout + ' ETB', payout - bet);
   row._acts = await actsOf(env, tgUser.id);
@@ -470,7 +489,7 @@ async function apiAd(env, tgUser) {
   if (row.ad_day !== day) { row.ads_today = 0; row.ad_day = day; }
   if (row.ads_today >= AD_MAX_PER_DAY) return { ok: false, error: 'Daily ad limit reached (' + AD_MAX_PER_DAY + '/day) — come back tomorrow' };
   const wait = AD_COOLDOWN - (t - (row.last_ad || 0));
-  if (wait > 0) return { ok: false, error: 'Next ad in ' + Math.floor(wait / 60) + ':' + String(wait % 60).padStart(2, '0') };
+  if (wait > 0) return { ok: false, error: 'Next ad in ' + wait + 's' };
   row.ads_watched += 1; row.ads_today += 1; row.last_ad = t;
   row.req_ads = (row.req_ads || 0) + 1;
   row.balance += AD_REWARD; row.total_earned += AD_REWARD; row.updated_at = t;
@@ -498,11 +517,12 @@ async function apiWithdraw(env, tgUser, body) {
   if (address.length < 4) return { ok: false, error: 'Enter your account details' };
   if (!amount || amount < MIN_WITHDRAW) return { ok: false, error: 'Minimum withdrawal is ' + MIN_WITHDRAW + ' ETB' };
   if (amount > row.balance) return { ok: false, error: 'Not enough ETB' };
+  /* requirements are consumed per withdrawal */
   row.req_ads = Math.max(0, (row.req_ads || 0) - WD_REQ_ADS);
   row.req_friends = Math.max(0, (row.req_friends || 0) - WD_REQ_FRIENDS);
   row.balance -= amount; row.updated_at = now();
   await saveRow(env, row);
-  await env.DB.prepare('INSERT INTO withdrawals (user_id, name, amount, method, address, status, created_at) VALUES (?,?,?,?,?,\'pending\',?)')
+  await env.DB.prepare('INSERT INTO withdrawals (user_id, name, amount, method, address, status, created_at) VALUES (?,?,?,?,?, \'pending\', ?)')
     .bind(tgUser.id, row.name, amount, method, address, now()).run();
   await logAct(env, tgUser.id, 'wd', 'Withdrawal — ' + method, -amount);
   row._acts = await actsOf(env, tgUser.id);
@@ -515,8 +535,8 @@ async function apiWithdrawals(env, tgUser) {
   return { ok: true, withdrawals: await withdrawalsOf(env, tgUser.id) };
 }
 
-/* ================= WEBHOOK ================= */
-function esc(s){ return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* ================= WEBHOOK (/start, /balance, /help) ================= */
+function esc(s){ return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 async function reply(env, chatId, text, keyboard) {
   const params = { chat_id: chatId, text, parse_mode: 'HTML' };
   if (keyboard) params.reply_markup = { inline_keyboard: keyboard };
@@ -524,6 +544,7 @@ async function reply(env, chatId, text, keyboard) {
 }
 async function handleWebhook(env, update) {
   try {
+    /* Verify button (bot-side gate backup) */
     if (update.callback_query) {
       const cq = update.callback_query;
       if (!cq.from || cq.data !== 'verify') return;
@@ -555,7 +576,7 @@ async function handleWebhook(env, update) {
         const kb = REQ_CHANNELS.map(h => [{ text: '📢 Join ' + h, url: 'https://t.me/' + h.slice(1) }]);
         kb.push([{ text: '✅ I joined — Verify', callback_data: 'verify' }]);
         await reply(env, chatId,
-          '👋 Welcome to <b>TanveXo</b>, ' + esc(msg.from.first_name) + '!\n\n📢 Join both channels to unlock the app — this is required for everyone.\n\n(Invited? Your <b>+' + WELCOME_BONUS + ' ETB</b> welcome bonus unlocks right after.)', kb);
+          '👋 Welcome to <b>TanveXo</b>, ' + esc(msg.from.first_name) + '!\n\n📢 Join both channels to unlock the app — required for everyone.\n\n(Invited? Your <b>+' + WELCOME_BONUS + ' ETB</b> welcome bonus unlocks right after.)', kb);
         return;
       }
       await reply(env, chatId,
@@ -570,7 +591,7 @@ async function handleWebhook(env, update) {
     } else {
       await reply(env, chatId, 'Tap /start to open TanveXo 🎮');
     }
-  } catch (e) {}
+  } catch (e) { /* never crash the webhook */ }
 }
 
 /* ================= ADMIN ================= */
@@ -603,7 +624,7 @@ async function adminReviewAction(env, body) {
     if (!name) return { ok: false, error: 'Name required' };
     if (!message) return { ok: false, error: 'Message required' };
     await env.DB.prepare('INSERT INTO reviews (name, message, stars, created_at) VALUES (?,?,?,?)').bind(name, message, stars, t).run();
-    try { await env.DB.prepare('DELETE FROM reviews WHERE id NOT IN (SELECT id FROM reviews ORDER BY id DESC LIMIT 15)').run(); } catch(e) {}
+    try { await env.DB.prepare('DELETE FROM reviews WHERE id NOT IN (SELECT id FROM reviews ORDER BY id DESC LIMIT 15)').run(); } catch (e) {}
     return { ok: true };
   }
   const id = parseInt(body.id, 10);
@@ -673,14 +694,16 @@ async function adminAction(env, body) {
   return { ok: true, user: r };
 }
 
+/* ================= ROUTER ================= */
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url = new URL(request.url).pathname;
-    if (url === '/') return j({ ok: true, msg: 'TanveXo API v12 is running' });
+    if (url === '/') return j({ ok: true, msg: 'TanveXo API v13 is running' });
     let body = {};
     if (request.method === 'POST') { try { body = await request.json(); } catch (e) {} }
     try {
+      /* webhook — secret-protected */
       if (url === '/telegram-webhook') {
         if (env.WEBHOOK_SECRET && request.headers.get('X-Telegram-Bot-Api-Secret-Token') !== env.WEBHOOK_SECRET)
           return j({ ok: false, error: 'Unauthorized' }, 401);
@@ -688,11 +711,13 @@ export default {
         await handleWebhook(env, body);
         return j({ ok: true });
       }
-      if (url === '/api/admin/stats') { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminStats(env)); }
-      if (url === '/api/admin/action') { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminAction(env, body)); }
-      if (url === '/api/admin/task_action') { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminTaskAction(env, body)); }
-      if (url === '/api/admin/wd_action') { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminWdAction(env, body)); }
-      if (url === '/api/admin/review_action') { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminReviewAction(env, body)); }
+      /* admin — password-protected */
+      if (url === '/api/admin/stats')        { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminStats(env)); }
+      if (url === '/api/admin/action')       { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminAction(env, body)); }
+      if (url === '/api/admin/task_action')  { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminTaskAction(env, body)); }
+      if (url === '/api/admin/wd_action')    { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminWdAction(env, body)); }
+      if (url === '/api/admin/review_action'){ if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminReviewAction(env, body)); }
+      /* user API — Telegram-authenticated */
       if (request.method !== 'POST') return j({ ok: false, error: 'Use POST' }, 405);
       await initDb(env);
       const initData = request.headers.get('X-Telegram-Init-Data') || '';
