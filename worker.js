@@ -1,20 +1,27 @@
-/* TapCoin API — Cloudflare Worker + D1 */
+/* TapCoin API v3 — device account cap, real ban screens, admin */
 const ENERGY_MAX = 500, ENERGY_REGEN = 1, TAP_COST = 1, MAX_TAPS_SEC = 12;
-const POINTS_PER_INVITE = 5, BOOST_MAX = 10, DAY = 86400;
+const POINTS_PER_INVITE = 5, BOOST_MAX = 10, DAY = 86400, SPIN_COST = 100;
+const MAX_ACCOUNTS_PER_DEVICE = 2;
 const STREAK_REWARDS = [10, 25, 50, 75, 100, 150, 250];
 const TASKS = {
   taps100:{reward:50,goal:100}, taps1000:{reward:250,goal:1000}, daily:{reward:25,goal:1},
   invite1:{reward:100,goal:1}, invite5:{reward:500,goal:5}, boost1:{reward:75,goal:1}, channel:{reward:50,goal:1}
 };
+const SPIN_PRIZES = [
+  { coins:5, w:28 }, { coins:10, w:22 }, { coins:15, w:18 }, { coins:25, w:12 },
+  { coins:50, w:10 }, { coins:100, w:6 }, { coins:250, w:3 }, { energy:true, w:1 }
+];
+function pickPrize(){ let r = Math.random()*100, a = 0; for (let i=0;i<SPIN_PRIZES.length;i++){ a += SPIN_PRIZES[i].w; if (r < a) return i; } return 0; }
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Telegram-Init-Data',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Telegram-Init-Data, X-Admin-Key',
   'Access-Control-Max-Age': '86400'
 };
 const j = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 const now = () => Math.floor(Date.now() / 1000);
+const bannedResp = row => ({ ok: false, error: (row && row.ban_reason) ? row.ban_reason : 'Account banned', locked: true });
 
 let dbReady = null;
 function initDb(env) {
@@ -28,11 +35,19 @@ function initDb(env) {
         last_daily INTEGER NOT NULL DEFAULT 0, daily_claims INTEGER NOT NULL DEFAULT 0,
         tasks TEXT NOT NULL DEFAULT '[]', channel_clicked INTEGER NOT NULL DEFAULT 0,
         referred_by INTEGER, invited INTEGER NOT NULL DEFAULT 0,
+        device_id TEXT, banned INTEGER NOT NULL DEFAULT 0, ban_reason TEXT, last_spin INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
       )`).run();
       await env.DB.prepare(`CREATE TABLE IF NOT EXISTS referrals (
         referrer INTEGER NOT NULL, user_id INTEGER PRIMARY KEY, name TEXT, created_at INTEGER NOT NULL
       )`).run();
+      const alters = [
+        'ALTER TABLE users ADD COLUMN device_id TEXT',
+        'ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE users ADD COLUMN ban_reason TEXT',
+        'ALTER TABLE users ADD COLUMN last_spin INTEGER NOT NULL DEFAULT 0'
+      ];
+      for (const a of alters) { try { await env.DB.prepare(a).run(); } catch(e) {} }
     })().catch(e => { dbReady = null; throw e; });
   }
   return dbReady;
@@ -79,10 +94,12 @@ async function friendsOf(env, id) {
 
 async function saveRow(env, row) {
   await env.DB.prepare(`UPDATE users SET name=?, username=?, balance=?, total_earned=?, taps=?, energy=?, energy_ts=?,
-    boost=?, daily_streak=?, last_daily=?, daily_claims=?, tasks=?, channel_clicked=?, invited=?, updated_at=? WHERE user_id=?`)
+    boost=?, daily_streak=?, last_daily=?, daily_claims=?, tasks=?, channel_clicked=?, invited=?,
+    device_id=?, banned=?, ban_reason=?, last_spin=?, updated_at=? WHERE user_id=?`)
     .bind(row.name, row.username, row.balance, row.total_earned, row.taps, row.energy, row.energy_ts,
       row.boost, row.daily_streak, row.last_daily, row.daily_claims, JSON.stringify(row.tasks),
-      row.channel_clicked ? 1 : 0, row.invited, now(), row.user_id).run();
+      row.channel_clicked ? 1 : 0, row.invited, row.device_id || null, row.banned ? 1 : 0,
+      row.ban_reason || null, row.last_spin || 0, now(), row.user_id).run();
 }
 
 function toClient(row, friends) {
@@ -90,32 +107,53 @@ function toClient(row, friends) {
     balance: row.balance, totalEarned: row.total_earned, taps: row.taps, energy: row.energy,
     boost: row.boost, referrals: row.invited, dailyStreak: row.daily_streak, lastDaily: row.last_daily * 1000,
     dailyClaims: row.daily_claims, completedTasks: row.tasks, channelClicked: !!row.channel_clicked,
-    friends: friends || []
+    lastSpin: (row.last_spin || 0) * 1000, friends: friends || []
   };
 }
 
 async function apiInit(env, tgUser, body) {
   const t = now();
+  const dev = (body && body.dev) ? String(body.dev).slice(0, 64) : null;
   let row = await getRow(env, tgUser.id);
   if (!row) {
     const name = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || 'Player';
-    await env.DB.prepare(`INSERT OR IGNORE INTO users (user_id, name, username, energy, energy_ts, tasks, created_at, updated_at)
-      VALUES (?, ?, ?, 500, ?, '[]', ?, ?)`).bind(tgUser.id, name, tgUser.username || null, t, t, t).run();
+    /* device account cap: max 2 accounts per device, 3rd+ is locked at creation */
+    let lockDev = false;
+    if (dev) {
+      const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE device_id = ?').bind(dev).first();
+      if (c && c.n >= MAX_ACCOUNTS_PER_DEVICE) lockDev = true;
+    }
+    await env.DB.prepare(`INSERT OR IGNORE INTO users (user_id, name, username, energy, energy_ts, tasks, device_id, banned, ban_reason, created_at, updated_at)
+      VALUES (?, ?, ?, 500, ?, '[]', ?, ?, ?, ?, ?)`)
+      .bind(tgUser.id, name, tgUser.username || null, t, dev,
+        lockDev ? 1 : 0,
+        lockDev ? 'Device limit reached — max ' + MAX_ACCOUNTS_PER_DEVICE + ' accounts per device' : null,
+        t, t).run();
     row = await getRow(env, tgUser.id);
-    const ref = parseInt(body.ref, 10);
-    if (row && !row.referred_by && ref && ref !== tgUser.id) {
-      const referrer = await getRow(env, ref);
-      if (referrer) {
-        referrer.balance += POINTS_PER_INVITE;
-        referrer.invited += 1;
-        await saveRow(env, referrer);
-        await env.DB.prepare('INSERT OR IGNORE INTO referrals (referrer, user_id, name, created_at) VALUES (?, ?, ?, ?)')
-          .bind(ref, tgUser.id, name, t).run();
-        await env.DB.prepare('UPDATE users SET referred_by=? WHERE user_id=?').bind(ref, tgUser.id).run();
+    if (row && !row.banned) {
+      const ref = parseInt(body && body.ref, 10);
+      if (row && !row.referred_by && ref && ref !== tgUser.id) {
+        const referrer = await getRow(env, ref);
+        if (referrer && !referrer.banned) {
+          let allowed = true;
+          if (dev) {
+            const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE device_id = ? AND referred_by IS NOT NULL').bind(dev).first();
+            if (c && c.n >= MAX_ACCOUNTS_PER_DEVICE) allowed = false;
+          }
+          if (allowed) {
+            referrer.balance += POINTS_PER_INVITE;
+            referrer.invited += 1;
+            await saveRow(env, referrer);
+            await env.DB.prepare('INSERT OR IGNORE INTO referrals (referrer, user_id, name, created_at) VALUES (?, ?, ?, ?)')
+              .bind(ref, tgUser.id, name, t).run();
+            await env.DB.prepare('UPDATE users SET referred_by=? WHERE user_id=?').bind(ref, tgUser.id).run();
+          }
+        }
       }
     }
   }
   if (!row) return { ok: false, error: 'Could not create user' };
+  if (row.banned) return bannedResp(row);
   regen(row);
   await saveRow(env, row);
   return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id)) };
@@ -124,6 +162,7 @@ async function apiInit(env, tgUser, body) {
 async function apiSync(env, tgUser, body) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found — reload the app' };
+  if (row.banned) return bannedResp(row);
   const t = now();
   regen(row);
   const elapsed = Math.max(0, t - row.updated_at);
@@ -141,6 +180,7 @@ async function apiSync(env, tgUser, body) {
 async function apiDaily(env, tgUser) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
   const t = now();
   if (t - row.last_daily < DAY) return { ok: false, error: 'Bonus already claimed — come back tomorrow' };
   row.daily_streak = (row.last_daily > 0 && t - row.last_daily < 2 * DAY)
@@ -166,6 +206,7 @@ function taskProgress(row, id) {
 async function apiTask(env, tgUser, body) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
   const def = TASKS[body.id];
   if (!def) return { ok: false, error: 'Unknown task' };
   if (body.id === 'channel' && body.click && !row.channel_clicked) {
@@ -186,6 +227,7 @@ function boostCost(b) { return Math.round(100 * Math.pow(1.8, b - 1) / 10) * 10;
 async function apiBoost(env, tgUser) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
   if (row.boost >= BOOST_MAX) return { ok: false, error: 'Max boost reached' };
   const cost = boostCost(row.boost);
   if (row.balance < cost) return { ok: false, error: 'Need ' + (cost - row.balance) + ' more coins' };
@@ -194,25 +236,88 @@ async function apiBoost(env, tgUser) {
   return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id)) };
 }
 
+async function apiSpin(env, tgUser) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  const t = now();
+  regen(row);
+  const free = t - (row.last_spin || 0) >= DAY;
+  if (!free) {
+    if (row.balance < SPIN_COST) return { ok: false, error: 'Need ' + (SPIN_COST - row.balance) + ' more coins to spin' };
+    row.balance -= SPIN_COST;
+  }
+  row.last_spin = t;
+  const idx = pickPrize();
+  const p = SPIN_PRIZES[idx];
+  const prize = { index: idx };
+  if (p.energy) { row.energy = ENERGY_MAX; prize.energy = true; }
+  else { row.balance += p.coins; row.total_earned += p.coins; prize.coins = p.coins; }
+  row.updated_at = t;
+  await saveRow(env, row);
+  return { ok: true, prize, state: toClient(row, await friendsOf(env, tgUser.id)) };
+}
+
+/* ================= ADMIN ================= */
+function adminOk(request, env) {
+  const key = request.headers.get('X-Admin-Key') || '';
+  return !!env.ADMIN_PASSWORD && key.length > 0 && key === env.ADMIN_PASSWORD;
+}
+async function adminStats(env) {
+  const agg = await env.DB.prepare('SELECT COUNT(*) AS users, COALESCE(SUM(balance),0) AS coins, COALESCE(SUM(total_earned),0) AS earned, COALESCE(SUM(taps),0) AS taps, COALESCE(SUM(invited),0) AS invites FROM users').first();
+  const nd = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE created_at > ?').bind(now() - 86400).first();
+  const top = await env.DB.prepare('SELECT user_id, name, balance, invited, taps, banned, ban_reason, device_id, created_at FROM users ORDER BY balance DESC LIMIT 25').all();
+  const recent = await env.DB.prepare('SELECT user_id, name, balance, invited, banned, ban_reason, device_id, created_at FROM users ORDER BY created_at DESC LIMIT 25').all();
+  return { ok: true, stats: { users: agg.users, coins: agg.coins, earned: agg.earned, taps: agg.taps, invites: agg.invites, new24: nd ? nd.n : 0 },
+    top: top.results || [], recent: recent.results || [] };
+}
+async function adminAction(env, body) {
+  const id = parseInt(body.userId, 10);
+  if (!id) return { ok: false, error: 'userId required' };
+  const t = now();
+  if (body.action === 'add') {
+    await env.DB.prepare('UPDATE users SET balance = MAX(0, balance + ?), updated_at=? WHERE user_id=?').bind(parseInt(body.amount, 10) || 0, t, id).run();
+  } else if (body.action === 'set') {
+    await env.DB.prepare('UPDATE users SET balance = MAX(0, ?), updated_at=? WHERE user_id=?').bind(parseInt(body.amount, 10) || 0, t, id).run();
+  } else if (body.action === 'ban') {
+    await env.DB.prepare("UPDATE users SET banned=1, ban_reason='Banned by admin', updated_at=? WHERE user_id=?").bind(t, id).run();
+  } else if (body.action === 'unban') {
+    await env.DB.prepare('UPDATE users SET banned=0, ban_reason=NULL, updated_at=? WHERE user_id=?').bind(t, id).run();
+  } else return { ok: false, error: 'Unknown action' };
+  const r = await env.DB.prepare('SELECT user_id, name, balance, banned, ban_reason FROM users WHERE user_id=?').bind(id).first();
+  return { ok: true, user: r };
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url = new URL(request.url).pathname;
-    if (url === '/') return j({ ok: true, msg: 'TapCoin API is running' });
-    if (request.method !== 'POST') return j({ ok: false, error: 'Use POST' }, 405);
+    if (url === '/') return j({ ok: true, msg: 'TapCoin API v3 is running' });
+    let body = {};
+    if (request.method === 'POST') { try { body = await request.json(); } catch (e) {} }
     try {
+      if (url === '/api/admin/stats') {
+        if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401);
+        await initDb(env);
+        return j(await adminStats(env));
+      }
+      if (url === '/api/admin/action') {
+        if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401);
+        await initDb(env);
+        return j(await adminAction(env, body));
+      }
+      if (request.method !== 'POST') return j({ ok: false, error: 'Use POST' }, 405);
       await initDb(env);
       const initData = request.headers.get('X-Telegram-Init-Data') || '';
       const tgUser = await verifyInitData(initData, env.BOT_TOKEN || '');
       if (!tgUser) return j({ ok: false, error: env.BOT_TOKEN ? 'Auth failed — open the app from Telegram' : 'BOT_TOKEN secret is not set in Worker settings' }, 401);
-      let body = {};
-      try { body = await request.json(); } catch (e) {}
       switch (url) {
         case '/api/init':  return j(await apiInit(env, tgUser, body));
         case '/api/sync':  return j(await apiSync(env, tgUser, body));
         case '/api/daily': return j(await apiDaily(env, tgUser));
         case '/api/task':  return j(await apiTask(env, tgUser, body));
         case '/api/boost': return j(await apiBoost(env, tgUser));
+        case '/api/spin':  return j(await apiSpin(env, tgUser));
       }
       return j({ ok: false, error: 'Unknown endpoint' }, 404);
     } catch (e) {
