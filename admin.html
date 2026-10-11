@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TapCoin Admin</title>
+<title>TanveXo Admin</title>
 <style>
 :root{--bg:#0a0d14;--surface:#141a26;--surface2:#1b2334;--border:rgba(255,255,255,.08);--text:#f2f4f8;--muted:#8b93a7;--gold:#f6b73c;--green:#34d399;--red:#f87171}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -34,10 +34,11 @@ tr[data-id]:active{background:var(--surface2)}
 .msg.err{color:var(--red)}
 .note{font-size:11px;color:var(--muted);margin-top:6px}
 .wd-act{display:flex;gap:4px}
+.starcol{color:var(--gold)}
 </style>
 </head>
 <body>
-<h1>🪙 TapCoin Admin</h1>
+<h1>🪙 TanveXo Admin</h1>
 
 <div class="card">
   <h2>Access</h2>
@@ -57,7 +58,7 @@ tr[data-id]:active{background:var(--surface2)}
   <div class="row"><input id="userId" type="number" placeholder="User ID"></div>
   <div class="row"><input id="amount" type="number" placeholder="Amount (negative to remove)"></div>
   <div class="row">
-    <button data-act="add">Add coins</button>
+    <button data-act="add">Add ETB</button>
     <button class="gray" data-act="set">Set balance</button>
     <button class="gray" data-act="ban">Ban</button>
     <button class="gray" data-act="unban">Unban</button>
@@ -67,8 +68,8 @@ tr[data-id]:active{background:var(--surface2)}
 </div>
 
 <div class="card" id="wdCard" style="display:none">
-  <h2>Withdrawals (<span id="pendWd">0</span> pending · <span id="pendWdAmt">0</span> coins)</h2>
-  <table><thead><tr><th>#</th><th>User</th><th>Coins</th><th>Method</th><th>Address</th><th>Status</th><th></th></tr></thead><tbody id="wdBody"></tbody></table>
+  <h2>Withdrawals (<span id="pendWd">0</span> pending · <span id="pendWdAmt">0</span> ETB)</h2>
+  <table><thead><tr><th>#</th><th>User</th><th>ETB</th><th>Method</th><th>Address</th><th>Status</th><th></th></tr></thead><tbody id="wdBody"></tbody></table>
 </div>
 
 <div class="card" id="tasksCard" style="display:none">
@@ -76,15 +77,14 @@ tr[data-id]:active{background:var(--surface2)}
   <div class="row"><input id="tTitle" placeholder="Task title"></div>
   <div class="row">
     <select id="tType">
-      <option value="taps">taps (goal = tap count)</option>
       <option value="invites">invites (goal = friends)</option>
-      <option value="daily">daily (claimed bonus once)</option>
-      <option value="boost">boost (goal = boost level -1)</option>
-      <option value="link">link (join a Telegram link)</option>
+      <option value="daily">daily (claimed check-in once)</option>
+      <option value="ads">ads (goal = ads watched)</option>
+      <option value="link">link (join a Telegram channel — verified)</option>
     </select>
   </div>
   <div class="row">
-    <input id="tReward" type="number" placeholder="Reward coins">
+    <input id="tReward" type="number" placeholder="Reward ETB">
     <input id="tGoal" type="number" placeholder="Goal (1 if n/a)">
   </div>
   <div class="row"><input id="tLink" placeholder="Link URL (only for link type)"></div>
@@ -94,14 +94,27 @@ tr[data-id]:active{background:var(--surface2)}
   <table><thead><tr><th>ID</th><th>Title</th><th>Type</th><th>Reward</th><th>On?</th><th></th></tr></thead><tbody id="tasksBody"></tbody></table>
 </div>
 
+<div class="card" id="revCard" style="display:none">
+  <h2>Add review (shows on app Home)</h2>
+  <div class="row"><input id="rvName" placeholder="Name e.g. Abebe"></div>
+  <div class="row"><input id="rvMsg" placeholder="Message e.g. Got paid in 2 hours!"></div>
+  <div class="row">
+    <input id="rvStars" type="number" min="1" max="5" placeholder="Stars 1-5 (default 5)">
+    <button id="rvAdd">+ Add</button>
+  </div>
+  <div class="msg" id="revMsg2"></div>
+  <h2 style="margin-top:14px">All reviews (max 15 shown in app)</h2>
+  <table><thead><tr><th>ID</th><th>Name</th><th>Message</th><th>★</th><th></th></tr></thead><tbody id="revBody"></tbody></table>
+</div>
+
 <div class="card" id="topCard" style="display:none">
   <h2>Top users</h2>
-  <table><thead><tr><th>ID</th><th>Name</th><th>Coins</th><th>Ref</th><th>Device</th></tr></thead><tbody id="topBody"></tbody></table>
+  <table><thead><tr><th>ID</th><th>Name</th><th>ETB</th><th>Ref</th><th>Device</th></tr></thead><tbody id="topBody"></tbody></table>
 </div>
 
 <div class="card" id="recentCard" style="display:none">
   <h2>Recent users</h2>
-  <table><thead><tr><th>ID</th><th>Name</th><th>Coins</th><th>Ref</th><th>Device</th></tr></thead><tbody id="recentBody"></tbody></table>
+  <table><thead><tr><th>ID</th><th>Name</th><th>ETB</th><th>Ref</th><th>Device</th></tr></thead><tbody id="recentBody"></tbody></table>
 </div>
 
 <script>
@@ -163,7 +176,7 @@ function renderWds(rows){
       const paid = document.createElement('button'); paid.textContent = 'Paid'; paid.className = 'sm'; paid.style.marginRight = '4px';
       const rej = document.createElement('button'); rej.textContent = 'Reject'; rej.className = 'sm gray';
       paid.addEventListener('click', function(){ wdAction(w.id, 'paid'); });
-      rej.addEventListener('click', function(){ if (confirm('Reject & refund ' + w.amount + ' coins to user?')) wdAction(w.id, 'reject'); });
+      rej.addEventListener('click', function(){ if (confirm('Reject & refund ' + w.amount + ' ETB to user?')) wdAction(w.id, 'reject'); });
       const td = document.createElement('td');
       const wrap = document.createElement('div'); wrap.className = 'wd-act';
       wrap.appendChild(paid); wrap.appendChild(rej);
@@ -186,6 +199,10 @@ async function wdAction(id, action){
 function renderTasksAdmin(rows){
   const tb = document.getElementById('tasksBody');
   tb.innerHTML = '';
+  if (!rows.length){
+    tb.innerHTML = '<tr><td colspan="6" style="color:var(--muted)">No tasks yet</td></tr>';
+    return;
+  }
   rows.forEach(function(t){
     const tr = document.createElement('tr');
     tr.innerHTML = '<td>' + t.id + '</td><td>' + t.title + '</td><td>' + t.type + '</td><td>+' + t.reward + '</td><td>' +
@@ -224,6 +241,37 @@ document.getElementById('tAdd').addEventListener('click', async function(){
   } catch(e){ msg('taskMsg', '❌ ' + e.message, true); }
 });
 
+/* ================= REVIEWS ================= */
+function renderReviewsAdmin(rows){
+  const tb = document.getElementById('revBody');
+  tb.innerHTML = '';
+  if (!rows.length){
+    tb.innerHTML = '<tr><td colspan="5" style="color:var(--muted)">No reviews yet</td></tr>';
+    return;
+  }
+  rows.forEach(function(r){
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + r.id + '</td><td>' + r.name + '</td><td style="max-width:140px">' + r.message + '</td><td class="starcol">' + '★'.repeat(r.stars) + '</td>';
+    const del = document.createElement('button'); del.textContent = 'Del'; del.className = 'sm gray';
+    del.addEventListener('click', async function(){
+      if (confirm('Delete review #' + r.id + '?')){ await call('/api/admin/review_action', { action:'delete', id:r.id }).catch(function(e){ alert(e.message); }); loadData(); }
+    });
+    const td = document.createElement('td'); td.appendChild(del); tr.appendChild(td);
+    tb.appendChild(tr);
+  });
+}
+document.getElementById('rvAdd').addEventListener('click', async function(){
+  try {
+    await call('/api/admin/review_action', { action:'add',
+      name: document.getElementById('rvName').value,
+      message: document.getElementById('rvMsg').value,
+      stars: document.getElementById('rvStars').value || 5 });
+    msg('revMsg2', '✅ Review added — visible in the app Home (newest first, oldest pushed out past 15)');
+    ['rvName','rvMsg','rvStars'].forEach(function(i){ document.getElementById(i).value = ''; });
+    loadData();
+  } catch(e){ msg('revMsg2', '❌ ' + e.message, true); }
+});
+
 /* ================= LOAD ================= */
 async function loadData(){
   localStorage.setItem('tc_adm_api', document.getElementById('api').value.trim());
@@ -235,21 +283,23 @@ async function loadData(){
     const s = d.stats;
     document.getElementById('statGrid').innerHTML =
       '<div class="stat"><b>' + s.users + '</b><small>USERS</small></div>' +
-      '<div class="stat"><b>' + Number(s.coins).toLocaleString() + '</b><small>COINS HELD</small></div>' +
+      '<div class="stat"><b>' + Number(s.coins).toLocaleString() + '</b><small>ETB HELD</small></div>' +
       '<div class="stat"><b>' + Number(s.earned).toLocaleString() + '</b><small>TOTAL EARNED</small></div>' +
-      '<div class="stat"><b>' + Number(s.taps).toLocaleString() + '</b><small>TAPS</small></div>' +
+      '<div class="stat"><b>' + Number(s.taps).toLocaleString() + '</b><small>ADS WATCHED</small></div>' +
       '<div class="stat"><b>' + s.invites + '</b><small>REFERRALS</small></div>' +
       '<div class="stat"><b>' + s.new24 + '</b><small>NEW 24H</small></div>';
     document.getElementById('statsCard').style.display = 'block';
     document.getElementById('actCard').style.display = 'block';
     document.getElementById('wdCard').style.display = 'block';
     document.getElementById('tasksCard').style.display = 'block';
+    document.getElementById('revCard').style.display = 'block';
     document.getElementById('topCard').style.display = 'block';
     document.getElementById('recentCard').style.display = 'block';
     document.getElementById('pendWd').textContent = d.pendingWd.n;
     document.getElementById('pendWdAmt').textContent = Number(d.pendingWd.amt).toLocaleString();
     renderWds(d.withdrawals || []);
     renderTasksAdmin(d.tasks || []);
+    renderReviewsAdmin(d.reviews || []);
     renderRows('topBody', d.top);
     renderRows('recentBody', d.recent);
   } catch(e){
@@ -267,7 +317,7 @@ document.querySelectorAll('[data-act]').forEach(function(b){
     try {
       const r = await call('/api/admin/action', { action: b.dataset.act, userId: userId, amount: amount });
       const u = r.user;
-      msg('actMsg', '✅ ' + b.dataset.act + ' → ' + (u ? u.name + ' (#' + u.user_id + ') now has ' + u.balance + ' coins' + (u.banned ? ' ⛔' : '') : 'done'));
+      msg('actMsg', '✅ ' + b.dataset.act + ' → ' + (u ? u.name + ' (#' + u.user_id + ') now has ' + u.balance + ' ETB' + (u.banned ? ' ⛔' : '') : 'done'));
       loadData();
     } catch(e){
       msg('actMsg', '❌ ' + e.message, true);
