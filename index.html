@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0d14">
-<title>TapCoin</title>
+<title>TanveXo</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -43,34 +43,11 @@ main{padding:8px 16px 0}
 .bal{display:flex;align-items:center;justify-content:center;gap:8px;font-size:38px;font-weight:800;margin:2px 0}
 .coin-ic{width:26px;height:26px}
 .sub{font-size:12px;color:var(--muted);font-weight:600}
-.coin-zone{display:grid;place-items:center;padding:20px 0 6px;position:relative}
-.glow{position:absolute;width:270px;height:270px;border-radius:50%;background:radial-gradient(circle,rgba(246,183,60,.18),transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
-.float{animation:floaty 4s ease-in-out infinite}
-@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-.coin{width:min(62vw,235px);aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;position:relative;display:grid;place-items:center;
-  background:radial-gradient(circle at 35% 28%,#ffe9a8,#f6b73c 45%,#dd9118 72%,#a8620b 100%);
-  box-shadow:0 14px 34px rgba(246,183,60,.22),0 4px 10px rgba(0,0,0,.4),inset 0 3px 6px rgba(255,255,255,.55),inset 0 -10px 18px rgba(122,63,0,.4)}
-.coin:active{filter:brightness(1.06)}
-.coin-ring{position:absolute;inset:9%;border-radius:50%;border:2px dashed rgba(122,63,0,.4)}
-.coin svg{width:38%;height:38%;fill:rgba(122,63,0,.85)}
-.energy{display:flex;align-items:center;gap:10px;margin:14px 2px 4px}
-.e-ic{display:grid;place-items:center;color:var(--gold)}
-.e-ic .ic{width:16px;height:16px}
-.e-bar{flex:1;height:10px;border-radius:99px;background:var(--surface2);overflow:hidden;border:1px solid var(--border)}
-.e-bar i{display:block;height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,#0ea5a0,#34d399);transition:width .2s}
-#eText{font-size:12px;color:var(--muted);font-weight:600;min-width:64px;text-align:right}
-#eText.low{color:var(--red)}
-.energy.shake{animation:shake .16s 2}
-@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
 .stats.two{grid-template-columns:repeat(2,1fr)}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:12px 8px;text-align:center}
 .stat span{font-size:17px;font-weight:800;display:block}
 .stat small{color:var(--muted);font-size:11px;font-weight:600}
-.boost-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:14px 16px}
-.boost-card b{font-size:15px}
-.boost-card small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
-.mt{margin-top:10px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;font-family:inherit;font-weight:700;border-radius:14px;cursor:pointer;transition:transform .06s}
 .btn:active{transform:scale(.96)}
 .btn .ic{width:18px;height:18px}
@@ -86,6 +63,10 @@ h3{font-size:15px;margin:18px 0 4px}
 .hint{color:var(--muted);font-size:13px;margin:4px 0 14px;line-height:1.5}
 .fine{font-size:11.5px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.6}
 .gold{color:var(--gold)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:14px 16px}
+.card b{font-size:15px}
+.card small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.mt{margin-top:10px}
 .task{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:12px;margin-bottom:10px}
 .t-ic{width:40px;height:40px;border-radius:12px;background:var(--surface2);display:grid;place-items:center;color:var(--gold);flex-shrink:0}
 .t-ic .ic{width:20px;height:20px}
@@ -140,6 +121,10 @@ h3{font-size:15px;margin:18px 0 4px}
 .spin-result{min-height:30px;text-align:center;font-weight:800;font-size:20px;color:var(--gold2);margin-bottom:8px}
 .spin-result.pop{animation:pop .8s}
 @keyframes pop{0%{transform:scale(.6);opacity:0}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+#adOverlay{position:fixed;inset:0;background:rgba(6,8,12,.96);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px}
+#adOverlay.show{display:flex}
+#adOverlay .ad-count{font-size:56px;font-weight:800;color:var(--gold);margin:14px 0}
+#adOverlay p{color:var(--muted);font-size:14px;line-height:1.6;max-width:280px}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;background:rgba(10,13,20,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--border);z-index:50;padding-bottom:env(safe-area-inset-bottom)}
 .nav-inner{width:100%;max-width:480px;display:grid;grid-template-columns:repeat(5,1fr)}
 .nav-btn{position:relative;background:none;border:none;color:var(--muted);font-family:inherit;font-weight:700;font-size:10px;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
@@ -152,7 +137,6 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:90;overflow:hidden}
 #confetti i{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{transform:translate(var(--x),108vh) rotate(var(--r));opacity:.7}}
-.fly{position:fixed;z-index:99;font-weight:800;font-size:18px;color:var(--gold2);text-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none}
 #banScreen{position:fixed;inset:0;background:var(--bg);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px}
 #banScreen.show{display:flex}
 .ban-ic{font-size:58px;margin-bottom:10px}
@@ -164,6 +148,11 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
 <body>
 
 <div id="confetti"></div>
+<div id="adOverlay">
+  <div style="font-size:40px">📺</div>
+  <div class="ad-count" id="adCount">10</div>
+  <p><b>Advertisement</b><br>Your reward unlocks when the ad finishes.</p>
+</div>
 
 <div id="app">
   <header class="top">
@@ -178,79 +167,20 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
   </header>
 
   <main>
-    <section class="page active" id="page-home">
+    <!-- INVITE (home) -->
+    <section class="page active" id="page-invite">
       <div class="balance-card">
         <span class="lbl">TOTAL BALANCE</span>
         <div class="bal">
           <svg class="ic coin-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#f6b73c"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="rgba(122,63,0,.55)" stroke-width="1.6"/></svg>
           <span id="balance">0</span>
         </div>
-        <span class="sub" id="perTap">+1 per tap</span>
+        <span class="sub" id="perInvite">+100 coins per friend</span>
       </div>
 
-      <div class="coin-zone">
-        <div class="glow"></div>
-        <div class="float">
-          <button class="coin" id="coin" aria-label="Tap to earn">
-            <div class="coin-ring"></div>
-            <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.1l-6.1 3.5 1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="energy" id="energyWrap">
-        <span class="e-ic" data-icon="bolt"></span>
-        <div class="e-bar"><i id="eFill"></i></div>
-        <span id="eText">500/500</span>
-      </div>
-
-      <div class="stats">
-        <div class="stat"><span id="stTaps">0</span><small>Taps</small></div>
-        <div class="stat"><span id="stFriends">0</span><small>Friends</small></div>
-        <div class="stat"><span id="stBoost">×1</span><small>Boost</small></div>
-      </div>
-
-      <div class="boost-card">
-        <div><b>Tap boost ×<span id="boostLvl">1</span></b><small id="boostNext">Next: +1 per tap</small></div>
-        <button class="btn gold" id="boostBtn">Upgrade · 100</button>
-      </div>
-
-      <div class="boost-card mt">
-        <div><b>🎡 Lucky spin</b><small id="spinCardSub">Free spin ready!</small></div>
-        <button class="btn gold" id="spinGo">Open</button>
-      </div>
-
-      <div class="boost-card mt">
-        <div><b>💰 Withdraw</b><small>Turn coins into real rewards</small></div>
-        <button class="btn gold" id="wdGo">Open</button>
-      </div>
-    </section>
-
-    <section class="page" id="page-spin">
-      <h2>Lucky spin</h2>
-      <p class="hint">One free spin every day — extra spins cost 100 coins. Win up to 250 coins or a full energy refill!</p>
-      <div class="spin-wrap">
-        <div class="spin-pointer"></div>
-        <div class="wheel" id="wheel">
-          <div id="wheelLabels"></div>
-          <div class="spin-hub">🎡</div>
-        </div>
-      </div>
-      <div class="spin-result" id="spinResult"></div>
-      <button class="btn gold big" id="spinBtn">🎁 FREE SPIN</button>
-      <p class="fine">Rewards: 5 · 10 · 15 · 25 · 50 · 100 · 250 coins or ⚡ energy</p>
-    </section>
-
-    <section class="page" id="page-tasks">
-      <h2>Daily tasks</h2>
-      <p class="hint">Complete tasks to earn bonus coins.</p>
-      <div id="taskList"></div>
-    </section>
-
-    <section class="page" id="page-invite">
       <div class="invite-hero">
         <span class="hero-ic" data-icon="userplus"></span>
-        <b>Invite friends — earn <span class="gold">+5 coins</span> per friend</b>
+        <b>Invite friends — earn <span class="gold">+<span id="heroRef">100</span> coins</span> per friend</b>
       </div>
       <div class="link-box">
         <span id="refLink">…</span>
@@ -269,10 +199,50 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
       <div id="friendList"></div>
     </section>
 
+    <!-- EARN (ads + daily bonus) -->
+    <section class="page" id="page-earn">
+      <h2>Earn coins</h2>
+      <p class="hint">Watch ads and claim your daily bonus — the easy way to grow your balance.</p>
+      <div class="card">
+        <b>📺 Watch an ad</b>
+        <small id="adSub">+<span id="adRewardLbl">15</span> coins per ad · <span id="adLimit">0/20 today</span></small>
+        <div style="margin-top:12px"><button class="btn gold big" id="adBtn">📺 Watch ad · +15</button></div>
+      </div>
+      <h3>Daily bonus</h3>
+      <p class="hint" style="margin-top:2px">Claim every day to grow your streak. Miss a day and it resets.</p>
+      <div class="streak" id="streakGrid"></div>
+      <button class="btn gold big" id="claimBtn">Claim bonus</button>
+      <p class="fine">Rewards: 10 → 25 → 50 → 75 → 100 → 150 → 250 coins</p>
+    </section>
+
+    <!-- TASKS -->
+    <section class="page" id="page-tasks">
+      <h2>Tasks</h2>
+      <p class="hint">Complete tasks to earn bonus coins.</p>
+      <div id="taskList"></div>
+    </section>
+
+    <!-- SPIN -->
+    <section class="page" id="page-spin">
+      <h2>Lucky spin</h2>
+      <p class="hint">One free spin every day — extra spins cost 100 coins. Win up to 500 coins!</p>
+      <div class="spin-wrap">
+        <div class="spin-pointer"></div>
+        <div class="wheel" id="wheel">
+          <div id="wheelLabels"></div>
+          <div class="spin-hub">🎡</div>
+        </div>
+      </div>
+      <div class="spin-result" id="spinResult"></div>
+      <button class="btn gold big" id="spinBtn">🎁 FREE SPIN</button>
+      <p class="fine">Rewards: 5 · 10 · 15 · 25 · 50 · 100 · 250 · 500 coins</p>
+    </section>
+
+    <!-- WITHDRAW -->
     <section class="page" id="page-withdraw">
       <h2>Withdraw coins</h2>
       <p class="hint">Requests are reviewed manually and paid within 24h. Coins are deducted when you request.</p>
-      <div class="boost-card"><div><b>Available</b><small><span id="wdBal">0</span> coins · min <span id="wdMin">5000</span></small></div></div>
+      <div class="card"><div><b>Available</b><small><span id="wdBal">0</span> coins · min <span id="wdMin">5000</span></small></div></div>
       <div class="link-box" style="margin-top:14px"><span style="color:var(--muted);font-weight:700">Choose method</span></div>
       <div class="wd-chip" id="wdMethods"></div>
       <input id="wdAddress" class="wd-input" placeholder="Your wallet / account address">
@@ -284,23 +254,15 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
       <h3>Your requests</h3>
       <div id="wdList"></div>
     </section>
-
-    <section class="page" id="page-bonus">
-      <h2>Daily bonus</h2>
-      <p class="hint">Claim every day to grow your streak. Miss a day and it resets.</p>
-      <div class="streak" id="streakGrid"></div>
-      <button class="btn gold big" id="claimBtn">Claim bonus</button>
-      <p class="fine">Rewards: 10 → 25 → 50 → 75 → 100 → 150 → 250 coins</p>
-    </section>
   </main>
 
   <nav>
     <div class="nav-inner">
-      <button class="nav-btn active" data-page="home" data-icon="home">Home</button>
-      <button class="nav-btn" data-page="spin" data-icon="spin">Spin</button>
+      <button class="nav-btn active" data-page="invite" data-icon="users">Invite</button>
+      <button class="nav-btn" data-page="earn" data-icon="bolt">Earn</button>
       <button class="nav-btn" data-page="tasks" data-icon="tasks">Tasks</button>
-      <button class="nav-btn" data-page="invite" data-icon="users">Invite</button>
-      <button class="nav-btn" data-page="bonus" data-icon="gift">Bonus<i class="dot" id="navBonusDot"></i></button>
+      <button class="nav-btn" data-page="spin" data-icon="spin">Spin</button>
+      <button class="nav-btn" data-page="withdraw" data-icon="wallet">Withdraw</button>
     </div>
   </nav>
 </div>
@@ -322,10 +284,12 @@ const CONFIG = {
   appName: 'refer',
   channelUrl: 'https://t.me/ebtry0',
   support: '',
+  adsgramBlockId: '',                    /* ← optional: Adsgram block ID for real ads; empty = demo countdown */
+  referralReward: 100,                   /* display only — server decides */
+  adReward: 15, adCooldownSec: 1800, adMaxPerDay: 20,
   withdrawMethods: ['TON Wallet', 'Telegram Stars', 'UPI', 'Other'],
   withdrawMin: 5000,
-  pointsPerInvite: 5, tapEnergyCost: 1, energyMax: 500, energyRegenPerSec: 1,
-  storageKey: 'tapcoin_v3'
+  storageKey: 'tanvexo_v1'
 };
 
 /* ================= TELEGRAM ================= */
@@ -351,10 +315,10 @@ const startRef = (function(){
 })();
 function deviceId(){
   try {
-    let d = localStorage.getItem('tapcoin_device');
+    let d = localStorage.getItem('tanvexo_device');
     if (!d){
       d = 'dev_' + (crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).slice(2) + Date.now().toString(36)));
-      localStorage.setItem('tapcoin_device', d);
+      localStorage.setItem('tanvexo_device', d);
     }
     return d;
   } catch(e){ return 'dev_unknown'; }
@@ -363,15 +327,16 @@ function referralLink(){ return 'https://t.me/' + CONFIG.botUsername + '/' + CON
 
 /* ================= ICONS ================= */
 const ICONS = {
-  home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h5.2v-6h2.6v6h5.2V10"/>',
-  spin:'<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v5h-5"/>',
-  tasks:'<path d="M9 11.5 12 14.5 20 6.5"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>',
   users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-  gift:'<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
   bolt:'<path d="M13 2 4.5 13.5h5.4L11 22l8.5-11.5h-5.4L13 2z"/>',
+  tasks:'<path d="M9 11.5 12 14.5 20 6.5"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>',
+  spin:'<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v5h-5"/>',
+  wallet:'<path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/><path d="M17 12h4"/><circle cx="16" cy="12" r="1" fill="currentColor"/>',
   userplus:'<path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>',
   up:'<circle cx="12" cy="12" r="9"/><path d="M12 16V8"/><path d="M8.5 11.5 12 8l3.5 3.5"/>',
   bell:'<path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/>',
+  gift:'<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
+  play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/>',
   copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
   share:'<path d="M12 3v13"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>'
 };
@@ -381,19 +346,16 @@ document.querySelectorAll('[data-icon]').forEach(function(el){ el.insertAdjacent
 /* ================= STATE ================= */
 const LEVELS = [0,500,2000,5000,12000,25000,50000,100000,200000,500000];
 const STREAK_REWARDS = [10,25,50,75,100,150,250];
-const DEFAULTS = { balance:0, totalEarned:0, taps:0, energy:CONFIG.energyMax, lastEnergyTs:0,
-  boost:1, referrals:0, friends:[], dailyStreak:0, lastDailyTs:0, dailyClaims:0,
-  completedTasks:[], channelClicked:false, lastSpinTs:0,
-  serverTasks:[], claimedTasks:[], taskClicks:[], withdrawals:[] };
+const DEFAULTS = { balance:0, totalEarned:0, referrals:0, friends:[],
+  dailyStreak:0, lastDailyTs:0, dailyClaims:0,
+  claimedTasks:[], adsWatched:0, adsToday:0, lastAdTs:0, lastSpinTs:0, withdrawals:[] };
 
 function load(){
   try {
     const raw = localStorage.getItem(CONFIG.storageKey);
     if (raw) return Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), JSON.parse(raw));
   } catch(e){}
-  const s = JSON.parse(JSON.stringify(DEFAULTS));
-  s.lastEnergyTs = Date.now();
-  return s;
+  return JSON.parse(JSON.stringify(DEFAULTS));
 }
 let state = load();
 let dirty = false;
@@ -401,7 +363,6 @@ function save(){ try{ localStorage.setItem(CONFIG.storageKey, JSON.stringify(sta
 
 /* ================= HELPERS ================= */
 const $ = s => document.querySelector(s);
-const balEl = $('#balance'), eFillEl = $('#eFill'), eTextEl = $('#eText');
 const fmt = n => Math.round(n).toLocaleString('en-US');
 function haptic(t){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t); }catch(e){} }
 function hNotify(t){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(t); }catch(e){} }
@@ -415,8 +376,6 @@ function toast(msg, err){
   clearTimeout(toastT);
   toastT = setTimeout(function(){ el.classList.remove('show'); }, 2600);
 }
-let lastWarn = 0;
-function throttledToast(m, e){ const n = Date.now(); if (n - lastWarn > 2000){ lastWarn = n; toast(m, e); } }
 
 let LOCKED = false;
 function showBanScreen(msg){
@@ -427,21 +386,6 @@ function showBanScreen(msg){
   if (CONFIG.support){ c.style.display = 'inline-block'; c.href = CONFIG.support; }
   $('#banScreen').classList.add('show');
   hNotify('error');
-}
-
-function flyText(x, y, text){
-  const el = document.createElement('div');
-  el.className = 'fly'; el.textContent = text;
-  el.style.left = (x + (Math.random()*30 - 15)) + 'px';
-  el.style.top = (y - 10) + 'px';
-  document.body.appendChild(el);
-  const rot = (Math.random()*14 - 7).toFixed(1);
-  try {
-    el.animate([
-      { transform:'translate(-50%,-50%) rotate('+rot+'deg) scale(1)', opacity:1 },
-      { transform:'translate(-50%,-160%) rotate('+rot+'deg) scale(1.25)', opacity:0 }
-    ], { duration:750, easing:'cubic-bezier(.2,.7,.3,1)' }).onfinish = function(){ el.remove(); };
-  } catch(e){ el.remove(); }
 }
 
 function confetti(){
@@ -461,32 +405,27 @@ function confetti(){
 }
 
 /* ================= NAVIGATION ================= */
-let currentPage = 'home';
+let currentPage = 'invite';
 function go(page){
   currentPage = page;
   document.querySelectorAll('.page').forEach(function(p){ p.classList.toggle('active', p.id === 'page-' + page); });
   document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.page === page); });
-  if (page === 'tasks') renderTasks();
-  if (page === 'bonus') renderBonus();
   if (page === 'invite') renderInvite();
+  if (page === 'earn'){ renderEarn(); renderBonus(); }
+  if (page === 'tasks') renderTasks();
   if (page === 'withdraw'){ renderWithdraw(); if (LIVE) loadWithdrawals(); }
   window.scrollTo(0, 0);
   try {
-    if (tg && tg.BackButton){ if (page === 'home') tg.BackButton.hide(); else tg.BackButton.show(); }
+    if (tg && tg.BackButton){ if (page === 'invite') tg.BackButton.hide(); else tg.BackButton.show(); }
   } catch(e){}
 }
 document.querySelectorAll('.nav-btn').forEach(function(b){
   b.addEventListener('click', function(){ haptic('light'); go(b.dataset.page); });
 });
-try { if (tg && tg.BackButton) tg.BackButton.onClick(function(){ go('home'); }); } catch(e){}
- $('#spinGo').addEventListener('click', function(){ go('spin'); });
- $('#wdGo').addEventListener('click', function(){ go('withdraw'); });
+try { if (tg && tg.BackButton) tg.BackButton.onClick(function(){ go('invite'); }); } catch(e){}
 
 /* ================= BACKEND ================= */
 let LIVE = false;
-let pendingTaps = 0;
-let syncing = false;
-
 async function api(path, body){
   const res = await fetch(CONFIG.api.replace(/\/+$/,'') + path, {
     method: 'POST',
@@ -504,20 +443,16 @@ async function api(path, body){
 }
 
 function applyState(s){
-  state.balance = s.balance; state.totalEarned = s.totalEarned; state.taps = s.taps;
-  state.energy = s.energy; state.boost = s.boost; state.referrals = s.referrals;
-  state.friends = s.friends || []; state.dailyStreak = s.dailyStreak;
-  state.lastDailyTs = s.lastDaily; state.dailyClaims = s.dailyClaims;
+  state.balance = s.balance; state.totalEarned = s.totalEarned;
+  state.referrals = s.referrals; state.friends = s.friends || [];
+  state.dailyStreak = s.dailyStreak; state.lastDailyTs = s.lastDaily; state.dailyClaims = s.dailyClaims;
   state.claimedTasks = s.tasksClaimed || [];
-  state.taskClicks = s.tasksClicked || [];
-  state.channelClicked = s.channelClicked;
+  state.adsWatched = s.adsWatched || 0; state.adsToday = s.adsToday || 0; state.lastAdTs = s.lastAd || 0;
   state.lastSpinTs = s.lastSpin || 0;
-  state.lastEnergyTs = Date.now();
-  pendingTaps = 0;
   save(); syncUI();
-  if (currentPage === 'tasks') renderTasks();
   if (currentPage === 'invite') renderInvite();
-  if (currentPage === 'bonus') renderBonus();
+  if (currentPage === 'earn'){ renderEarn(); renderBonus(); }
+  if (currentPage === 'tasks') renderTasks();
   if (currentPage === 'withdraw') renderWithdraw();
 }
 
@@ -543,202 +478,120 @@ async function bootLive(){
   }
 }
 
-async function syncTaps(){
-  if (!LIVE || syncing) return;
-  syncing = true;
-  try {
-    const r = await api('/api/sync', { taps: pendingTaps });
-    applyState(r.state);
-  } catch(e){ if (e && e.locked) showBanScreen(e.message); }
-  syncing = false;
-}
-async function flushTaps(){ if (LIVE && pendingTaps > 0) await syncTaps(); }
-
-/* ================= TAP TO EARN ================= */
-const coinEl = $('#coin');
-coinEl.addEventListener('contextmenu', function(e){ e.preventDefault(); });
-coinEl.addEventListener('pointerdown', function(e){
-  e.preventDefault();
-  if (LOCKED) return;
-  if (state.energy < CONFIG.tapEnergyCost){
-    const w = $('#energyWrap');
-    w.classList.remove('shake'); void w.offsetWidth; w.classList.add('shake');
-    throttledToast('Out of energy — it refills automatically', true);
-    haptic('rigid');
-    return;
-  }
-  state.energy -= CONFIG.tapEnergyCost;
-  state.taps++;
-  if (LIVE) pendingTaps++;
-  const g = state.boost;
-  state.balance += g; state.totalEarned += g; dirty = true;
-  flyText(e.clientX, e.clientY, '+' + g);
-  try { coinEl.animate([{transform:'scale(1)'},{transform:'scale(.93)'},{transform:'scale(1)'}],{duration:140,easing:'ease-out'}); } catch(err){}
-  haptic('light');
-  updateEnergyUI();
-  $('#stTaps').textContent = fmt(state.taps);
-});
-
-let shown = state.balance;
-(function balLoop(){
-  const target = state.balance;
-  shown += (target - shown) * 0.18;
-  if (Math.abs(target - shown) < 0.6) shown = target;
-  balEl.textContent = fmt(shown);
-  requestAnimationFrame(balLoop);
-})();
-
-function updateEnergyUI(){
-  const pct = Math.max(0, Math.min(100, state.energy / CONFIG.energyMax * 100));
-  eFillEl.style.width = pct + '%';
-  eTextEl.textContent = Math.floor(state.energy) + '/' + CONFIG.energyMax;
-  eTextEl.classList.toggle('low', state.energy < 50);
+async function refreshState(){
+  if (!LIVE || LOCKED) return;
+  try { const r = await api('/api/sync'); applyState(r.state); } catch(e){ if (e && e.locked) showBanScreen(e.message); }
 }
 
-/* ================= LEVELS + BOOST ================= */
+/* ================= UI SYNC ================= */
 function levelInfo(){
   let lvl = 1;
   for (let i = 0; i < LEVELS.length; i++) if (state.totalEarned >= LEVELS[i]) lvl = i + 1;
   const cur = LEVELS[lvl-1], next = LEVELS[lvl] != null ? LEVELS[lvl] : cur;
   return { lvl: lvl, pct: next > cur ? (state.totalEarned - cur) / (next - cur) : 1 };
 }
-function boostCost(){ return Math.round(100 * Math.pow(1.8, state.boost - 1) / 10) * 10; }
-
- $('#boostBtn').addEventListener('click', async function(){
-  if (state.boost >= 10 || LOCKED) return;
-  if (LIVE){
-    await flushTaps();
-    const c = boostCost();
-    if (state.balance < c){ haptic('rigid'); toast('Need ' + fmt(c - state.balance) + ' more coins', true); return; }
-    this.disabled = true;
-    try {
-      const r = await api('/api/boost');
-      hNotify('success'); toast('Boost upgraded to ×' + r.state.boost + '!');
-      applyState(r.state);
-    } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); }
-    this.disabled = false;
-    return;
-  }
-  const c = boostCost();
-  if (state.balance >= c){
-    state.balance -= c; state.boost++; dirty = true;
-    hNotify('success'); toast('Boost upgraded to ×' + state.boost + '!');
-    syncUI();
-  } else {
-    haptic('rigid'); toast('Need ' + fmt(c - state.balance) + ' more coins', true);
-  }
-});
-
 function syncUI(){
-  $('#stTaps').textContent = fmt(state.taps);
-  $('#stFriends').textContent = fmt(state.referrals);
-  $('#stBoost').textContent = '×' + state.boost;
-  $('#boostLvl').textContent = state.boost;
-  const maxed = state.boost >= 10;
-  const bb = $('#boostBtn');
-  bb.textContent = maxed ? 'MAX' : 'Upgrade · ' + fmt(boostCost());
-  bb.disabled = maxed;
-  $('#boostNext').textContent = maxed ? 'Max level reached' : 'Next: +1 per tap';
-  $('#perTap').textContent = '+' + state.boost + ' per tap';
+  $('#balance').textContent = fmt(state.balance);
+  $('#invFriends').textContent = fmt(state.referrals);
+  $('#invEarned').textContent = '+' + fmt(state.referrals * CONFIG.referralReward);
+  $('#heroRef').textContent = CONFIG.referralReward;
+  $('#perInvite').textContent = '+' + CONFIG.referralReward + ' coins per friend';
+  $('#adRewardLbl').textContent = CONFIG.adReward;
   const li = levelInfo();
   $('#lvlText').textContent = 'Lv ' + li.lvl;
   $('#lvlFill').style.width = Math.min(100, li.pct * 100) + '%';
-  updateEnergyUI();
+  updateEarnUI();
   updateBonusBtn();
-  updateSpinUI();
 }
+function adReady(){
+  return (Date.now() - (state.lastAdTs || 0) >= CONFIG.adCooldownSec * 1000 + 2000) && state.adsToday < CONFIG.adMaxPerDay;
+}
+function renderEarn(){
+  $('#adLimit').textContent = state.adsToday + '/' + CONFIG.adMaxPerDay + ' today';
+  const btn = $('#adBtn');
+  if (LOCKED) { btn.disabled = true; return; }
+  if (state.adsToday >= CONFIG.adMaxPerDay){
+    btn.disabled = true; btn.textContent = 'Daily limit reached';
+  } else if (adReady()){
+    btn.disabled = false; btn.textContent = '📺 Watch ad · +' + CONFIG.adReward;
+  } else {
+    btn.disabled = true;
+    const ms = CONFIG.adCooldownSec * 1000 - (Date.now() - (state.lastAdTs || 0));
+    const m = Math.max(0, Math.floor(ms / 60000)), s = Math.max(0, Math.floor(ms % 60000 / 1000));
+    btn.textContent = 'Next ad in ' + m + ':' + String(s).padStart(2,'0');
+  }
+}
+function updateEarnUI(){ if (currentPage === 'earn') renderEarn(); }
 
-/* ================= SPIN GAME ================= */
-const PRIZES = [ {coins:5},{coins:10},{coins:15},{coins:25},{coins:50},{coins:100},{coins:250},{energy:true} ];
-const PRIZE_W = [28,22,18,12,10,6,3,1];
-const SPIN_COST = 100, SEG = 45;
-let wheelRot = 0, spinning = false;
-
-function buildWheel(){
-  const labels = ['5','10','15','25','50','100','250','⚡'];
-  const g = $('#wheelLabels'); g.innerHTML = '';
-  labels.forEach(function(l, i){
-    const s = document.createElement('div');
-    s.className = 'wl'; s.style.setProperty('--a', (i * SEG) + 'deg');
-    s.innerHTML = '<b>' + l + '</b>';
-    g.appendChild(s);
+/* ================= WATCH ADS ================= */
+let adController = null;
+let adWatching = false;
+async function showRealAd(){
+  if (!window.Adsgram){
+    await new Promise(function(res, rej){
+      const s = document.createElement('script');
+      s.src = 'https://sad.adsgram.ai/sdk.js';
+      s.onload = res; s.onerror = function(){ rej(new Error('Ad SDK failed to load')); };
+      document.head.appendChild(s);
+    });
+  }
+  if (!adController) adController = window.Adsgram.init({ blockId: CONFIG.adsgramBlockId });
+  await adController.show();
+}
+function demoAd(){
+  return new Promise(function(res, rej){
+    const ov = $('#adOverlay'), cd = $('#adCount');
+    let n = 10;
+    ov.classList.add('show'); cd.textContent = n;
+    const iv = setInterval(function(){
+      n--;
+      if (n <= 0){ clearInterval(iv); ov.classList.remove('show'); res(); }
+      else cd.textContent = n;
+    }, 1000);
   });
 }
-function pickLocalPrize(){ let r = Math.random()*100, a = 0; for (let i=0;i<PRIZE_W.length;i++){ a += PRIZE_W[i]; if (r < a) return i; } return 0; }
-function spinFree(){ return Date.now() - (state.lastSpinTs || 0) >= 86400e3 + 2000; }
-
-function updateSpinUI(){
-  const free = spinFree();
-  const btn = $('#spinBtn');
-  if (!spinning){ btn.disabled = false; btn.textContent = free ? '🎁 FREE SPIN' : 'SPIN · ' + SPIN_COST + ' coins'; }
-  $('#spinCardSub').textContent = free ? 'Free spin ready!' : 'Next free tomorrow · spins cost ' + SPIN_COST;
-}
-
-function animateWheel(idx, done){
-  const base = Math.ceil(wheelRot / 360) * 360 + 360 * 5;
-  let target = base - idx * SEG + (Math.floor(Math.random() * 30) - 15);
-  if (target <= wheelRot) target += 360;
-  wheelRot = target;
-  $('#wheel').style.transform = 'rotate(' + target + 'deg)';
-  let fired = false;
-  const fin = function(){ if (fired) return; fired = true; spinning = false; updateSpinUI(); done(); };
-  $('#wheel').addEventListener('transitionend', fin, { once:true });
-  setTimeout(fin, 5000);
-}
-
-function showPrize(p){
-  const el = $('#spinResult');
-  el.textContent = p.energy ? '⚡ FULL ENERGY!' : '+' + p.coins + ' coins';
-  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
-  if (p.energy || p.coins >= 100) confetti();
-  hNotify('success');
-  toast(p.energy ? 'Energy refilled!' : 'You won +' + p.coins + ' coins!');
-}
-
- $('#spinBtn').addEventListener('click', async function(){
-  if (spinning || LOCKED) return;
-  spinning = true; this.disabled = true;
-  const free = spinFree();
-  if (!free && !LIVE && state.balance < SPIN_COST){
-    spinning = false; updateSpinUI();
-    toast('Need ' + fmt(SPIN_COST - state.balance) + ' more coins', true);
-    return;
-  }
-  if (LIVE){
-    await flushTaps();
-    try {
-      const r = await api('/api/spin');
-      animateWheel(r.prize.index, function(){ applyState(r.state); showPrize(r.prize); });
-    } catch(e){ spinning = false; updateSpinUI(); if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); }
-    return;
-  }
-  const idx = pickLocalPrize();
-  const p = PRIZES[idx];
-  if (!free) state.balance -= SPIN_COST;
-  if (p.energy) state.energy = CONFIG.energyMax;
-  else { state.balance += p.coins; state.totalEarned += p.coins; }
-  state.lastSpinTs = Date.now(); dirty = true; save();
-  animateWheel(idx, function(){ syncUI(); showPrize(p); });
+ $('#adBtn').addEventListener('click', async function(){
+  if (adWatching || LOCKED || !adReady()) return;
+  adWatching = true; this.disabled = true;
+  try {
+    if (LIVE){
+      try {
+        if (CONFIG.adsgramBlockId) await showRealAd(); else await demoAd();
+        const r = await api('/api/ad');
+        hNotify('success'); confetti();
+        toast('+' + r.reward + ' coins for watching!');
+        applyState(r.state);
+      } catch(e){
+        if (e && e.locked){ showBanScreen(e.message); }
+        else toast(e.message, true);
+      }
+    } else {
+      await demoAd();
+      state.balance += CONFIG.adReward; state.totalEarned += CONFIG.adReward;
+      state.adsToday++; state.lastAdTs = Date.now(); dirty = true; save();
+      confetti(); toast('+' + CONFIG.adReward + ' coins (preview)');
+      syncUI();
+    }
+  } catch(e){ toast('Ad failed: ' + e.message, true); }
+  adWatching = false;
+  renderEarn(); this.disabled = false;
 });
 
-/* ================= TASKS (dynamic + channel gate) ================= */
+/* ================= TASKS ================= */
 const LOCAL_TASKS = [
-  { id:'taps100',  ic:'bolt',     title:'Tap the coin 100 times',   reward:50,  goal:100,  type:'taps' },
-  { id:'taps1000', ic:'bolt',     title:'Tap the coin 1,000 times', reward:250, goal:1000, type:'taps' },
-  { id:'daily',    ic:'gift',     title:'Claim a daily bonus',      reward:25,  goal:1,    type:'daily' },
-  { id:'invite1',  ic:'userplus', title:'Invite your first friend', reward:100, goal:1,    type:'invites' },
-  { id:'invite5',  ic:'userplus', title:'Invite 5 friends',         reward:500, goal:5,    type:'invites' },
-  { id:'boost1',   ic:'up',       title:'Upgrade your tap boost',   reward:75,  goal:1,    type:'boost' },
-  { id:'channel',  ic:'bell',     title:'Join our news channel',    reward:50,  goal:1,    type:'link' }
+  { id:1, title:'Invite your first friend', reward:250, goal:1, type:'invites' },
+  { id:2, title:'Invite 5 friends',         reward:1000, goal:5, type:'invites' },
+  { id:3, title:'Watch your first ad',      reward:50,  goal:1, type:'ads' },
+  { id:4, title:'Watch 10 ads',             reward:300, goal:10, type:'ads' },
+  { id:5, title:'Claim a daily bonus',      reward:25,  goal:1, type:'daily' },
+  { id:6, title:'Join our channel',         reward:100, goal:1, type:'link' }
 ];
-const TICONS = { taps:'bolt', invites:'userplus', daily:'gift', boost:'up', link:'bell' };
+const TICONS = { invites:'userplus', daily:'gift', ads:'play', link:'bell' };
 function taskProgressOf(t){
   switch (t.type){
-    case 'taps': return state.taps;
     case 'invites': return state.referrals;
     case 'daily': return state.dailyClaims;
-    case 'boost': return state.boost - 1;
-    case 'link': return t._clicked ? 1 : 0;
+    case 'ads': return state.adsWatched;
     default: return 0;
   }
 }
@@ -750,22 +603,16 @@ function taskRow(t, done, v, ready, isLink){
     '<div class="t-main"><b>' + t.title + '</b><small>' + Math.min(v, t.goal) + ' / ' + t.goal + ' · +' + t.reward + ' coins</small>' +
     '<div class="t-bar"><i style="width:' + (Math.min(v, t.goal) / t.goal * 100) + '%"></i></div></div>';
   const btn = document.createElement('button');
-  /* link task flow: Join → opens channel → "I joined ✓" → server verifies membership live */
-  const joinedNotClaimed = isLink && t._clicked && !done;
-  btn.className = 'claim' + (done ? ' done' : (ready || joinedNotClaimed) ? ' ready' : '');
+  const opened = isLink && t._opened && !done;
+  btn.className = 'claim' + (done ? ' done' : (ready || opened) ? ' ready' : '');
   if (done) btn.textContent = 'Done';
-  else if (isLink && !t._clicked) btn.textContent = 'Join';
-  else if (joinedNotClaimed) btn.textContent = 'I joined ✓';
+  else if (isLink && !t._opened) btn.textContent = 'Join';
+  else if (opened) btn.textContent = 'Check ✓';
   else btn.textContent = '+' + t.reward;
   btn.addEventListener('click', async function(){
     if (done || LOCKED) return;
-    if (isLink && !t._clicked){
-      if (LIVE){
-        try {
-          const r = await api('/api/task', { id: t.id, click: true });
-          applyState(r.state);
-        } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); return; }
-      } else { t._clicked = true; }
+    if (isLink && !t._opened){
+      t._opened = true;
       try {
         const url = LIVE ? t.link : CONFIG.channelUrl;
         if (url){
@@ -773,26 +620,26 @@ function taskRow(t, done, v, ready, isLink){
           else window.open(url, '_blank');
         }
       } catch(e){}
-      toast('Joined? Come back and tap "I joined ✓"');
+      toast('Join the channel, come back and tap Check ✓');
       renderTasks();
       return;
     }
-    if (!ready && !joinedNotClaimed){ haptic('rigid'); return; }
+    if (!ready && !opened){ haptic('rigid'); return; }
     btn.disabled = true;
     if (LIVE){
-      await flushTaps();
       try {
         const r = await api('/api/task', { id: t.id });
         hNotify('success'); toast('+' + r.reward + ' coins claimed!');
         applyState(r.state);
       } catch(e){
         if (e && e.locked){ showBanScreen(e.message); return; }
-        if (e && e.notJoined){ haptic('rigid'); toast(e.message + ' — join, then tap again', true); btn.disabled = false; renderTasks(); return; }
-        toast(e.message, true); btn.disabled = false;
+        haptic('rigid');
+        toast(e.message + (e && e.notJoined ? ' — join, then tap Check ✓' : ''), true);
+        btn.disabled = false;
       }
       return;
     }
-    state.completedTasks.push(t.id);
+    state.claimedTasks.push(t.id);
     state.balance += t.reward; state.totalEarned += t.reward; dirty = true;
     hNotify('success'); toast('+' + t.reward + ' coins claimed!');
     syncUI(); renderTasks();
@@ -810,7 +657,6 @@ function renderTasks(){
       return;
     }
     tasks.forEach(function(t){
-      t._clicked = state.taskClicks.includes(t.id);
       const done = state.claimedTasks.includes(t.id);
       const v = taskProgressOf(t);
       const ready = !done && v >= t.goal;
@@ -819,8 +665,7 @@ function renderTasks(){
     return;
   }
   LOCAL_TASKS.forEach(function(t){
-    t._clicked = t.type === 'link' ? state.channelClicked : false;
-    const done = state.completedTasks.includes(t.id);
+    const done = state.claimedTasks.includes(t.id);
     const v = taskProgressOf(t);
     const ready = !done && v >= t.goal;
     wrap.appendChild(taskRow(t, done, v, ready, t.type === 'link'));
@@ -831,16 +676,14 @@ function renderTasks(){
 const AV_COLORS = ['#ffd97a','#8ecae6','#ff8fa3','#a7f3d0','#c4b5fd','#fdba74'];
 function renderInvite(){
   $('#refLink').textContent = referralLink();
-  $('#invFriends').textContent = fmt(state.referrals);
-  $('#invEarned').textContent = '+' + fmt(state.referrals * CONFIG.pointsPerInvite);
   const list = $('#friendList');
   if (!state.friends.length){
-    list.innerHTML = '<div class="empty">No friends yet — share your link to earn +' + CONFIG.pointsPerInvite + ' per friend.</div>';
+    list.innerHTML = '<div class="empty">No friends yet — share your link to earn +' + CONFIG.referralReward + ' per friend.</div>';
     return;
   }
   list.innerHTML = state.friends.map(function(f, i){
     return '<div class="friend"><div class="f-av" style="background:' + AV_COLORS[i % AV_COLORS.length] + '">' +
-      f.name.charAt(0).toUpperCase() + '</div><b>' + f.name + '</b><span class="f-pts">+' + CONFIG.pointsPerInvite + '</span></div>';
+      f.name.charAt(0).toUpperCase() + '</div><b>' + f.name + '</b><span class="f-pts">+' + CONFIG.referralReward + '</span></div>';
   }).join('');
 }
 
@@ -860,7 +703,7 @@ function fallbackCopy(t){
 });
  $('#shareBtn').addEventListener('click', function(){
   const link = referralLink();
-  const text = 'Join me on TapCoin — tap the coin, do tasks and earn coins together!';
+  const text = 'Join me on TanveXo — invite friends, watch ads, do tasks and earn coins!';
   try {
     if (tg && tg.openTelegramLink){
       tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text));
@@ -876,11 +719,11 @@ const DEMO_NAMES = ['Amina','Rustam','Leyla','Diyor','Sardor','Kamola','Jasur','
   if (LOCKED) return;
   const name = DEMO_NAMES[state.referrals % DEMO_NAMES.length] + ' ' + Math.floor(10 + Math.random() * 89);
   state.referrals++;
-  state.balance += CONFIG.pointsPerInvite;
-  state.totalEarned += CONFIG.pointsPerInvite;
+  state.balance += CONFIG.referralReward;
+  state.totalEarned += CONFIG.referralReward;
   state.friends.push({ name: name, ts: Date.now() });
   dirty = true; hNotify('success');
-  toast(name + ' joined! +' + CONFIG.pointsPerInvite + ' coins');
+  toast(name + ' joined! +' + CONFIG.referralReward + ' coins');
   syncUI(); renderInvite();
 });
 
@@ -930,7 +773,6 @@ async function loadWithdrawals(){
   if (!amount || amount < CONFIG.withdrawMin){ toast('Minimum is ' + fmt(CONFIG.withdrawMin) + ' coins', true); return; }
   this.disabled = true;
   try {
-    await flushTaps();
     const r = await api('/api/withdraw', { amount: amount, method: wdMethod, address: address });
     applyState(r.state);
     $('#wdAmount').value = ''; $('#wdAddress').value = '';
@@ -961,6 +803,7 @@ function renderBonus(){
 }
 function updateBonusBtn(){
   const btn = $('#claimBtn');
+  if (!btn) return;
   const ready = dailyReady();
   const r = STREAK_REWARDS[nextDay() - 1];
   if (ready){
@@ -972,12 +815,10 @@ function updateBonusBtn(){
     const h = Math.max(0, Math.floor(ms / 3600e3)), m = Math.max(0, Math.floor(ms % 3600e3 / 60e3)), s = Math.max(0, Math.floor(ms % 60e3 / 1e3));
     btn.textContent = 'Next in ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
   }
-  $('#navBonusDot').style.display = ready ? 'block' : 'none';
 }
  $('#claimBtn').addEventListener('click', async function(){
   if (!dailyReady() || LOCKED) return;
   if (LIVE){
-    await flushTaps();
     this.disabled = true;
     try {
       const r = await api('/api/daily');
@@ -997,6 +838,75 @@ function updateBonusBtn(){
   renderBonus(); syncUI();
 });
 
+/* ================= SPIN ================= */
+const PRIZES = [ {coins:5},{coins:10},{coins:15},{coins:25},{coins:50},{coins:100},{coins:250},{coins:500} ];
+const PRIZE_W = [28,22,18,12,10,6,3,1];
+const SPIN_COST = 100, SEG = 45;
+let wheelRot = 0, spinning = false;
+
+function buildWheel(){
+  const labels = ['5','10','15','25','50','100','250','500'];
+  const g = $('#wheelLabels'); g.innerHTML = '';
+  labels.forEach(function(l, i){
+    const s = document.createElement('div');
+    s.className = 'wl'; s.style.setProperty('--a', (i * SEG) + 'deg');
+    s.innerHTML = '<b>' + l + '</b>';
+    g.appendChild(s);
+  });
+}
+function pickLocalPrize(){ let r = Math.random()*100, a = 0; for (let i=0;i<PRIZE_W.length;i++){ a += PRIZE_W[i]; if (r < a) return i; } return 0; }
+function spinFree(){ return Date.now() - (state.lastSpinTs || 0) >= 86400e3 + 2000; }
+
+function updateSpinBtn(){
+  const btn = $('#spinBtn');
+  if (!spinning && !LOCKED){ btn.disabled = false; btn.textContent = spinFree() ? '🎁 FREE SPIN' : 'SPIN · ' + SPIN_COST + ' coins'; }
+}
+
+function animateWheel(idx, done){
+  const base = Math.ceil(wheelRot / 360) * 360 + 360 * 5;
+  let target = base - idx * SEG + (Math.floor(Math.random() * 30) - 15);
+  if (target <= wheelRot) target += 360;
+  wheelRot = target;
+  $('#wheel').style.transform = 'rotate(' + target + 'deg)';
+  let fired = false;
+  const fin = function(){ if (fired) return; fired = true; spinning = false; updateSpinBtn(); done(); };
+  $('#wheel').addEventListener('transitionend', fin, { once:true });
+  setTimeout(fin, 5000);
+}
+
+function showPrize(p){
+  const el = $('#spinResult');
+  el.textContent = '+' + p.coins + ' coins';
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  if (p.coins >= 100) confetti();
+  hNotify('success');
+  toast('You won +' + p.coins + ' coins!');
+}
+
+ $('#spinBtn').addEventListener('click', async function(){
+  if (spinning || LOCKED) return;
+  spinning = true; this.disabled = true;
+  const free = spinFree();
+  if (!free && !LIVE && state.balance < SPIN_COST){
+    spinning = false; updateSpinBtn();
+    toast('Need ' + fmt(SPIN_COST - state.balance) + ' more coins', true);
+    return;
+  }
+  if (LIVE){
+    try {
+      const r = await api('/api/spin');
+      animateWheel(r.prize.index, function(){ applyState(r.state); showPrize(r.prize); });
+    } catch(e){ spinning = false; updateSpinBtn(); if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); }
+    return;
+  }
+  const idx = pickLocalPrize();
+  const p = PRIZES[idx];
+  if (!free) state.balance -= SPIN_COST;
+  state.balance += p.coins; state.totalEarned += p.coins;
+  state.lastSpinTs = Date.now(); dirty = true; save();
+  animateWheel(idx, function(){ syncUI(); showPrize(p); });
+});
+
 /* ================= HEADER ================= */
 function renderHeader(){
   $('#userName').textContent = myName;
@@ -1009,39 +919,23 @@ function renderHeader(){
 let tick = 0;
 setInterval(function(){
   if (LOCKED) return;
-  const secs = Math.floor((Date.now() - state.lastEnergyTs) / 1000);
-  if (secs > 0){
-    state.lastEnergyTs += secs * 1000;
-    if (state.energy < CONFIG.energyMax){
-      state.energy = Math.min(CONFIG.energyMax, state.energy + secs * CONFIG.energyRegenPerSec);
-      updateEnergyUI(); dirty = true;
-    }
-  }
   updateBonusBtn();
-  if (++tick % 15 === 0){
-    if (LIVE) syncTaps();
+  updateEarnUI();
+  updateSpinBtn();
+  if (++tick % 30 === 0){
+    if (LIVE) refreshState();
     else if (dirty) save();
   }
 }, 1000);
 document.addEventListener('visibilitychange', function(){
-  if (document.hidden){ if (dirty) save(); if (LIVE && pendingTaps > 0 && !LOCKED) syncTaps(); }
-});
-window.addEventListener('pagehide', function(){
-  if (dirty) save();
-  if (LIVE && pendingTaps > 0 && !LOCKED){
-    try { fetch(CONFIG.api.replace(/\/+$/,'') + '/api/sync', {
-      method: 'POST', keepalive: true,
-      headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': (tg && tg.initData) ? tg.initData : '' },
-      body: JSON.stringify({ taps: pendingTaps })
-    }); } catch(e){}
-  }
+  if (document.hidden){ if (dirty) save(); if (LIVE && !LOCKED) refreshState(); }
 });
 
 /* ================= INIT ================= */
 renderHeader();
 buildWheel();
 syncUI();
-go('home');
+go('invite');
 bootLive();
 </script>
 </body>
