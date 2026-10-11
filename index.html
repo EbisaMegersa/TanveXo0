@@ -10,24 +10,20 @@
 <style>
 /* ============================================================
    iOS 27 LIQUID GLASS — DESIGN TOKENS
-   Accent: BLUE in light mode, GREEN in dark mode
+   Accent: BLUE in light, GREEN in dark
    ============================================================ */
 :root{
   color-scheme: light;
-  /* TELEGRAM HEADER FIX — env fallback; JS overrides with real Telegram insets */
   --tg-top: env(safe-area-inset-top, 0px);
   --tg-bot: env(safe-area-inset-bottom, 0px);
-  /* Semantic colors (light) */
   --bg:#F2F2F7; --card:#FFFFFF;
   --card2:rgba(120,120,128,.10);
   --label:#0A0A0C; --label2:rgba(60,60,67,.62); --label3:rgba(60,60,67,.32);
   --sep:rgba(60,60,67,.22);
   --fill:rgba(120,120,128,.15); --fill2:rgba(120,120,128,.09);
-  /* LIGHT ACCENT = iOS systemBlue */
   --accent:#007AFF; --accent-hi:#3B9EFF; --accent-deep:#0066D6;
   --on-accent:#FFFFFF; --accent-tint:rgba(0,122,255,.13); --accent-glow:rgba(0,122,255,.32);
   --red:#FF3B30; --red-tint:rgba(255,59,48,.12);
-  /* LIQUID GLASS material */
   --glass:rgba(255,255,255,.55);
   --glass-strong:rgba(255,255,255,.72);
   --glass-blur:blur(28px) saturate(190%) brightness(1.06);
@@ -37,12 +33,10 @@
   --glass-inner:inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 1px rgba(0,0,0,.06);
   --card-edge:inset 0 0 0 .5px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.9);
   --card-shadow:0 6px 22px rgba(0,0,0,.07);
-  /* Wheel palette (green slice follows accent → blue in light) */
   --seg-d1:#E9E9EE; --seg-t-d1:#6C6C72;
   --seg-d2:#DBDBE1; --seg-t-d2:#8A8A90;
   --seg-g:var(--accent); --seg-t-g:#fff;
   --seg-w:#1C1C1E; --seg-t-w:#fff;
-  /* Radii + springs */
   --r-sm:14px; --r-md:18px; --r-lg:24px; --r-xl:30px; --r-capsule:999px;
   --spring:cubic-bezier(.34,1.28,.48,1);
   --spring-soft:cubic-bezier(.22,1.1,.36,1);
@@ -55,7 +49,6 @@
   --label:#FFFFFF; --label2:rgba(235,235,245,.62); --label3:rgba(235,235,245,.32);
   --sep:rgba(84,84,88,.6);
   --fill:rgba(120,120,128,.30); --fill2:rgba(120,120,128,.20);
-  /* DARK ACCENT = iOS systemGreen */
   --accent:#30D158; --accent-hi:#4FE375; --accent-deep:#24B84A;
   --accent-tint:rgba(48,209,88,.16); --accent-glow:rgba(48,209,88,.3);
   --red:#FF453A; --red-tint:rgba(255,69,58,.15);
@@ -151,7 +144,6 @@ svg{display:block}
 .topnav.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
 .topnav b{font-size:1.05rem;font-weight:700;letter-spacing:-.02em;flex:1}
 
-/* circular glass icon buttons */
 .icon-glass{
   width:40px;height:40px;border-radius:var(--r-capsule);border:none;cursor:pointer;
   display:grid;place-items:center;color:var(--label);flex-shrink:0;position:relative;
@@ -166,7 +158,7 @@ svg{display:block}
   -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);mask-composite:exclude}
 .icon-glass:active{transform:scale(.9);opacity:.75}
 
-/* ================= HEADER — below Telegram system bar ================= */
+/* ================= HEADER ================= */
 .top{display:flex;align-items:center;gap:12px;
   padding:calc(var(--tg-top) + 12px) 2px 12px}
 .avatar{width:48px;height:48px;border-radius:var(--r-capsule);
@@ -179,7 +171,7 @@ svg{display:block}
 .sub2{color:var(--label2);font-size:.85rem;margin-top:1px;font-weight:500}
 
 /* ============================================================
-   ⋯ MENU — rows are DIVs (fixes nested-button language bug)
+   ⋯ MENU (rows are DIVs — no nested-button bug)
    ============================================================ */
 #menuOverlay{position:fixed;inset:0;z-index:80;display:none}
 #menuOverlay.show{display:block}
@@ -198,7 +190,6 @@ svg{display:block}
 .menu-item .ic{width:19px;height:19px;color:var(--label2)}
 .mi-right{margin-left:auto;display:flex;align-items:center}
 .menu-info{padding:9px 12px;font-size:.72rem;color:var(--label3);font-weight:500}
-/* iOS switch */
 .sw{position:relative;width:50px;height:30px;flex-shrink:0;display:inline-block}
 .sw input{opacity:0;width:100%;height:100%;position:absolute;margin:0;cursor:pointer;z-index:1}
 .sw i{position:absolute;inset:0;border-radius:99px;background:var(--fill);transition:background .25s;pointer-events:none}
@@ -206,7 +197,6 @@ svg{display:block}
   box-shadow:0 2px 6px rgba(0,0,0,.28);transition:transform .32s var(--spring)}
 .sw input:checked + i{background:var(--accent)}
 .sw input:checked + i::after{transform:translateX(20px)}
-/* mini segmented */
 .seg{display:flex;background:var(--fill);border-radius:var(--r-capsule);padding:2px}
 .seg button{border:none;border-radius:var(--r-capsule);background:transparent;color:var(--label2);
   font-family:inherit;font-weight:600;font-size:.72rem;cursor:pointer;min-height:28px;padding:0 12px;
@@ -223,7 +213,10 @@ svg{display:block}
 .mt{margin-top:10px}
 .page{display:none} .page.active{display:block;animation:fadein .3s var(--spring-soft)}
 @keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-h2.sec{font-size:1.35rem;font-weight:700;margin:22px 2px 4px;letter-spacing:-.03em}
+/* section headers: small SF-style glyph + bold text */
+h2.sec{display:flex;align-items:center;gap:8px;font-size:1.35rem;font-weight:700;margin:22px 2px 4px;letter-spacing:-.03em}
+h2.sec .sic{display:flex;color:var(--accent)}
+h2.sec .sic .ic{width:20px;height:20px}
 .hint{color:var(--label2);font-size:.82rem;margin:6px 0 12px;line-height:1.55;font-weight:500}
 
 /* ================= BUTTONS ================= */
@@ -248,6 +241,7 @@ h2.sec{font-size:1.35rem;font-weight:700;margin:22px 2px 4px;letter-spacing:-.03
 .hero::before{content:'';position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(300px 150px at 10% -20%,var(--accent-tint),transparent 70%)}
 .hero .hlabel{display:flex;align-items:center;gap:8px;color:var(--label2);font-size:.9rem;font-weight:500}
+.hero .hlabel .ic{width:17px;height:17px;color:var(--accent)}
 .hero .hnum{font-size:2.7rem;font-weight:700;letter-spacing:-.045em;margin:10px 0;line-height:1;font-variant-numeric:tabular-nums}
 .hero .hnum small{font-size:1rem;font-weight:600;color:var(--label2);letter-spacing:0;margin-left:6px}
 .hero .hsub{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--label2);font-weight:500}
@@ -455,6 +449,7 @@ nav.tabbar{
 .gate-card .g-p{color:var(--label2);font-size:.84rem;line-height:1.5;margin-bottom:16px;font-weight:500}
 #gateChannels{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
 #gateChannels .btn{min-height:48px}
+#gateChannels .btn .ic{width:16px;height:16px}
 .g-err{color:var(--red);font-size:.8rem;margin-top:10px;min-height:18px;font-weight:600}
 
 /* ================= ALERT (glass) ================= */
@@ -477,16 +472,20 @@ nav.tabbar{
 #banContact{display:none;margin:16px auto 0;color:var(--accent);font-weight:600;text-decoration:none;
   background:var(--accent-tint);padding:11px 22px;border-radius:var(--r-capsule);font-size:.85rem}
 
-/* ================= TOAST (glass capsule) ================= */
+/* ================= TOAST — glass capsule + SF-style status icon ============ */
 #toast{position:fixed;left:50%;bottom:calc(var(--tg-bot) + 92px);transform:translate(-50%,20px) scale(.95);
   border-radius:var(--r-capsule);color:var(--label);
-  font-size:.84rem;font-weight:600;padding:12px 20px;opacity:0;pointer-events:none;
+  font-size:.84rem;font-weight:600;padding:11px 20px 11px 14px;opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:9px;
   background:var(--glass-strong);
   -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
   box-shadow:var(--glass-inner), var(--glass-shadow);
-  transition:.35s var(--spring);z-index:100;max-width:86vw;text-align:center}
+  transition:.35s var(--spring);z-index:100;max-width:86vw;text-align:left}
 #toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+#toast .t-ic{width:22px;height:22px;flex-shrink:0;display:grid;place-items:center;color:var(--accent)}
+#toast .t-ic svg{width:22px;height:22px}
 #toast.err{color:var(--red)}
+#toast.err .t-ic{color:var(--red)}
 
 /* confetti + ad overlay */
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:95;overflow:hidden}
@@ -535,14 +534,16 @@ nav.tabbar{
     <!-- HOME -->
     <section class="page active" id="page-home">
       <div class="hero">
-        <div class="hlabel"><span data-i18n="your_balance">💰 Your Balance</span>
+        <div class="hlabel">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/><path d="M17 12h4"/><circle cx="16" cy="12" r="1" fill="currentColor"/></svg>
+          <span data-i18n="your_balance">Your Balance</span>
           <svg class="ic" id="eyeBtn" style="width:18px;height:18px;color:var(--label2);cursor:pointer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
         </div>
         <div class="hnum"><span id="balance">0</span><small>ETB</small></div>
         <div class="hsub"><i></i><span data-i18n="earn_daily">Earn daily — check-in, ads &amp; invites</span></div>
       </div>
 
-      <h2 class="sec" data-i18n="quick">⚡ Quick Actions</h2>
+      <h2 class="sec"><span class="sic" id="boltIc"></span><span data-i18n="quick">Quick Actions</span></h2>
       <div class="qa">
         <div class="qac" id="qaCheck">
           <div class="qic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 9h18"/><path d="M9 15l2 2 4-4"/></svg></div>
@@ -559,34 +560,34 @@ nav.tabbar{
       </div>
 
       <div class="card">
-        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/></svg> <span data-i18n="watch_earn">📺 Watch &amp; Earn</span></div>
+        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/></svg> <span data-i18n="watch_earn">Watch &amp; Earn</span></div>
         <div class="dots" id="adDots"></div>
         <div class="adline" id="adLine"></div>
         <button class="btn green big" id="adBtn"></button>
       </div>
 
-      <h2 class="sec" data-i18n="recent_activity">🕘 Recent Activity</h2>
+      <h2 class="sec"><span class="sic" id="clockIc"></span><span data-i18n="recent_activity">Recent Activity</span></h2>
       <div class="card" id="activityList" style="padding:6px 18px"></div>
 
-      <h2 class="sec" data-i18n="reviews">⭐ User Reviews</h2>
+      <h2 class="sec"><span class="sic" id="starIc"></span><span data-i18n="reviews">User Reviews</span></h2>
       <div class="card" id="reviewList" style="padding:6px 18px"></div>
     </section>
 
     <!-- TASKS -->
     <section class="page" id="page-tasks">
       <div class="card">
-        <div class="ct"><span id="flameIc"></span> <span data-i18n="streak">🔥 Daily Streak</span></div>
+        <div class="ct"><span id="flameIc"></span> <span data-i18n="streak">Daily Streak</span></div>
         <div class="streak" id="streakGrid"></div>
         <button class="btn green big" id="claimBtn"></button>
         <div class="streakline" id="streakLine"></div>
       </div>
       <div class="card">
-        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5.5"/></svg> <span data-i18n="tasks_h">✅ Tasks</span></div>
+        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5.5"/></svg> <span data-i18n="tasks_h">Tasks</span></div>
         <div id="taskList"></div>
         <div class="hint" style="margin:10px 0 0" data-i18n="tasks_hint">Tap Start, join/follow, come back and tap Verify.</div>
       </div>
       <div class="card">
-        <div class="ct"><span id="giftIc"></span> <span data-i18n="ref_bonus">🎁 Referral bonus</span></div>
+        <div class="ct"><span id="giftIc"></span> <span data-i18n="ref_bonus">Referral bonus</span></div>
         <p class="hint" style="margin:0" data-i18n="ref_txt"></p>
       </div>
     </section>
@@ -594,7 +595,7 @@ nav.tabbar{
     <!-- GAME -->
     <section class="page" id="page-game">
       <div class="card">
-        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg> <span data-i18n="lucky">🎯 Lucky Wheel</span></div>
+        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg> <span data-i18n="lucky">Lucky Wheel</span></div>
         <div class="spin-wrap">
           <div class="wheel-ring"></div>
           <div class="spin-pointer"></div>
@@ -613,7 +614,7 @@ nav.tabbar{
         <p class="fine" data-i18n="fine_game"></p>
       </div>
       <div class="card">
-        <div class="ct"><span id="chartIc"></span> <span data-i18n="spin_hist">📈 Spin History</span></div>
+        <div class="ct"><span id="chartIc"></span> <span data-i18n="spin_hist">Spin History</span></div>
         <div id="spinHistList"></div>
       </div>
     </section>
@@ -621,7 +622,7 @@ nav.tabbar{
     <!-- FRIENDS -->
     <section class="page" id="page-friends">
       <div class="card">
-        <div class="ct"><span id="linkIc"></span> <span data-i18n="your_link">🔗 Your referral link</span></div>
+        <div class="ct"><span id="linkIc"></span> <span data-i18n="your_link">Your referral link</span></div>
         <div class="linkbox"><span id="refLink">…</span></div>
         <div style="display:flex;gap:10px">
           <button class="btn dark half" id="copyBtn" data-i18n="copy">Copy</button>
@@ -637,7 +638,7 @@ nav.tabbar{
         </div>
       </div>
       <div class="card">
-        <div class="ct"><span id="usersIc"></span> <span data-i18n="your_friends">👥 Your friends</span></div>
+        <div class="ct"><span id="usersIc"></span> <span data-i18n="your_friends">Your friends</span></div>
         <div id="friendList"></div>
       </div>
     </section>
@@ -645,13 +646,13 @@ nav.tabbar{
     <!-- WALLET -->
     <section class="page" id="page-wallet">
       <div class="wd-hero">
-        <div class="muted" style="font-size:.9rem;font-weight:500" data-i18n="avail">💸 Available to withdraw</div>
+        <div class="muted" style="font-size:.9rem;font-weight:500" data-i18n="avail">Available to withdraw</div>
         <div class="wh-num"><span id="wdBal">0</span> <small>ETB</small></div>
         <div class="wh-sub" id="reqStatus"><i></i><span></span></div>
       </div>
 
       <div class="card">
-        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 3.5v5.5c0 5-3.4 8.8-8 11-4.6-2.2-8-6-8-11V5.5L12 2z"/><path d="M9 12l2 2 4-4.5"/></svg> <span data-i18n="wd_reqs">🛡️ Withdrawal Requirements</span></div>
+        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 3.5v5.5c0 5-3.4 8.8-8 11-4.6-2.2-8-6-8-11V5.5L12 2z"/><path d="M9 12l2 2 4-4.5"/></svg> <span data-i18n="wd_reqs">Withdrawal Requirements</span></div>
         <div class="req-row"><span data-i18n="r_ads">Ads watched</span><b id="rqAds">0/25</b></div>
         <div class="bar"><i id="rqAdsBar" style="width:0%"></i></div>
         <div class="req-row"><span data-i18n="r_fr">Friends invited</span><b id="rqFr">0/15</b></div>
@@ -660,7 +661,7 @@ nav.tabbar{
       </div>
 
       <div class="card">
-        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.5c-.4-.8-1.5-1.3-2.8-1.3-1.7 0-3 .8-3 1.9 0 1 1 1.5 3 1.9 2.2.4 3.2 1 3.2 2.1 0 1.2-1.4 2-3.2 2-1.5 0-2.7-.6-3-1.5M12 6.5v11"/></svg> <span data-i18n="request_wd">💳 Request Withdrawal</span></div>
+        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.5c-.4-.8-1.5-1.3-2.8-1.3-1.7 0-3 .8-3 1.9 0 1 1 1.5 3 1.9 2.2.4 3.2 1 3.2 2.1 0 1.2-1.4 2-3.2 2-1.5 0-2.7-.6-3-1.5M12 6.5v11"/></svg> <span data-i18n="request_wd">Request Withdrawal</span></div>
         <div class="lbl2" data-i18n="amount">AMOUNT</div>
         <div class="bet-row">
           <input class="wd-input" id="wdAmount" type="number" inputmode="numeric" placeholder="1000">
@@ -675,7 +676,7 @@ nav.tabbar{
       </div>
 
       <div class="card">
-        <div class="ct"><span id="histIc"></span> <span data-i18n="history">🕘 History</span></div>
+        <div class="ct"><span id="histIc"></span> <span data-i18n="history">History</span></div>
         <div id="wdList"></div>
       </div>
     </section>
@@ -691,25 +692,25 @@ nav.tabbar{
   </nav>
 </div>
 
-<!-- Liquid Glass: ⋯ dropdown menu (rows are DIVs — language buttons now work) -->
+<!-- Liquid Glass: ⋯ dropdown menu -->
 <div id="menuOverlay">
   <div class="menu lg" id="menuPanel">
     <div class="menu-status"><i id="menuDot"></i><span id="menuStatus">PREVIEW</span></div>
     <div class="menu-item" id="menuThemeRow" role="button" tabindex="0">
       <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
-      <span data-i18n="m_theme">🌙 Dark Mode</span>
+      <span data-i18n="m_theme">Dark Mode</span>
       <span class="mi-right"><span class="sw"><input type="checkbox" id="menuThemeSw"><i></i></span></span>
     </div>
     <div class="menu-item" id="menuLangRow">
       <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
-      <span data-i18n="m_lang">🌐 Language</span>
+      <span data-i18n="m_lang">Language</span>
       <span class="mi-right">
         <span class="seg" id="segLangMenu">
           <button id="segEnM" class="on">EN</button><button id="segAmM">አማ</button>
         </span>
       </span>
     </div>
-    <div class="menu-info">🚀 TanveXo • v1.1</div>
+    <div class="menu-info">TanveXo • v1.2</div>
   </div>
 </div>
 
@@ -719,7 +720,7 @@ nav.tabbar{
     <div class="grabber" id="gateGrabber"></div>
     <div class="gate-card">
       <div class="g-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
-      <h2 data-i18n="gate_h">📣 Join to continue</h2>
+      <h2 data-i18n="gate_h">Join to continue</h2>
       <p class="g-p" data-i18n="gate_p"></p>
       <div id="gateChannels"></div>
       <button class="btn green big" id="gateCheck" data-i18n="gate_check">I joined — Verify</button>
@@ -738,7 +739,8 @@ nav.tabbar{
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- Toast: glass capsule with SF-style status icon -->
+<div id="toast"><span class="t-ic" id="toastIc"></span><span id="toastText"></span></div>
 
 <script>
 /* ================= CONFIG ================= */
@@ -766,7 +768,7 @@ const CONFIG = {
   storageKey: 'tanvexo_v2'
 };
 
-/* ================= SVG ICONS ================= */
+/* ================= SVG ICONS (SF Symbols style) ================= */
 const ICON_PATHS = {
   play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/>',
   check:'<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5.5"/>',
@@ -779,8 +781,13 @@ const ICON_PATHS = {
   star:'<path d="M12 2l3.1 6.3 6.9.9-5 4.8 1.2 6.9L12 17.8 5.8 20.9 7 14 2 9.2l6.9-.9L12 2z"/>',
   link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
   list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1" fill="currentColor"/><circle cx="3.5" cy="12" r="1" fill="currentColor"/><circle cx="3.5" cy="18" r="1" fill="currentColor"/>',
-  chart:'<path d="M3 3v17a1 1 0 0 0 1 1h17"/><path d="M7 14l4-4 3 3 5-6"/>'
+  chart:'<path d="M3 3v17a1 1 0 0 0 1 1h17"/><path d="M7 14l4-4 3 3 5-6"/>',
+  bolt:'<path d="M13 2 4.5 13.5h5.4L11 22l8.5-11.5h-5.4L13 2z"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
 };
+/* filled status glyphs for the toast (SF checkmark/xmark circle fill) */
+const TOAST_OK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.53 7.53-5.25 5.25a.75.75 0 0 1-1.06 0L7.97 12.53a.75.75 0 1 1 1.06-1.06l1.72 1.72 4.72-4.72a.75.75 0 1 1 1.06 1.06z"/></svg>';
+const TOAST_ERR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.53 12.03a.75.75 0 1 1-1.06 1.06L12 12.56l-2.47 2.53a.75.75 0 1 1-1.06-1.06L11 11.5 8.47 8.97a.75.75 0 0 1 1.06-1.06L12 10.44l2.47-2.53a.75.75 0 1 1 1.06 1.06L13 11.5l2.53 2.53z"/></svg>';
 function ic(n, size){
   return '<svg class="ic" style="width:' + (size || 18) + 'px;height:' + (size || 18) + 'px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICON_PATHS[n] + '</svg>';
 }
@@ -790,6 +797,9 @@ document.getElementById('linkIc').innerHTML = ic('link', 20);
 document.getElementById('usersIc').innerHTML = ic('users', 20);
 document.getElementById('histIc').innerHTML = ic('list', 20);
 document.getElementById('chartIc').innerHTML = ic('chart', 20);
+document.getElementById('boltIc').innerHTML = ic('bolt', 20);
+document.getElementById('clockIc').innerHTML = ic('clock', 20);
+document.getElementById('starIc').innerHTML = ic('star', 20);
 
 /* ============================================================
    TELEGRAM HEADER FIX — real insets as CSS vars
@@ -861,99 +871,98 @@ function toggleMenu(){ menuOverlay.classList.contains('show') ? closeMenu() : op
 document.getElementById('menuBtn').addEventListener('click', toggleMenu);
 document.getElementById('menuBtn2').addEventListener('click', toggleMenu);
 menuOverlay.addEventListener('click', function(e){ if (e.target === menuOverlay) closeMenu(); });
-/* theme row: tapping anywhere on the row flips the switch (switch input handles its own taps) */
 document.getElementById('menuThemeRow').addEventListener('click', function(e){
-  if (e.target.id === 'menuThemeSw') return; /* native change event fires */
+  if (e.target.id === 'menuThemeSw') return;
   const sw = document.getElementById('menuThemeSw');
   sw.checked = !sw.checked;
   sw.dispatchEvent(new Event('change'));
 });
 
-/* ================= I18N (iOS-style emojis included) ================= */
+/* ================= I18N — plain text, icons come from SVG ================= */
 const STR = {
   en: {
-    letsub:"Let's earn together", your_balance:"💰 Your Balance", earn_daily:"Earn daily — check-in, ads & invites",
-    quick:"⚡ Quick Actions", checkin:"Check-in", up_to:"up to +100 ETB", watch_ads:"Watch Ads", per_ad:"+5 ETB each",
-    invite:"Invite", per_ref:"+50 ETB each", watch_earn:"📺 Watch & Earn",
+    letsub:"Let's earn together", your_balance:"Your Balance", earn_daily:"Earn daily — check-in, ads & invites",
+    quick:"Quick Actions", checkin:"Check-in", up_to:"up to +100 ETB", watch_ads:"Watch Ads", per_ad:"+5 ETB each",
+    invite:"Invite", per_ref:"+50 ETB each", watch_earn:"Watch & Earn",
     adline:"ads today • {b} left • watch a short video, get paid",
-    watch_btn:"▶️ Watch Ad — +{r} ETB", limit_reached:"Daily limit reached 😴", next_ad:"Next ad in {t}",
-    recent_activity:"🕘 Recent Activity", reviews:"⭐ User Reviews",
+    watch_btn:"Watch Ad — +{r} ETB", limit_reached:"Daily limit reached", next_ad:"Next ad in {t}",
+    recent_activity:"Recent Activity", reviews:"User Reviews",
     no_activity:"No activity yet — watch an ad or invite a friend!", no_reviews:"No reviews yet — be the first!",
-    streak:"🔥 Daily Streak", claim_r:"🎁 Claim +{r} ETB", next_claim:"Next in {t}",
-    streak_0:"Come back daily for bigger rewards", streak_n:"🔥 {n} day streak — keep going!",
-    tasks_h:"✅ Tasks", done:"Done", start:"Start", verify:"Verify", locked:"Locked", claim:"Claim",
+    streak:"Daily Streak", claim_r:"Claim +{r} ETB", next_claim:"Next in {t}",
+    streak_0:"Come back daily for bigger rewards", streak_n:"{n} day streak — keep going!",
+    tasks_h:"Tasks", done:"Done", start:"Start", verify:"Verify", locked:"Locked", claim:"Claim",
     tasks_hint:"Tap Start, join/follow, come back and tap Verify.",
-    ref_bonus:"🎁 Referral bonus",
+    ref_bonus:"Referral bonus",
     ref_txt:"Invite friends and earn +50 ETB each — they get a +25 ETB welcome bonus after joining our channels. Share your link from the Friends tab!",
-    lucky:"🎯 Lucky Wheel", your_bet:"YOUR BET", spin_wheel:"🎡 Spin the Wheel",
+    lucky:"Lucky Wheel", your_bet:"YOUR BET", spin_wheel:"Spin the Wheel",
     fine_game:"Tap the wheel or the button to spin. Multipliers: ×1.5 · ×2 · ×3 — results are decided on the server. Play for fun.",
-    spin_hist:"📈 Spin History", no_spins:"No spins yet — place your first bet! 🎰",
-    hist_win:"Win ×{m} 🎉", hist_lose:"Bet lost", hist_bet:"Bet {n}",
-    your_link:"🔗 Your referral link", copy:"Copy", share:"Share",
+    spin_hist:"Spin History", no_spins:"No spins yet — place your first bet!",
+    hist_win:"Win ×{m}", hist_lose:"Bet lost", hist_bet:"Bet {n}",
+    your_link:"Your referral link", copy:"Copy", share:"Share",
     fr_txt:"You get +50 ETB when your friend joins both channels. They get a +25 ETB welcome bonus.",
-    s_friends:"Friends", s_pending:"Pending", s_earned:"ETB earned", your_friends:"👥 Your friends",
-    no_friends:"No friends yet — share your link to earn +50 ETB per friend. 🤝",
-    avail:"💸 Available to withdraw", req_done:"Requirements complete — you can withdraw ✓",
-    req_left:"{n} of 2 requirements left", wd_reqs:"🛡️ Withdrawal Requirements",
+    s_friends:"Friends", s_pending:"Pending", s_earned:"ETB earned", your_friends:"Your friends",
+    no_friends:"No friends yet — share your link to earn +50 ETB per friend.",
+    avail:"Available to withdraw", req_done:"Requirements complete — you can withdraw ✓",
+    req_left:"{n} of 2 requirements left", wd_reqs:"Withdrawal Requirements",
     r_ads:"Ads watched", r_fr:"Friends invited",
     req_note:"Watch 25 ads and invite 15 friends to unlock withdrawals. These are used up when you withdraw — earn them again for your next withdrawal.",
-    request_wd:"💳 Request Withdrawal", amount:"AMOUNT", method:"METHOD", account:"YOUR ACCOUNT",
-    req_btn:"💸 Request Withdrawal", wd_fine:"Processed manually within 24–48 hours. Double-check your account details.",
-    history:"🕘 History", no_wd:"No withdrawal requests yet.",
+    request_wd:"Request Withdrawal", amount:"AMOUNT", method:"METHOD", account:"YOUR ACCOUNT",
+    req_btn:"Request Withdrawal", wd_fine:"Processed manually within 24–48 hours. Double-check your account details.",
+    history:"History", no_wd:"No withdrawal requests yet.",
     st_paid:"Paid", st_pending:"Pending", st_rej:"Rejected",
     nav_home:"Home", nav_tasks:"Tasks", nav_game:"Game", nav_friends:"Friends", nav_wallet:"Wallet",
-    banned_h:"⛔ Account locked", contact:"Contact support",
-    gate_h:"📣 Join to continue", gate_p:"Join both channels to unlock TanveXo and your +25 ETB welcome bonus.",
-    gate_check:"✅ I joined — Verify", gate_fail:"Please join both channels first",
-    t_claimed:"🎉 +{r} ETB claimed!", t_copied:"Invite link copied! 🔗", t_join_back:"Visit the link, come back and tap Verify",
-    t_not_enough:"Not enough ETB for that bet", t_submitted:"Request submitted! Paid within 24–48h. 💸",
+    banned_h:"Account locked", contact:"Contact support",
+    gate_h:"Join to continue", gate_p:"Join both channels to unlock TanveXo and your +25 ETB welcome bonus.",
+    gate_check:"I joined — Verify", gate_fail:"Please join both channels first",
+    t_claimed:"+{r} ETB claimed!", t_copied:"Invite link copied!", t_join_back:"Visit the link, come back and tap Verify",
+    t_not_enough:"Not enough ETB for that bet", t_submitted:"Request submitted! Paid within 24–48h.",
     t_locked_req:"Locked — meet the requirements first (25 ads · 15 friends)",
     t_min_wd:"Minimum is {n} ETB", t_enter_acc:"Enter your account details",
-    t_ad_ok:"📺 +{r} ETB for watching!", t_spin_win:"🎉 +{a} ETB · ×{m}", t_spin_lose:"-{a} ETB",
+    t_ad_ok:"+{r} ETB for watching!", t_spin_win:"+{a} ETB · ×{m}", t_spin_lose:"-{a} ETB",
     ago_now:"just now", ago_min:"{n} min ago", ago_hr:"{n} hr ago", ago_d:"{n} d ago",
-    spin_hub:"SPIN", m_theme:"🌙 Dark Mode", m_lang:"🌐 Language"
+    spin_hub:"SPIN", m_theme:"Dark Mode", m_lang:"Language"
   },
   am: {
-    letsub:"አብረን እናትርፍ!", your_balance:"💰 ቀሪ ሂሳብ", earn_daily:"በየቀኑ ያትርፉ — ቼክ-ኢን፣ ማስታወቂያና ጋብዣ",
-    quick:"⚡ ፈጣን ተግባራት", checkin:"ቼክ-ኢን", up_to:"እስከ +100 ETB", watch_ads:"ማስታወቂያ", per_ad:"+5 ETB ለእያንዳንዱ",
-    invite:"ጋብዝ", per_ref:"+50 ETB ለእያንዳንዱ", watch_earn:"📺 ተመልከት & አትርፍ",
+    letsub:"አብረን እናትርፍ!", your_balance:"ቀሪ ሂሳብ", earn_daily:"በየቀኑ ያትርፉ — ቼክ-ኢን፣ ማስታወቂያና ጋብዣ",
+    quick:"ፈጣን ተግባራት", checkin:"ቼክ-ኢን", up_to:"እስከ +100 ETB", watch_ads:"ማስታወቂያ", per_ad:"+5 ETB ለእያንዳንዱ",
+    invite:"ጋብዝ", per_ref:"+50 ETB ለእያንዳንዱ", watch_earn:"ተመልከት & አትርፍ",
     adline:"ማስታወቂያ ዛሬ • {b} ቀሪ • አጭር ቪዲዮ ይመልከቱ፣ ይከፈልዎታል",
-    watch_btn:"▶️ ማስታወቂያ — +{r} ETB", limit_reached:"የዕለት ገደብ ደርሷል 😴", next_ad:"ቀጣዩ ማስታወቂያ {t}",
-    recent_activity:"🕘 የቅርብ እንቅስቃሴ", reviews:"⭐ የተጠቃሚ አስተያየቶች",
+    watch_btn:"ማስታወቂያ — +{r} ETB", limit_reached:"የዕለት ገደብ ደርሷል", next_ad:"ቀጣዩ ማስታወቂያ {t}",
+    recent_activity:"የቅርብ እንቅስቃሴ", reviews:"የተጠቃሚ አስተያየቶች",
     no_activity:"ገና እንቅስቃሴ የለም — ማስታወቂያ ይመልከቱ ወይም ጓደኛ ይጋብዙ!", no_reviews:"ገና አስተያየት የለም",
-    streak:"🔥 የቀን ተከታታይ", claim_r:"🎁 ይቀበሉ +{r} ETB", next_claim:"ቀጣይ {t}",
-    streak_0:"በየቀኑ ይምጡ — ሽልማት ይጨምራል", streak_n:"🔥 {n} ቀን ተከታታይ — ይቀጥሉ!",
-    tasks_h:"✅ ተግባራት", done:"ተጠናቋል", start:"ጀምር", verify:"አረጋግጥ", locked:"ተዘግቷል", claim:"ይቀበሉ",
+    streak:"የቀን ተከታታይ", claim_r:"ይቀበሉ +{r} ETB", next_claim:"ቀጣይ {t}",
+    streak_0:"በየቀኑ ይምጡ — ሽልማት ይጨምራል", streak_n:"{n} ቀን ተከታታይ — ይቀጥሉ!",
+    tasks_h:"ተግባራት", done:"ተጠናቋል", start:"ጀምር", verify:"አረጋግጥ", locked:"ተዘግቷል", claim:"ይቀበሉ",
     tasks_hint:"ጀምር → ይቀላቀሉ → ተመለስተው አረጋግጥ ይንኩ።",
-    ref_bonus:"🎁 የጋብዣ ቦነስ",
+    ref_bonus:"የጋብዣ ቦነስ",
     ref_txt:"ጓደኞችዎን ይጋብዙ — ለእያንዳንዱ +50 ETB ያገኛሉ፤ ጓደኛዎ ቻናሎችን ከተቀላቀለ +25 ETB የእንጋቢ ስጦታ ይቀበላል።",
-    lucky:"🎯 ሎኪ ዊል", your_bet:"የእርስዎ መደጋ", spin_wheel:"🎡 ዊሉን ያሽከርክሩ",
+    lucky:"ሎኪ ዊል", your_bet:"የእርስዎ መደጋ", spin_wheel:"ዊሉን ያሽከርክሩ",
     fine_game:"ዊሉን ወይም አዝራሩን ይንኩ። ×1.5 · ×2 · ×3 — ውጤቱ በሰርቨር ላይ ይወሰናል። ለመዝናናት ብቻ!",
-    spin_hist:"📈 የመንኪያ ታሪክ", no_spins:"ገና አልተጫወተም — የመጀመሪያ መደጋዎን ይጥሉ! 🎰",
-    hist_win:"አሸነፈ ×{m} 🎉", hist_lose:"መደጋ አልተሳካም", hist_bet:"መደጋ {n}",
-    your_link:"🔗 የጋብዣ ሊንክዎ", copy:"ቅዳ", share:"አጋራ",
+    spin_hist:"የመንኪያ ታሪክ", no_spins:"ገና አልተጫወተም — የመጀመሪያ መደጋዎን ይጥሉ!",
+    hist_win:"አሸነፈ ×{m}", hist_lose:"መደጋ አልተሳካም", hist_bet:"መደጋ {n}",
+    your_link:"የጋብዣ ሊንክዎ", copy:"ቅዳ", share:"አጋራ",
     fr_txt:"ጓደኛዎ ሁለቱንም ቻናሎች ሲቀላቀል +50 ETB ያገኛሉ፤ እሱም +25 ETB ይቀበላል።",
-    s_friends:"ጓደኞች", s_pending:"በመጠባበቅ ላይ", s_earned:"ያትረፉት ETB", your_friends:"👥 የእርስዎ ጓደኞች",
-    no_friends:"ገና ጓደኛ የለም — ሊንክዎን ያጋሩ! 🤝",
-    avail:"💸 ለማውጣት የሚገኝ", req_done:"መስፈርቶቹ ተሟልተዋል — ማውጣት ትችላለህ ✓",
-    req_left:"ከ2 መስፈርቶች {n} ቀሪዋል", wd_reqs:"🛡️ የማውጣት መስፈርቶች",
+    s_friends:"ጓደኞች", s_pending:"በመጠባበቅ ላይ", s_earned:"ያትረፉት ETB", your_friends:"የእርስዎ ጓደኞች",
+    no_friends:"ገና ጓደኛ የለም — ሊንክዎን ያጋሩ!",
+    avail:"ለማውጣት የሚገኝ", req_done:"መስፈርቶቹ ተሟልተዋል — ማውጣት ትችላለህ ✓",
+    req_left:"ከ2 መስፈርቶች {n} ቀሪዋል", wd_reqs:"የማውጣት መስፈርቶች",
     r_ads:"የታዩ ማስታወቂያዎች", r_fr:"የተጋበዙ ጓደኞች",
     req_note:"ለማውጣት 25 ማስታወቂያዎች ይመልከቱ እና 15 ጓደኞች ይጋብዙ። ሲያወጡ እነዚህ ይቀንሳሉ — ለቀጣዩ ዙር እንደገና ይስሩ።",
-    request_wd:"💳 የማውጣት ጥያቄ", amount:"መጠን", method:"ዘዴ", account:"የእርስዎ መለያ",
-    req_btn:"💸 መውጣት ይጠይቁ", wd_fine:"በእጅ በ24–48 ሰዓት ውስጥ ይከፈላል። መረጃዎን ደግም ያረጋግጡ።",
-    history:"🕘 ታሪክ", no_wd:"ገና የመውጣት ጥያቄ የለም።",
+    request_wd:"የማውጣት ጥያቄ", amount:"መጠን", method:"ዘዴ", account:"የእርስዎ መለያ",
+    req_btn:"መውጣት ይጠይቁ", wd_fine:"በእጅ በ24–48 ሰዓት ውስጥ ይከፈላል። መረጃዎን ደግም ያረጋግጡ።",
+    history:"ታሪክ", no_wd:"ገና የመውጣት ጥያቄ የለም።",
     st_paid:"ተከፍሏል", st_pending:"በመጠባበቅ ላይ", st_rej:"ተቀንቋዋል",
     nav_home:"መነሻ", nav_tasks:"ተግባራት", nav_game:"ጨዋታ", nav_friends:"ጓደኞች", nav_wallet:"ዋሌት",
-    banned_h:"⛔ መለያ ተዘግቷል", contact:"ድጋፍ ያግኙ",
-    gate_h:"📣 ለመቀጠል ይቀላቀሉ", gate_p:"TanveXoን ለመክፈት እና +25 ETB የእንጋቢ ስጦታ ለማግኘት ሁለቱንም ቻናሎች ይቀላቀሉ።",
-    gate_check:"✅ ተቀላቅያለሁ — አረጋግጥ", gate_fail:"እባክዎ ሁለቱንም ቻናሎች ይቀላቀሉ",
-    t_claimed:"🎉 +{r} ETB ተቀብለዋል!", t_copied:"ሊንክ ተቀድቷል! 🔗", t_join_back:"ሊንኩን ይጎብኙ፣ ተመለስተው አረጋግጥ ይንኩ",
-    t_not_enough:"ለዚህ መደጋ በቂ ETB የለም", t_submitted:"ጥያቄ ተልኳል! በ24–48 ሰዓት ይከፈላል። 💸",
+    banned_h:"መለያ ተዘግቷል", contact:"ድጋፍ ያግኙ",
+    gate_h:"ለመቀጠል ይቀላቀሉ", gate_p:"TanveXoን ለመክፈት እና +25 ETB የእንጋቢ ስጦታ ለማግኘት ሁለቱንም ቻናሎች ይቀላቀሉ።",
+    gate_check:"ተቀላቅያለሁ — አረጋግጥ", gate_fail:"እባክዎ ሁለቱንም ቻናሎች ይቀላቀሉ",
+    t_claimed:"+{r} ETB ተቀብለዋል!", t_copied:"ሊንክ ተቀድቷል!", t_join_back:"ሊንኩን ይጎብኙ፣ ተመለስተው አረጋግጥ ይንኩ",
+    t_not_enough:"ለዚህ መደጋ በቂ ETB የለም", t_submitted:"ጥያቄ ተልኳል! በ24–48 ሰዓት ይከፈላል።",
     t_locked_req:"ተዘግቷል — መስፈርቱን ይሙሉ (25 ማስታወቂያ • 15 ጓደኛ)",
     t_min_wd:"አነስተኛው {n} ETB ነው", t_enter_acc:"የመለያ መረጃዎን ያስገቡ",
-    t_ad_ok:"📺 ለመመልከት +{r} ETB!", t_spin_win:"🎉 +{a} ETB · ×{m}", t_spin_lose:"-{a} ETB",
+    t_ad_ok:"ለመመልከት +{r} ETB!", t_spin_win:"+{a} ETB · ×{m}", t_spin_lose:"-{a} ETB",
     ago_now:"አሁን", ago_min:"ከ{n} ደቂቃ በፊት", ago_hr:"ከ{n} ሰዓት በፊት", ago_d:"ከ{n} ቀን በፊት",
-    spin_hub:"አሽክረርክር", m_theme:"🌙 ጨለማ ሁነታ", m_lang:"🌐 ቋንቋ"
+    spin_hub:"አሽክረርክር", m_theme:"ጨለማ ሁነታ", m_lang:"ቋንቋ"
   }
 };
 let LANG = 'en';
@@ -1040,10 +1049,12 @@ const $ = s => document.querySelector(s);
 const fmt = n => Math.round(n).toLocaleString('en-US');
 function haptic(t_){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t_); }catch(e){} }
 function hNotify(t_){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(t_); }catch(e){} }
+/* toast with SF-style status icon */
 let toastT = null;
 function toast(msg, err){
-  const el = $('#toast');
-  el.textContent = msg;
+  const el = $('#toast'), tIc = $('#toastIc'), tTx = $('#toastText');
+  tTx.textContent = msg;
+  tIc.innerHTML = err ? TOAST_ERR : TOAST_OK;
   el.classList.toggle('err', !!err);
   el.classList.add('show');
   clearTimeout(toastT);
@@ -1144,7 +1155,7 @@ async function tryInit(){
   const r = await api('/api/init', { ref: startRef, dev: deviceId() });
   LIVE = true; GATED = false;
   applyState(r.state);
-  const ms = $('#menuStatus'); ms.textContent = 'LIVE ✅'; ms.classList.add('ok');
+  const ms = $('#menuStatus'); ms.textContent = 'LIVE'; ms.classList.add('ok');
   $('#menuDot').classList.add('ok');
   try { const tr = await api('/api/tasks'); state.serverTasks = tr.tasks || []; if (currentPage === 'tasks') renderTasksPage(); } catch(e2){}
   try { const wr = await api('/api/withdrawals'); state.withdrawals = wr.withdrawals || []; save(); } catch(e3){}
@@ -1176,7 +1187,7 @@ function showGate(channels){
   (channels && channels.length ? channels : ['@ebtry0']).forEach(function(h){
     const b = document.createElement('button');
     b.className = 'btn dark big';
-    b.innerHTML = '📢 ' + h;
+    b.innerHTML = ic('megaphone', 16) + ' ' + h;
     b.addEventListener('click', function(){ openUrl('https://t.me/' + h.replace('@','')); });
     wrap.appendChild(b);
   });
@@ -1252,9 +1263,9 @@ function renderActivity(){
   }).join('');
 }
 const DEMO_REVIEWS = [
-  { name:'Abebe', message:'Got paid in 2 hours. Best app! 🔥', stars:5, ts:Date.now() - 2*60000 },
-  { name:'Hanna', message:'The wheel is so fun, won ×3 twice! 🎉', stars:5, ts:Date.now() - 25*60000 },
-  { name:'Kebede', message:'Invite friends, it really pays. 💸', stars:4, ts:Date.now() - 3*3600000 }
+  { name:'Abebe', message:'Got paid in 2 hours. Best app!', stars:5, ts:Date.now() - 2*60000 },
+  { name:'Hanna', message:'The wheel is so fun, won ×3 twice!', stars:5, ts:Date.now() - 25*60000 },
+  { name:'Kebede', message:'Invite friends, it really pays.', stars:4, ts:Date.now() - 3*3600000 }
 ];
 function renderReviews(){
   const list = $('#reviewList');
@@ -1293,7 +1304,7 @@ function renderEarn(){
   const btn = $('#adBtn');
   if (LOCKED || GATED){ btn.disabled = true; return; }
   if (state.adsToday >= CONFIG.adMaxPerDay){ btn.disabled = true; btn.textContent = t('limit_reached'); }
-  else if (adReady()){ btn.disabled = false; btn.textContent = t('watch_btn', CONFIG.adReward); }
+  else if (adReady()){ btn.disabled = false; btn.innerHTML = ic('play', 16) + '<span>' + t('watch_btn', CONFIG.adReward) + '</span>'; }
   else {
     btn.disabled = true;
     const ms = CONFIG.adCooldownSec * 1000 - (Date.now() - (state.lastAdTs || 0));
@@ -1669,7 +1680,7 @@ function fallbackCopy(t_){
 });
  $('#shareBtn').addEventListener('click', function(){
   const link = referralLink();
-  const text = 'Join me on TanveXo — join our channels, invite friends, watch ads and earn ETB! 🚀';
+  const text = 'Join me on TanveXo — join our channels, invite friends, watch ads and earn ETB!';
   try {
     if (tg && tg.openTelegramLink){
       tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text));
@@ -1805,4 +1816,4 @@ go('home');
 bootLive();
 </script>
 </body>
-           </html>
+</html>
