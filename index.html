@@ -151,6 +151,13 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
 #confetti i{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{transform:translate(var(--x),108vh) rotate(var(--r));opacity:.7}}
 .fly{position:fixed;z-index:99;font-weight:800;font-size:18px;color:var(--gold2);text-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none}
+/* ban / lock screen */
+#banScreen{position:fixed;inset:0;background:var(--bg);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px}
+#banScreen.show{display:flex}
+.ban-ic{font-size:58px;margin-bottom:10px}
+#banScreen h1{font-size:22px;margin-bottom:8px}
+#banReason{color:var(--muted);font-size:14px;line-height:1.6;max-width:300px}
+#banContact{display:none;margin-top:18px;color:var(--gold);font-weight:700;text-decoration:none;border:1px solid rgba(246,183,60,.4);padding:10px 18px;border-radius:12px}
 </style>
 </head>
 <body>
@@ -276,6 +283,13 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
   </nav>
 </div>
 
+<div id="banScreen">
+  <div class="ban-ic">⛔</div>
+  <h1>Account locked</h1>
+  <p id="banReason">Your account has been locked.</p>
+  <a id="banContact" href="#" target="_blank" rel="noopener">Contact support</a>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -285,6 +299,7 @@ const CONFIG = {
   botUsername: 'tanvexoappbot',
   appName: 'refer',
   channelUrl: 'https://t.me/ebtry0',
+  support: '',                              // ← optional: 'https://t.me/your_username' shows a Contact button on the ban screen
   pointsPerInvite: 5, tapEnergyCost: 1, energyMax: 500, energyRegenPerSec: 1,
   storageKey: 'tapcoin_v3'
 };
@@ -359,63 +374,6 @@ let state = load();
 let dirty = false;
 function save(){ try{ localStorage.setItem(CONFIG.storageKey, JSON.stringify(state)); }catch(e){} dirty = false; }
 
-/* ================= BACKEND ================= */
-let LIVE = false;
-let pendingTaps = 0;
-let syncing = false;
-
-async function api(path, body){
-  const res = await fetch(CONFIG.api.replace(/\/+$/,'') + path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': (tg && tg.initData) ? tg.initData : '' },
-    body: JSON.stringify(body || {})
-  });
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.error || 'API error');
-  return data;
-}
-
-function applyState(s){
-  state.balance = s.balance; state.totalEarned = s.totalEarned; state.taps = s.taps;
-  state.energy = s.energy; state.boost = s.boost; state.referrals = s.referrals;
-  state.friends = s.friends || []; state.dailyStreak = s.dailyStreak;
-  state.lastDailyTs = s.lastDaily; state.dailyClaims = s.dailyClaims;
-  state.completedTasks = s.completedTasks || []; state.channelClicked = s.channelClicked;
-  state.lastSpinTs = s.lastSpin || 0;
-  state.lastEnergyTs = Date.now();
-  pendingTaps = 0;
-  save(); syncUI();
-  if (currentPage === 'tasks') renderTasks();
-  if (currentPage === 'invite') renderInvite();
-  if (currentPage === 'bonus') renderBonus();
-}
-
-async function bootLive(){
-  if (!CONFIG.api || !tg || !tg.initData) return;
-  try {
-    const r = await api('/api/init', { ref: startRef, dev: deviceId() });
-    LIVE = true;
-    applyState(r.state);
-    const b = $('#modeBadge');
-    b.textContent = 'LIVE';
-    b.style.color = '#34d399';
-    b.style.borderColor = 'rgba(52,211,153,.4)';
-    $('#simCard').style.display = 'none';
-  } catch(e){
-    toast('Backend: ' + e.message + ' — preview mode', true);
-  }
-}
-
-async function syncTaps(){
-  if (!LIVE || syncing) return;
-  syncing = true;
-  try {
-    const r = await api('/api/sync', { taps: pendingTaps });
-    applyState(r.state);
-  } catch(e){}
-  syncing = false;
-}
-
 /* ================= HELPERS ================= */
 const $ = s => document.querySelector(s);
 const balEl = $('#balance'), eFillEl = $('#eFill'), eTextEl = $('#eText');
@@ -434,6 +392,18 @@ function toast(msg, err){
 }
 let lastWarn = 0;
 function throttledToast(m, e){ const n = Date.now(); if (n - lastWarn > 2000){ lastWarn = n; toast(m, e); } }
+
+/* ---- ban / lock screen ---- */
+let LOCKED = false;
+function showBanScreen(msg){
+  if (LOCKED) return;
+  LOCKED = true;
+  $('#banReason').textContent = msg || 'Your account has been locked.';
+  const c = $('#banContact');
+  if (CONFIG.support){ c.style.display = 'inline-block'; c.href = CONFIG.support; }
+  $('#banScreen').classList.add('show');
+  hNotify('error');
+}
 
 function flyText(x, y, text){
   const el = document.createElement('div');
@@ -486,11 +456,74 @@ document.querySelectorAll('.nav-btn').forEach(function(b){
 try { if (tg && tg.BackButton) tg.BackButton.onClick(function(){ go('home'); }); } catch(e){}
  $('#spinGo').addEventListener('click', function(){ go('spin'); });
 
+/* ================= BACKEND ================= */
+let LIVE = false;
+let pendingTaps = 0;
+let syncing = false;
+
+async function api(path, body){
+  const res = await fetch(CONFIG.api.replace(/\/+$/,'') + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': (tg && tg.initData) ? tg.initData : '' },
+    body: JSON.stringify(body || {})
+  });
+  const data = await res.json();
+  if (!data.ok){
+    const err = new Error(data.error || 'API error');
+    if (data.locked) err.locked = true;
+    throw err;
+  }
+  return data;
+}
+
+function applyState(s){
+  state.balance = s.balance; state.totalEarned = s.totalEarned; state.taps = s.taps;
+  state.energy = s.energy; state.boost = s.boost; state.referrals = s.referrals;
+  state.friends = s.friends || []; state.dailyStreak = s.dailyStreak;
+  state.lastDailyTs = s.lastDaily; state.dailyClaims = s.dailyClaims;
+  state.completedTasks = s.completedTasks || []; state.channelClicked = s.channelClicked;
+  state.lastSpinTs = s.lastSpin || 0;
+  state.lastEnergyTs = Date.now();
+  pendingTaps = 0;
+  save(); syncUI();
+  if (currentPage === 'tasks') renderTasks();
+  if (currentPage === 'invite') renderInvite();
+  if (currentPage === 'bonus') renderBonus();
+}
+
+async function bootLive(){
+  if (!CONFIG.api || !tg || !tg.initData) return;
+  try {
+    const r = await api('/api/init', { ref: startRef, dev: deviceId() });
+    LIVE = true;
+    applyState(r.state);
+    const b = $('#modeBadge');
+    b.textContent = 'LIVE';
+    b.style.color = '#34d399';
+    b.style.borderColor = 'rgba(52,211,153,.4)';
+    $('#simCard').style.display = 'none';
+  } catch(e){
+    if (e && e.locked){ showBanScreen(e.message); return; }
+    toast('Backend: ' + e.message + ' — preview mode', true);
+  }
+}
+
+async function syncTaps(){
+  if (!LIVE || syncing) return;
+  syncing = true;
+  try {
+    const r = await api('/api/sync', { taps: pendingTaps });
+    applyState(r.state);
+  } catch(e){ if (e && e.locked) showBanScreen(e.message); }
+  syncing = false;
+}
+
 /* ================= TAP TO EARN ================= */
 const coinEl = $('#coin');
 coinEl.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 coinEl.addEventListener('pointerdown', function(e){
   e.preventDefault();
+  if (LOCKED) return;
   if (state.energy < CONFIG.tapEnergyCost){
     const w = $('#energyWrap');
     w.classList.remove('shake'); void w.offsetWidth; w.classList.add('shake');
@@ -536,7 +569,7 @@ function levelInfo(){
 function boostCost(){ return Math.round(100 * Math.pow(1.8, state.boost - 1) / 10) * 10; }
 
  $('#boostBtn').addEventListener('click', async function(){
-  if (state.boost >= 10) return;
+  if (state.boost >= 10 || LOCKED) return;
   if (LIVE){
     const c = boostCost();
     if (state.balance < c){ haptic('rigid'); toast('Need ' + fmt(c - state.balance) + ' more coins', true); return; }
@@ -545,7 +578,7 @@ function boostCost(){ return Math.round(100 * Math.pow(1.8, state.boost - 1) / 1
       const r = await api('/api/boost');
       hNotify('success'); toast('Boost upgraded to ×' + r.state.boost + '!');
       applyState(r.state);
-    } catch(e){ toast(e.message, true); }
+    } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); }
     this.disabled = false;
     return;
   }
@@ -626,7 +659,7 @@ function showPrize(p){
 }
 
  $('#spinBtn').addEventListener('click', async function(){
-  if (spinning) return;
+  if (spinning || LOCKED) return;
   spinning = true; this.disabled = true;
   const free = spinFree();
   if (!free && !LIVE && state.balance < SPIN_COST){
@@ -638,7 +671,7 @@ function showPrize(p){
     try {
       const r = await api('/api/spin');
       animateWheel(r.prize.index, function(){ applyState(r.state); showPrize(r.prize); });
-    } catch(e){ spinning = false; updateSpinUI(); toast(e.message, true); }
+    } catch(e){ spinning = false; updateSpinUI(); if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); }
     return;
   }
   const idx = pickLocalPrize();
@@ -678,9 +711,9 @@ function renderTasks(){
     else if (t.link && !state.channelClicked) btn.textContent = 'Join';
     else btn.textContent = '+' + t.reward;
     btn.addEventListener('click', async function(){
-      if (done) return;
+      if (done || LOCKED) return;
       if (t.link && !state.channelClicked){
-        if (LIVE){ try { await api('/api/task', { id: 'channel', click: true }); } catch(e){} }
+        if (LIVE){ try { await api('/api/task', { id: 'channel', click: true }); } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } } }
         else { state.channelClicked = true; dirty = true; }
         try {
           if (tg && tg.openTelegramLink) tg.openTelegramLink(CONFIG.channelUrl);
@@ -697,7 +730,7 @@ function renderTasks(){
           const r = await api('/api/task', { id: t.id });
           hNotify('success'); toast('+' + r.reward + ' coins claimed!');
           applyState(r.state);
-        } catch(e){ toast(e.message, true); btn.disabled = false; }
+        } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); btn.disabled = false; }
         return;
       }
       state.completedTasks.push(t.id);
@@ -756,6 +789,7 @@ function fallbackCopy(t){
 
 const DEMO_NAMES = ['Amina','Rustam','Leyla','Diyor','Sardor','Kamola','Jasur','Nilufar','Timur','Zara','Omar','Mila'];
  $('#simBtn').addEventListener('click', function(){
+  if (LOCKED) return;
   const name = DEMO_NAMES[state.referrals % DEMO_NAMES.length] + ' ' + Math.floor(10 + Math.random() * 89);
   state.referrals++;
   state.balance += CONFIG.pointsPerInvite;
@@ -801,7 +835,7 @@ function updateBonusBtn(){
   $('#navBonusDot').style.display = ready ? 'block' : 'none';
 }
  $('#claimBtn').addEventListener('click', async function(){
-  if (!dailyReady()) return;
+  if (!dailyReady() || LOCKED) return;
   if (LIVE){
     this.disabled = true;
     try {
@@ -809,7 +843,7 @@ function updateBonusBtn(){
       confetti(); hNotify('success');
       toast('+' + r.reward + ' coins — day ' + r.state.dailyStreak + ' streak!');
       applyState(r.state);
-    } catch(e){ toast(e.message, true); }
+    } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); }
     this.disabled = false;
     return;
   }
@@ -833,6 +867,7 @@ function renderHeader(){
 /* ================= MAIN LOOP ================= */
 let tick = 0;
 setInterval(function(){
+  if (LOCKED) return;
   const secs = Math.floor((Date.now() - state.lastEnergyTs) / 1000);
   if (secs > 0){
     state.lastEnergyTs += secs * 1000;
@@ -848,11 +883,11 @@ setInterval(function(){
   }
 }, 1000);
 document.addEventListener('visibilitychange', function(){
-  if (document.hidden){ if (dirty) save(); if (LIVE && pendingTaps > 0) syncTaps(); }
+  if (document.hidden){ if (dirty) save(); if (LIVE && pendingTaps > 0 && !LOCKED) syncTaps(); }
 });
 window.addEventListener('pagehide', function(){
   if (dirty) save();
-  if (LIVE && pendingTaps > 0){
+  if (LIVE && pendingTaps > 0 && !LOCKED){
     try { fetch(CONFIG.api.replace(/\/+$/,'') + '/api/sync', {
       method: 'POST', keepalive: true,
       headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': (tg && tg.initData) ? tg.initData : '' },
