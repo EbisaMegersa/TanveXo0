@@ -1,4 +1,4 @@
-/* TanveXo API v8 — reviews, top-15 leaderboard, req gate ads+friends, min wd 1000 */
+/* TanveXo API v9 — 2-channel referral gate, pending referrals, photos, no leaderboard */
 const REFERRAL_REWARD = 50, WELCOME_BONUS = 25;
 const AD_REWARD = 5, AD_COOLDOWN = 1800, AD_MAX_PER_DAY = 25;
 const SPIN_MIN_BET = 50, SPIN_MAX_BET = 5000;
@@ -9,6 +9,8 @@ const DAY = 86400;
 const DEFAULT_CHANNEL = 'https://t.me/ebtry0';
 const BOT_USERNAME = 'tanvexoappbot';
 const APP_LINK = 'https://t.me/' + BOT_USERNAME + '/refer';
+/* ← CHANGE THE SECOND ONE to your group/2nd channel (public handle with @) */
+const REQ_CHANNELS = ['@ebtry0', '@ebisa_emoji'];
 const STREAK_REWARDS = [10, 30, 40, 60, 70, 80, 100];
 const TASK_TYPES = ['invites','daily','ads','link'];
 
@@ -78,7 +80,9 @@ function initDb(env) {
         'ALTER TABLE users ADD COLUMN req_friends INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN req_spins INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN welcome INTEGER NOT NULL DEFAULT 0',
-        'ALTER TABLE users ADD COLUMN migrated INTEGER NOT NULL DEFAULT 0'
+        'ALTER TABLE users ADD COLUMN migrated INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE referrals ADD COLUMN photo TEXT',
+        "ALTER TABLE referrals ADD COLUMN status TEXT DEFAULT 'pending'"
       ];
       for (const a of alters) { try { await env.DB.prepare(a).run(); } catch(e) {} }
       const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM tasks').first();
@@ -157,15 +161,21 @@ async function isMember(env, chat, userId) {
   if (m.status === 'restricted') return { ok: m.is_member === true };
   return { ok: MEMBER_STATUSES.includes(m.status) };
 }
+async function joinedAllChannels(env, userId) {
+  for (const ch of REQ_CHANNELS) {
+    const v = await isMember(env, ch, userId);
+    if (!v.ok) return { ok: false, channel: ch };
+  }
+  return { ok: true };
+}
 
 async function getRow(env, id) {
   const r = await env.DB.prepare('SELECT * FROM users WHERE user_id = ?').bind(id).first();
-  if (r) r.tasks = JSON.parse(r.tasks || '[]');
   return r || null;
 }
 async function friendsOf(env, id) {
-  const { results } = await env.DB.prepare('SELECT name, created_at FROM referrals WHERE referrer = ? ORDER BY created_at DESC LIMIT 100').bind(id).all();
-  return (results || []).map(r => ({ name: r.name || 'Friend', ts: r.created_at * 1000 }));
+  const { results } = await env.DB.prepare('SELECT name, photo, status, created_at FROM referrals WHERE referrer = ? ORDER BY created_at DESC LIMIT 100').bind(id).all();
+  return (results || []).map(r => ({ name: r.name || 'Friend', photo: r.photo || null, status: r.status || 'verified', ts: r.created_at * 1000 }));
 }
 async function claimsOf(env, id) {
   const { results } = await env.DB.prepare('SELECT task_id FROM task_claims WHERE user_id = ?').bind(id).all();
@@ -212,6 +222,7 @@ function toClient(row, friends, claimed) {
   };
 }
 
+/* create user + record pending referral (no credit until verified) */
 async function ensureUser(env, u, refId, dev) {
   const t = now();
   let row = await getRow(env, u.id);
@@ -229,26 +240,14 @@ async function ensureUser(env, u, refId, dev) {
       lockDev ? 'Device limit reached — max ' + MAX_ACCOUNTS_PER_DEVICE + ' accounts per device' : null, t, t).run();
   row = await getRow(env, u.id);
   if (row && !row.banned && refId && refId !== u.id) {
-    const referrer = await getRow(env, refId);
-    if (referrer && !referrer.banned) {
-      let allowed = true;
-      if (dev) {
-        const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE device_id = ? AND referred_by IS NOT NULL').bind(dev).first();
-        if (c && c.n >= MAX_ACCOUNTS_PER_DEVICE) allowed = false;
-      }
-      if (allowed) {
-        referrer.balance += REFERRAL_REWARD;
-        referrer.total_earned += REFERRAL_REWARD;
-        referrer.invited += 1;
-        referrer.req_friends = (referrer.req_friends || 0) + 1;
-        await saveRow(env, referrer);
-        await env.DB.prepare('INSERT OR IGNORE INTO referrals (referrer, user_id, name, created_at) VALUES (?, ?, ?, ?)').bind(refId, u.id, name, t).run();
+    const exists = await env.DB.prepare('SELECT user_id FROM referrals WHERE user_id = ?').bind(u.id).first();
+    if (!exists && !row.referred_by) {
+      const referrer = await getRow(env, refId);
+      if (referrer && !referrer.banned) {
+        await env.DB.prepare('INSERT OR IGNORE INTO referrals (referrer, user_id, name, photo, status, created_at) VALUES (?,?,?,?,\'pending\',?)')
+          .bind(refId, u.id, name, u.photo_url || null, t).run();
         await env.DB.prepare('UPDATE users SET referred_by=? WHERE user_id=?').bind(refId, u.id).run();
-        await logAct(env, refId, 'ref', 'Friend joined: ' + name, REFERRAL_REWARD);
-        row.balance += WELCOME_BONUS;
-        row.total_earned += WELCOME_BONUS;
-        row.welcome = 1;
-        await logAct(env, u.id, 'bonus', 'Welcome bonus', WELCOME_BONUS);
+        row.referred_by = refId;
       }
     }
   }
@@ -256,12 +255,53 @@ async function ensureUser(env, u, refId, dev) {
   return row;
 }
 
+/* verify pending referral: check both channels live, then credit */
+async function verifyReferral(env, friendId) {
+  const row = await getRow(env, friendId);
+  if (!row || !row.referred_by) return { ok: false };
+  const ref = await env.DB.prepare("SELECT status FROM referrals WHERE user_id = ?").bind(friendId).first();
+  if (!ref || (ref.status || 'verified') !== 'pending') return { ok: false, already: true };
+  const gate = await joinedAllChannels(env, friendId);
+  if (!gate.ok) return { ok: false, channel: gate.channel };
+  const referrer = await getRow(env, row.referred_by);
+  const t = now();
+  if (referrer && !referrer.banned) {
+    referrer.balance += REFERRAL_REWARD;
+    referrer.total_earned += REFERRAL_REWARD;
+    referrer.invited += 1;
+    referrer.req_friends = (referrer.req_friends || 0) + 1;
+    await saveRow(env, referrer);
+    await logAct(env, referrer.user_id, 'ref', 'Friend joined: ' + row.name, REFERRAL_REWARD);
+  }
+  if (!row.welcome) {
+    row.balance += WELCOME_BONUS;
+    row.total_earned += WELCOME_BONUS;
+    row.welcome = 1;
+    await logAct(env, friendId, 'bonus', 'Welcome bonus', WELCOME_BONUS);
+  }
+  row.updated_at = t;
+  await saveRow(env, row);
+  await env.DB.prepare("UPDATE referrals SET status='verified' WHERE user_id=?").bind(friendId).run();
+  return { ok: true };
+}
+
 async function apiInit(env, tgUser, body) {
   const dev = (body && body.dev) ? String(body.dev).slice(0, 64) : null;
   const ref = parseInt(body && body.ref, 10) || null;
-  const row = await ensureUser(env, tgUser, ref, dev);
+  let row = await ensureUser(env, tgUser, ref, dev);
   if (!row) return { ok: false, error: 'Could not create user' };
   if (row.banned) return bannedResp(row);
+  /* referral gate: pending referrals must join both channels before the app opens */
+  if (row.referred_by) {
+    const st = await env.DB.prepare('SELECT status FROM referrals WHERE user_id = ?').bind(row.user_id).first();
+    if (st && (st.status || 'verified') === 'pending') {
+      const v = await verifyReferral(env, row.user_id);
+      if (!v.ok) {
+        return { ok: false, gate: true, error: 'Join both channels to continue', channels: REQ_CHANNELS };
+      }
+      row = await getRow(env, tgUser.id);
+    }
+  }
   row._acts = await actsOf(env, tgUser.id);
   return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
 }
@@ -374,14 +414,6 @@ async function apiAd(env, tgUser) {
   return { ok: true, reward: AD_REWARD, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
 }
 
-async function apiLeaderboard(env, tgUser) {
-  const row = await getRow(env, tgUser.id);
-  if (!row) return { ok: false, error: 'User not found' };
-  if (row.banned) return bannedResp(row);
-  const { results } = await env.DB.prepare('SELECT user_id, name, total_earned FROM users WHERE banned = 0 ORDER BY total_earned DESC LIMIT 15').all();
-  return { ok: true, me: tgUser.id, board: (results || []).map((r, i) => ({ rank: i + 1, user_id: r.user_id, name: r.name, earned: r.total_earned })) };
-}
-
 async function apiReviews(env) {
   return { ok: true, reviews: await reviewsOf(env) };
 }
@@ -425,6 +457,23 @@ async function reply(env, chatId, text, keyboard) {
 }
 async function handleWebhook(env, update) {
   try {
+    /* callback queries (Verify button) */
+    if (update.callback_query) {
+      const cq = update.callback_query;
+      if (!cq.from || cq.data !== 'verify') return;
+      const r = await verifyReferral(env, cq.from.id);
+      if (r && r.ok) {
+        await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '✅ Verified! +' + WELCOME_BONUS + ' ETB bonus' });
+        if (cq.message && cq.message.chat) {
+          await reply(env, cq.message.chat.id,
+            '✅ <b>Verified!</b>\n\n🎁 +' + WELCOME_BONUS + ' ETB welcome bonus added to your balance.\n\nWelcome to TanveXo — let\'s earn together!',
+            [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
+        }
+      } else {
+        await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '❌ You haven\'t joined both channels yet', show_alert: true });
+      }
+      return;
+    }
     const msg = update.message || update.edited_message;
     if (!msg || !msg.from || !msg.text) return;
     const chatId = msg.chat.id;
@@ -435,10 +484,22 @@ async function handleWebhook(env, update) {
       const m = String(payload).match(/ref[_-]?(\d+)/i);
       const refId = m ? parseInt(m[1], 10) : null;
       await ensureUser(env, msg.from, refId, null);
+      /* referred & pending → channel gate first */
+      const row = await getRow(env, msg.from.id);
+      let pending = false;
+      if (row && row.referred_by && !row.banned) {
+        const st = await env.DB.prepare('SELECT status FROM referrals WHERE user_id = ?').bind(msg.from.id).first();
+        pending = !!(st && (st.status || 'verified') === 'pending');
+      }
+      if (pending) {
+        const kb = REQ_CHANNELS.map(h => [{ text: '📢 Join ' + h, url: 'https://t.me/' + h.slice(1) }]);
+        kb.push([{ text: '✅ I joined — Verify', callback_data: 'verify' }]);
+        await reply(env, chatId,
+          '👋 Welcome to <b>TanveXo</b>, ' + esc(msg.from.first_name) + '!\n\n🎁 You were invited by a friend!\n\nTo get your <b>+' + WELCOME_BONUS + ' ETB</b> welcome bonus and open the app:\n\n1️⃣ Join both channels below\n2️⃣ Tap <b>"I joined — Verify"</b>\n\nThat\'s it — let\'s earn together! 💰', kb);
+        return;
+      }
       const kb = [[{ text: '🎮 Open TanveXo', url: APP_LINK }]];
-      const txt = refId
-        ? '👋 Welcome to <b>TanveXo</b>!\n\n🎁 You were invited by a friend — you got a <b>' + WELCOME_BONUS + ' ETB</b> welcome bonus!\n\n💰 Invite friends · 📺 Watch ads · ✅ Tasks · 🎯 Lucky Wheel · 💸 Withdraw'
-        : '👋 Welcome to <b>TanveXo</b>!\n\n👥 Invite friends — earn <b>' + REFERRAL_REWARD + ' ETB</b> each\n📺 Watch ads for ETB\n✅ Complete tasks\n🎯 Play the Lucky Wheel\n💸 Withdraw to Telebirr, banks & crypto\n\nTap below to start!';
+      const txt = '👋 Welcome to <b>TanveXo</b>!\n\n👥 Invite friends — earn <b>' + REFERRAL_REWARD + ' ETB</b> each\n📺 Watch ads for ETB\n✅ Complete tasks\n🎯 Play the Lucky Wheel\n💸 Withdraw to Telebirr, banks & crypto\n\nTap below to start!';
       await reply(env, chatId, txt, kb);
     } else if (cmd === '/balance') {
       const row = await getRow(env, msg.from.id);
@@ -482,7 +543,6 @@ async function adminReviewAction(env, body) {
     if (!name) return { ok: false, error: 'Name required' };
     if (!message) return { ok: false, error: 'Message required' };
     await env.DB.prepare('INSERT INTO reviews (name, message, stars, created_at) VALUES (?,?,?,?)').bind(name, message, stars, t).run();
-    /* keep only latest 15 */
     try { await env.DB.prepare('DELETE FROM reviews WHERE id NOT IN (SELECT id FROM reviews ORDER BY id DESC LIMIT 15)').run(); } catch(e) {}
     return { ok: true };
   }
@@ -557,7 +617,7 @@ export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url = new URL(request.url).pathname;
-    if (url === '/') return j({ ok: true, msg: 'TanveXo API v8 is running' });
+    if (url === '/') return j({ ok: true, msg: 'TanveXo API v9 is running' });
     let body = {};
     if (request.method === 'POST') { try { body = await request.json(); } catch (e) {} }
     try {
@@ -586,7 +646,6 @@ export default {
         case '/api/task':        return j(await apiTask(env, tgUser, body));
         case '/api/spin':        return j(await apiSpin(env, tgUser, body));
         case '/api/ad':          return j(await apiAd(env, tgUser));
-        case '/api/leaderboard': return j(await apiLeaderboard(env, tgUser));
         case '/api/reviews':     return j(await apiReviews(env));
         case '/api/withdraw':    return j(await apiWithdraw(env, tgUser, body));
         case '/api/withdrawals': return j(await apiWithdrawals(env, tgUser));
