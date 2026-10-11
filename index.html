@@ -191,32 +191,44 @@ nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:calc(10
 .nv-ic .ic{width:19px;height:19px}
 .nav-btn.active{color:var(--g)}
 .nav-btn.active .nv-ic{background:rgba(74,222,128,.16)}
-#toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,16px);background:#1e1e1e;border:1px solid rgba(255,255,255,.1);color:var(--text);font-size:13px;font-weight:600;padding:12px 18px;border-radius:16px;opacity:0;pointer-events:none;transition:.25s;z-index:100;max-width:86vw;text-align:center;box-shadow:0 12px 34px rgba(0,0,0,.5)}
+#toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,16px);background:#1e1e1e;border:1px solid rgba(255,255,255,.1);color:var(--text);font-size:13px;font-weight:600;padding:12px 18px;border-radius:16px;opacity:0;pointer-events:none;transition:.25s;z-index:600;max-width:86vw;text-align:center;box-shadow:0 12px 34px rgba(0,0,0,.5)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #toast.err{border-color:rgba(248,113,113,.4);color:var(--red)}
-#confetti{position:fixed;inset:0;pointer-events:none;z-index:90;overflow:hidden}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:590;overflow:hidden}
 #confetti i{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{transform:translate(var(--x),108vh) rotate(var(--r));opacity:.7}}
 #adOverlay{position:fixed;inset:0;background:rgba(4,4,4,.97);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px}
 #adOverlay.show{display:flex}
+#adOverlay .ad-ic{width:80px;height:80px;border-radius:24px;background:var(--tile);display:grid;place-items:center;color:var(--g)}
+#adOverlay .ad-ic .ic{width:38px;height:38px}
 #adOverlay .ad-count{font-size:56px;font-weight:900;color:var(--g);margin:14px 0}
 #adOverlay p{color:var(--muted);font-size:14px;line-height:1.6;max-width:280px}
-#banScreen,#gateScreen{position:fixed;inset:0;background:var(--bg);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px}
-#banScreen.show,#gateScreen.show{display:flex}
-.ban-ic{width:76px;height:76px;border-radius:24px;background:var(--tile);display:grid;place-items:center;margin-bottom:14px;color:var(--g)}
+/* ban screen */
+#banScreen{position:fixed;inset:0;background:var(--bg);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px}
+#banScreen.show{display:flex}
+.ban-ic{width:76px;height:76px;border-radius:24px;background:var(--tile);display:grid;place-items:center;margin-bottom:14px;color:var(--red)}
 .ban-ic .ic{width:36px;height:36px}
-#banScreen h1,#gateScreen h1{font-size:22px;margin-bottom:8px}
-#banReason,#gateP{color:var(--muted);font-size:14px;line-height:1.6;max-width:300px}
-#gateChannels{display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px;margin:18px 0 6px}
-#gateCheck{max-width:300px}
+#banScreen h1{font-size:22px;margin-bottom:8px}
+#banReason{color:var(--muted);font-size:14px;line-height:1.6;max-width:300px}
 #banContact{display:none;margin-top:18px;color:var(--g);font-weight:700;text-decoration:none;border:1px solid rgba(74,222,128,.4);padding:10px 18px;border-radius:14px}
+/* channel gate popup card */
+#gateWrap{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+#gateWrap.show{display:flex}
+.gate-card{width:100%;max-width:340px;background:var(--card);border:1px solid rgba(74,222,128,.18);border-radius:26px;padding:24px 20px;text-align:center;animation:popin .3s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes popin{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.gate-card .g-ic{width:64px;height:64px;border-radius:20px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);display:grid;place-items:center;margin:0 auto 14px;color:var(--g)}
+.gate-card .g-ic .ic{width:30px;height:30px}
+.gate-card h2{font-size:19px;font-weight:800;margin-bottom:6px}
+.gate-card .g-p{color:var(--muted);font-size:13px;line-height:1.55;margin-bottom:16px}
+#gateChannels{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
+.g-err{color:var(--red);font-size:12.5px;margin-top:10px;min-height:16px;font-weight:600}
 </style>
 </head>
 <body>
 
 <div id="confetti"></div>
 <div id="adOverlay">
-  <div style="font-size:40px">📺</div>
+  <div class="ad-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/></svg></div>
   <div class="ad-count" id="adCount">10</div>
   <p><b>Advertisement</b><br>Your reward unlocks when the ad finishes.</p>
 </div>
@@ -389,16 +401,20 @@ nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:calc(10
   </nav>
 </div>
 
-<div id="gateScreen">
-  <div class="ban-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
-  <h1 data-i18n="gate_h">Join to continue</h1>
-  <p id="gateP" data-i18n="gate_p"></p>
-  <div id="gateChannels"></div>
-  <button class="btn green big" id="gateCheck" data-i18n="gate_check">I joined — Continue</button>
+<!-- channel gate popup card -->
+<div id="gateWrap">
+  <div class="gate-card">
+    <div class="g-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
+    <h2 data-i18n="gate_h">Join to continue</h2>
+    <p class="g-p" data-i18n="gate_p"></p>
+    <div id="gateChannels"></div>
+    <button class="btn green big" id="gateCheck" data-i18n="gate_check">I joined — Verify</button>
+    <div class="g-err" id="gateErr"></div>
+  </div>
 </div>
 
 <div id="banScreen">
-  <div class="ban-ic" style="color:var(--red)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg></div>
+  <div class="ban-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg></div>
   <h1 data-i18n="banned_h">Account locked</h1>
   <p id="banReason"></p>
   <a id="banContact" href="#" target="_blank" rel="noopener" data-i18n="contact">Contact support</a>
@@ -484,7 +500,7 @@ const STR = {
     nav_home:"Home", nav_tasks:"Tasks", nav_game:"Game", nav_friends:"Friends", nav_wallet:"Wallet",
     banned_h:"Account locked", contact:"Contact support",
     gate_h:"Join to continue", gate_p:"Join both channels to unlock TanveXo and your +25 ETB welcome bonus.",
-    gate_check:"I joined — Continue", gate_fail:"Please join both channels first",
+    gate_check:"I joined — Verify", gate_fail:"Please join both channels first",
     t_claimed:"+{r} ETB claimed!", t_copied:"Invite link copied!", t_join_back:"Join, come back and tap Verify",
     t_not_enough:"Not enough ETB for that bet", t_submitted:"Request submitted! Paid within 24–48h.",
     t_locked_req:"Locked — meet the requirements first (25 ads · 15 friends)",
@@ -524,7 +540,7 @@ const STR = {
     nav_home:"መነሻ", nav_tasks:"ተግባራት", nav_game:"ጨዋታ", nav_friends:"ጓደኞች", nav_wallet:"ዋሌት",
     banned_h:"መለያ ተዘግቷል", contact:"ድጋፍ ያግኙ",
     gate_h:"ለመቀጠል ይቀላቀሉ", gate_p:"TanveXoን ለመክፈት እና +25 ETB የእንጋቢ ስጦታ ለማግኘት ሁለቱንም ቻናሎች ይቀላቀሉ።",
-    gate_check:"ተቀላቅያለሁ — ቀጥል", gate_fail:"እባክዎ ሁለቱንም ቻናሎች ይቀላቀሉ",
+    gate_check:"ተቀላቅያለሁ — አረጋግጥ", gate_fail:"እባክዎ ሁለቱንም ቻናሎች ይቀላቀሉ",
     t_claimed:"+{r} ETB ተቀብለዋል!", t_copied:"ሊንክ ተቀድቷል!", t_join_back:"ይቀላቀሉ፣ ተመለስተው አረጋግጥ ይንኩ",
     t_not_enough:"ለዚህ መደጋ በቂ ETB የለም", t_submitted:"ጥያቄ ተልኳል! በ24–48 ሰዓት ይከፈላል።",
     t_locked_req:"ተዘግቷል — መስፈርቱን ይሙሉ (25 ማስታወቂያ • 15 ጓደኛ)",
@@ -552,7 +568,6 @@ function ago(ts){
 function applyStatic(){
   document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent = t(el.dataset.i18n); });
   const hub = document.getElementById('spinHub'); if (hub) hub.textContent = t('spin_hub');
-  $('#gateP').textContent = t('gate_p');
 }
 document.getElementById('langBtn').addEventListener('click', function(){
   LANG = LANG === 'en' ? 'am' : 'en';
@@ -592,8 +607,8 @@ function deviceId(){
     return d;
   } catch(e){ return 'dev_unknown'; }
 }
-/* invite link now goes through the BOT first so the 2-channel gate runs before the app */
-function referralLink(){ return 'https://t.me/' + CONFIG.botUsername + '?start=ref_' + myId; }
+/* direct miniapp invite link — gate happens inside the app as a popup */
+function referralLink(){ return 'https://t.me/' + CONFIG.botUsername + '/refer?startapp=ref_' + myId; }
 
 /* ================= STATE ================= */
 const STREAK_REWARDS = [10,30,40,60,70,80,100];
@@ -740,10 +755,13 @@ async function bootLive(){
 }
 async function refreshState(){
   if (!LIVE || LOCKED || GATED) return;
-  try { const r = await api('/api/sync'); applyState(r.state); } catch(e){ if (e && e.locked) showBanScreen(e.message); }
+  try { const r = await api('/api/sync'); applyState(r.state); } catch(e){
+    if (e && e.locked) showBanScreen(e.message);
+    if (e && e.gate) showGate(e.channels);
+  }
 }
 
-/* ================= REFERRAL GATE (2 channels) ================= */
+/* ================= REFERRAL GATE (popup card) ================= */
 function showGate(channels){
   GATED = true;
   const wrap = $('#gateChannels');
@@ -751,22 +769,30 @@ function showGate(channels){
   (channels && channels.length ? channels : ['@ebtry0']).forEach(function(h){
     const b = document.createElement('button');
     b.className = 'btn dark big';
+    b.style.padding = '13px';
     b.innerHTML = ic('megaphone', 17) + ' ' + h;
     b.addEventListener('click', function(){ openTg('https://t.me/' + h.replace('@','')); });
     wrap.appendChild(b);
   });
-  $('#gateScreen').classList.add('show');
+  $('#gateErr').textContent = '';
+  $('#gateWrap').classList.add('show');
 }
  $('#gateCheck').addEventListener('click', async function(){
   this.disabled = true;
   try {
-    $('#gateScreen').classList.remove('show');
-    await tryInit();
+    const r = await api('/api/verify_ref');
+    GATED = false;
+    $('#gateWrap').classList.remove('show');
+    LIVE = true;
+    applyState(r.state);
+    confetti(); hNotify('success');
     toast(t('t_claimed', CONFIG.welcomeBonus));
+    try { const tr = await api('/api/tasks'); state.serverTasks = tr.tasks || []; } catch(e2){}
+    try { const wr = await api('/api/withdrawals'); state.withdrawals = wr.withdrawals || []; save(); } catch(e3){}
   } catch(e){
-    if (e && e.gate){ showGate(e.channels); toast(t('gate_fail'), true); haptic('rigid'); }
-    else if (e && e.locked){ showBanScreen(e.message); }
-    else toast(e.message, true);
+    if (e && e.gate){ $('#gateErr').textContent = t('gate_fail'); haptic('rigid'); }
+    else if (e && e.locked){ $('#gateWrap').classList.remove('show'); showBanScreen(e.message); }
+    else $('#gateErr').textContent = e.message;
   }
   this.disabled = false;
 });
@@ -794,7 +820,7 @@ function renderActivity(){
 }
 const DEMO_REVIEWS = [
   { name:'Abebe', message:'Got paid in 2 hours. Best app!', stars:5, ts:Date.now() - 2*60000 },
-  { name:'Hanna', message:'The wheel is so fun, won ×3 twice 😍', stars:5, ts:Date.now() - 25*60000 },
+  { name:'Hanna', message:'The wheel is so fun, won ×3 twice!', stars:5, ts:Date.now() - 25*60000 },
   { name:'Kebede', message:'Invite friends, it really pays.', stars:4, ts:Date.now() - 3*3600000 }
 ];
 function renderReviews(){
@@ -887,6 +913,7 @@ async function watchAd(){
         applyState(r.state);
       } catch(e){
         if (e && e.locked){ showBanScreen(e.message); }
+        else if (e && e.gate){ showGate(e.channels); }
         else toast(e.message, true);
       }
     } else {
@@ -981,6 +1008,7 @@ function taskRow(t_, done, v, ready, isLink){
         applyState(r.state);
       } catch(e){
         if (e && e.locked){ showBanScreen(e.message); return; }
+        if (e && e.gate){ showGate(e.channels); return; }
         haptic('rigid');
         toast(e.message, true);
         btn.disabled = false;
@@ -1020,7 +1048,7 @@ function renderTasksPage(){ renderStreak(); renderTasksList(); }
       confetti(); hNotify('success');
       toast(t('t_claimed', r.reward));
       applyState(r.state);
-    } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } toast(e.message, true); }
+    } catch(e){ if (e && e.locked){ showBanScreen(e.message); return; } if (e && e.gate){ showGate(e.channels); return; } toast(e.message, true); }
     this.disabled = false;
     return;
   }
@@ -1117,6 +1145,7 @@ function betVal(){
     } catch(e){
       spinning = false; this.disabled = false;
       if (e && e.locked){ showBanScreen(e.message); return; }
+      if (e && e.gate){ showGate(e.channels); return; }
       toast(e.message, true);
     }
     return;
@@ -1149,7 +1178,7 @@ function renderFriends(){
   }
   list.innerHTML = state.friends.map(function(f){
     const av = f.photo
-      ? '<div class="f-av"><img src="' + f.photo + '" alt=""></div>'
+      ? '<div class="f-av"><img src="' + f.photo + '" alt="" onerror="this.parentNode.textContent=\'' + (f.name || '?').charAt(0).toUpperCase() + '\'"></div>'
       : '<div class="f-av">' + (f.name || '?').charAt(0).toUpperCase() + '</div>';
     const right = f.status === 'pending'
       ? '<span class="fpill pend">' + t('st_pending') + '</span>'
@@ -1258,7 +1287,7 @@ async function loadWithdrawals(){
     $('#wdAmount').value = ''; $('#wdAddress').value = '';
     hNotify('success'); toast(t('t_submitted'));
     loadWithdrawals();
-  } catch(e){ if (e && e.locked){ showBanScreen(e.message); } else toast(e.message, true); }
+  } catch(e){ if (e && e.locked){ showBanScreen(e.message); } else if (e && e.gate){ showGate(e.channels); } else toast(e.message, true); }
   this.disabled = false;
 });
 
