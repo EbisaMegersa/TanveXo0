@@ -1,4 +1,4 @@
-/* TanveXo API v9 — 2-channel referral gate, pending referrals, photos, no leaderboard */
+/* TanveXo API v10 — direct miniapp invites, in-app channel gate popup, pending referrals */
 const REFERRAL_REWARD = 50, WELCOME_BONUS = 25;
 const AD_REWARD = 5, AD_COOLDOWN = 1800, AD_MAX_PER_DAY = 25;
 const SPIN_MIN_BET = 50, SPIN_MAX_BET = 5000;
@@ -13,6 +13,7 @@ const APP_LINK = 'https://t.me/' + BOT_USERNAME + '/refer';
 const REQ_CHANNELS = ['@ebtry0', '@ebisa_emoji'];
 const STREAK_REWARDS = [10, 30, 40, 60, 70, 80, 100];
 const TASK_TYPES = ['invites','daily','ads','link'];
+const gateErr = () => ({ ok: false, gate: true, error: 'Join both channels to continue', channels: REQ_CHANNELS });
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -221,6 +222,13 @@ function toClient(row, friends, claimed) {
     activities: row._acts || []
   };
 }
+/* true if this user was referred and hasn't verified the channels yet */
+async function refPending(env, userId) {
+  const row = await getRow(env, userId);
+  if (!row || !row.referred_by || row.banned) return false;
+  const st = await env.DB.prepare('SELECT status FROM referrals WHERE user_id = ?').bind(userId).first();
+  return !!(st && (st.status || 'verified') === 'pending');
+}
 
 /* create user + record pending referral (no credit until verified) */
 async function ensureUser(env, u, refId, dev) {
@@ -255,12 +263,12 @@ async function ensureUser(env, u, refId, dev) {
   return row;
 }
 
-/* verify pending referral: check both channels live, then credit */
+/* verify pending referral: check both channels live, then credit referrer + welcome bonus */
 async function verifyReferral(env, friendId) {
   const row = await getRow(env, friendId);
-  if (!row || !row.referred_by) return { ok: false };
-  const ref = await env.DB.prepare("SELECT status FROM referrals WHERE user_id = ?").bind(friendId).first();
-  if (!ref || (ref.status || 'verified') !== 'pending') return { ok: false, already: true };
+  if (!row || !row.referred_by) return { ok: true, nothing: true };
+  const ref = await env.DB.prepare('SELECT status FROM referrals WHERE user_id = ?').bind(friendId).first();
+  if (!ref || (ref.status || 'verified') !== 'pending') return { ok: true, already: true };
   const gate = await joinedAllChannels(env, friendId);
   if (!gate.ok) return { ok: false, channel: gate.channel };
   const referrer = await getRow(env, row.referred_by);
@@ -288,25 +296,29 @@ async function verifyReferral(env, friendId) {
 async function apiInit(env, tgUser, body) {
   const dev = (body && body.dev) ? String(body.dev).slice(0, 64) : null;
   const ref = parseInt(body && body.ref, 10) || null;
-  let row = await ensureUser(env, tgUser, ref, dev);
+  const row = await ensureUser(env, tgUser, ref, dev);
   if (!row) return { ok: false, error: 'Could not create user' };
   if (row.banned) return bannedResp(row);
-  /* referral gate: pending referrals must join both channels before the app opens */
-  if (row.referred_by) {
-    const st = await env.DB.prepare('SELECT status FROM referrals WHERE user_id = ?').bind(row.user_id).first();
-    if (st && (st.status || 'verified') === 'pending') {
-      const v = await verifyReferral(env, row.user_id);
-      if (!v.ok) {
-        return { ok: false, gate: true, error: 'Join both channels to continue', channels: REQ_CHANNELS };
-      }
-      row = await getRow(env, tgUser.id);
-    }
-  }
+  /* pending referral → app shows the channel popup */
+  if (await refPending(env, tgUser.id)) return gateErr();
+  row._acts = await actsOf(env, tgUser.id);
+  return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
+}
+
+/* called by the in-app popup Verify button */
+async function apiVerifyRef(env, tgUser) {
+  let row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  const r = await verifyReferral(env, tgUser.id);
+  if (!r.ok) return gateErr();
+  row = await getRow(env, tgUser.id);
   row._acts = await actsOf(env, tgUser.id);
   return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
 }
 
 async function apiSync(env, tgUser) {
+  if (await refPending(env, tgUser.id)) return gateErr();
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found — reopen the app' };
   if (row.banned) return bannedResp(row);
@@ -317,6 +329,7 @@ async function apiSync(env, tgUser) {
 }
 
 async function apiDaily(env, tgUser) {
+  if (await refPending(env, tgUser.id)) return gateErr();
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
   if (row.banned) return bannedResp(row);
@@ -349,6 +362,7 @@ async function apiTasks(env, tgUser) {
   return { ok: true, tasks: results || [] };
 }
 async function apiTask(env, tgUser, body) {
+  if (await refPending(env, tgUser.id)) return gateErr();
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
   if (row.banned) return bannedResp(row);
@@ -375,6 +389,7 @@ async function apiTask(env, tgUser, body) {
 
 function spinMult(){ let r = Math.random() * 100; if (r < 55) return 0; if (r < 80) return 1.5; if (r < 92) return 2; return 3; }
 async function apiSpin(env, tgUser, body) {
+  if (await refPending(env, tgUser.id)) return gateErr();
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
   if (row.banned) return bannedResp(row);
@@ -396,6 +411,7 @@ async function apiSpin(env, tgUser, body) {
 }
 
 async function apiAd(env, tgUser) {
+  if (await refPending(env, tgUser.id)) return gateErr();
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
   if (row.banned) return bannedResp(row);
@@ -419,6 +435,7 @@ async function apiReviews(env) {
 }
 
 async function apiWithdraw(env, tgUser, body) {
+  if (await refPending(env, tgUser.id)) return gateErr();
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
   if (row.banned) return bannedResp(row);
@@ -448,7 +465,7 @@ async function apiWithdrawals(env, tgUser) {
   return { ok: true, withdrawals: await withdrawalsOf(env, tgUser.id) };
 }
 
-/* ================= WEBHOOK ================= */
+/* ================= WEBHOOK (backup path — app popup is primary) ================= */
 function esc(s){ return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 async function reply(env, chatId, text, keyboard) {
   const params = { chat_id: chatId, text, parse_mode: 'HTML' };
@@ -457,7 +474,6 @@ async function reply(env, chatId, text, keyboard) {
 }
 async function handleWebhook(env, update) {
   try {
-    /* callback queries (Verify button) */
     if (update.callback_query) {
       const cq = update.callback_query;
       if (!cq.from || cq.data !== 'verify') return;
@@ -466,7 +482,7 @@ async function handleWebhook(env, update) {
         await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '✅ Verified! +' + WELCOME_BONUS + ' ETB bonus' });
         if (cq.message && cq.message.chat) {
           await reply(env, cq.message.chat.id,
-            '✅ <b>Verified!</b>\n\n🎁 +' + WELCOME_BONUS + ' ETB welcome bonus added to your balance.\n\nWelcome to TanveXo — let\'s earn together!',
+            '✅ <b>Verified!</b>\n\n🎁 +' + WELCOME_BONUS + ' ETB welcome bonus added.\n\nWelcome to TanveXo — let\'s earn together!',
             [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
         }
       } else {
@@ -484,7 +500,6 @@ async function handleWebhook(env, update) {
       const m = String(payload).match(/ref[_-]?(\d+)/i);
       const refId = m ? parseInt(m[1], 10) : null;
       await ensureUser(env, msg.from, refId, null);
-      /* referred & pending → channel gate first */
       const row = await getRow(env, msg.from.id);
       let pending = false;
       if (row && row.referred_by && !row.banned) {
@@ -495,12 +510,12 @@ async function handleWebhook(env, update) {
         const kb = REQ_CHANNELS.map(h => [{ text: '📢 Join ' + h, url: 'https://t.me/' + h.slice(1) }]);
         kb.push([{ text: '✅ I joined — Verify', callback_data: 'verify' }]);
         await reply(env, chatId,
-          '👋 Welcome to <b>TanveXo</b>, ' + esc(msg.from.first_name) + '!\n\n🎁 You were invited by a friend!\n\nTo get your <b>+' + WELCOME_BONUS + ' ETB</b> welcome bonus and open the app:\n\n1️⃣ Join both channels below\n2️⃣ Tap <b>"I joined — Verify"</b>\n\nThat\'s it — let\'s earn together! 💰', kb);
+          '👋 Welcome to <b>TanveXo</b>, ' + esc(msg.from.first_name) + '!\n\n🎁 Join both channels and tap Verify to unlock the app + <b>+' + WELCOME_BONUS + ' ETB</b>!', kb);
         return;
       }
-      const kb = [[{ text: '🎮 Open TanveXo', url: APP_LINK }]];
-      const txt = '👋 Welcome to <b>TanveXo</b>!\n\n👥 Invite friends — earn <b>' + REFERRAL_REWARD + ' ETB</b> each\n📺 Watch ads for ETB\n✅ Complete tasks\n🎯 Play the Lucky Wheel\n💸 Withdraw to Telebirr, banks & crypto\n\nTap below to start!';
-      await reply(env, chatId, txt, kb);
+      await reply(env, chatId,
+        '👋 Welcome to <b>TanveXo</b>!\n\n👥 Invite friends — earn <b>' + REFERRAL_REWARD + ' ETB</b> each\n📺 Watch ads · ✅ Tasks · 🎯 Lucky Wheel · 💸 Withdraw\n\nTap below to start!',
+        [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
     } else if (cmd === '/balance') {
       const row = await getRow(env, msg.from.id);
       if (!row) await reply(env, chatId, 'You don\'t have an account yet — open the app first!', [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
@@ -617,7 +632,7 @@ export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url = new URL(request.url).pathname;
-    if (url === '/') return j({ ok: true, msg: 'TanveXo API v9 is running' });
+    if (url === '/') return j({ ok: true, msg: 'TanveXo API v10 is running' });
     let body = {};
     if (request.method === 'POST') { try { body = await request.json(); } catch (e) {} }
     try {
@@ -640,6 +655,7 @@ export default {
       if (!tgUser) return j({ ok: false, error: env.BOT_TOKEN ? 'Auth failed — open the app from Telegram' : 'BOT_TOKEN secret is not set in Worker settings' }, 401);
       switch (url) {
         case '/api/init':        return j(await apiInit(env, tgUser, body));
+        case '/api/verify_ref':  return j(await apiVerifyRef(env, tgUser));
         case '/api/sync':        return j(await apiSync(env, tgUser));
         case '/api/daily':       return j(await apiDaily(env, tgUser));
         case '/api/tasks':       return j(await apiTasks(env, tgUser));
