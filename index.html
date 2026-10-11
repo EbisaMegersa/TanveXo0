@@ -28,8 +28,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(600px 
 #app{max-width:480px;margin:0 auto;min-height:100dvh;padding-bottom:100px}
 main{padding:8px 16px 0}
 .ic{width:22px;height:22px}
-
-/* header */
 .top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px}
 .me{display:flex;align-items:center;gap:10px}
 .avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(160deg,var(--gold2),var(--gold-deep));display:grid;place-items:center;font-weight:800;color:#45290a;font-size:16px;overflow:hidden;flex-shrink:0}
@@ -39,16 +37,12 @@ main{padding:8px 16px 0}
 .lvl-bar{width:80px;height:5px;background:var(--surface2);border-radius:99px;overflow:hidden}
 .lvl-bar i{display:block;height:100%;width:0;background:var(--gold);border-radius:99px;transition:width .3s}
 .lvl span{font-size:10.5px;color:var(--muted);font-weight:700}
-.badge{font-size:9.5px;font-weight:800;letter-spacing:1px;color:var(--gold);border:1px solid rgba(246,183,60,.4);border-radius:99px;padding:4px 9px}
-
-/* balance */
+.badge{font-size:9.5px;font-weight:800;letter-spacing:1px;color:var(--muted);border:1px solid var(--border);border-radius:99px;padding:4px 9px}
 .balance-card{margin-top:10px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:16px}
 .lbl{font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:600}
 .bal{display:flex;align-items:center;justify-content:center;gap:8px;font-size:38px;font-weight:800;margin:2px 0}
 .coin-ic{width:26px;height:26px}
 .sub{font-size:12px;color:var(--muted);font-weight:600}
-
-/* coin */
 .coin-zone{display:grid;place-items:center;padding:20px 0 6px;position:relative}
 .glow{position:absolute;width:270px;height:270px;border-radius:50%;background:radial-gradient(circle,rgba(246,183,60,.18),transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
 .float{animation:floaty 4s ease-in-out infinite}
@@ -59,8 +53,6 @@ main{padding:8px 16px 0}
 .coin:active{filter:brightness(1.06)}
 .coin-ring{position:absolute;inset:9%;border-radius:50%;border:2px dashed rgba(122,63,0,.4)}
 .coin svg{width:38%;height:38%;fill:rgba(122,63,0,.85)}
-
-/* energy */
 .energy{display:flex;align-items:center;gap:10px;margin:14px 2px 4px}
 .e-ic{display:grid;place-items:center;color:var(--gold)}
 .e-ic .ic{width:16px;height:16px}
@@ -70,8 +62,6 @@ main{padding:8px 16px 0}
 #eText.low{color:var(--red)}
 .energy.shake{animation:shake .16s 2}
 @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-
-/* stats + boost */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
 .stats.two{grid-template-columns:repeat(2,1fr)}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:12px 8px;text-align:center}
@@ -80,8 +70,6 @@ main{padding:8px 16px 0}
 .boost-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:14px 16px}
 .boost-card b{font-size:15px}
 .boost-card small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
-
-/* buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;font-family:inherit;font-weight:700;border-radius:14px;cursor:pointer;transition:transform .06s}
 .btn:active{transform:scale(.96)}
 .btn .ic{width:18px;height:18px}
@@ -89,8 +77,6 @@ main{padding:8px 16px 0}
 .btn.big{width:100%;padding:15px;font-size:15px}
 .btn.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:11px 16px;font-size:13px;width:100%}
 .btn:disabled{background:var(--surface2);color:var(--muted);box-shadow:none;border:1px solid var(--border);pointer-events:none}
-
-/* pages */
 .page{display:none;padding-bottom:8px}
 .page.active{display:block;animation:fadein .2s}
 @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -99,8 +85,6 @@ h3{font-size:15px;margin:18px 0 4px}
 .hint{color:var(--muted);font-size:13px;margin:4px 0 14px;line-height:1.5}
 .fine{font-size:11.5px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.6}
 .gold{color:var(--gold)}
-
-/* tasks */
 .task{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:12px;margin-bottom:10px}
 .t-ic{width:40px;height:40px;border-radius:12px;background:var(--surface2);display:grid;place-items:center;color:var(--gold);flex-shrink:0}
 .t-ic .ic{width:20px;height:20px}
@@ -113,8 +97,6 @@ h3{font-size:15px;margin:18px 0 4px}
 .claim.ready{background:linear-gradient(180deg,var(--gold2),var(--gold-deep));color:#45290a;border:none;box-shadow:0 4px 12px rgba(246,183,60,.25);animation:pulse 1.6s infinite}
 .claim.done{color:var(--green);border-color:rgba(52,211,153,.3)}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-
-/* invite */
 .invite-hero{background:linear-gradient(160deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:20px;padding:22px 16px;text-align:center;margin-top:10px}
 .hero-ic{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:rgba(246,183,60,.12);color:var(--gold)}
 .hero-ic .ic{width:26px;height:26px}
@@ -131,8 +113,6 @@ h3{font-size:15px;margin:18px 0 4px}
 .friend b{flex:1;font-size:14px}
 .f-pts{color:var(--green);font-weight:800;font-size:13px}
 .empty{color:var(--muted);font-size:13px;text-align:center;padding:18px 0;line-height:1.5}
-
-/* bonus */
 .streak{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:6px 0 16px}
 .day{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:9px 2px;text-align:center}
 .day small{display:block;font-size:9.5px;color:var(--muted);font-weight:700}
@@ -141,16 +121,12 @@ h3{font-size:15px;margin:18px 0 4px}
 .day.done small,.day.done b{color:#45290a}
 .day.today{border-color:var(--gold);animation:pulse 1.6s infinite}
 .day.today b{color:var(--gold2)}
-
-/* nav */
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;background:rgba(10,13,20,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--border);z-index:50;padding-bottom:env(safe-area-inset-bottom)}
 .nav-inner{width:100%;max-width:480px;display:grid;grid-template-columns:repeat(4,1fr)}
 .nav-btn{position:relative;background:none;border:none;color:var(--muted);font-family:inherit;font-weight:700;font-size:10.5px;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
 .nav-btn .ic{width:22px;height:22px}
 .nav-btn.active{color:var(--gold)}
 .dot{position:absolute;top:8px;left:calc(50% + 7px);width:8px;height:8px;border-radius:50%;background:var(--gold);display:none}
-
-/* toast + confetti + fly */
 #toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translate(-50%,16px);background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:600;padding:11px 18px;border-radius:14px;opacity:0;pointer-events:none;transition:.25s;z-index:100;max-width:86vw;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.4)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #toast.err{border-color:rgba(248,113,113,.4);color:var(--red)}
@@ -177,7 +153,6 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
   </header>
 
   <main>
-    <!-- HOME -->
     <section class="page active" id="page-home">
       <div class="balance-card">
         <span class="lbl">TOTAL BALANCE</span>
@@ -216,14 +191,12 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
       </div>
     </section>
 
-    <!-- TASKS -->
     <section class="page" id="page-tasks">
       <h2>Daily tasks</h2>
       <p class="hint">Complete tasks to earn bonus coins.</p>
       <div id="taskList"></div>
     </section>
 
-    <!-- INVITE -->
     <section class="page" id="page-invite">
       <div class="invite-hero">
         <span class="hero-ic" data-icon="userplus"></span>
@@ -238,15 +211,14 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
         <div class="stat"><span id="invFriends">0</span><small>Friends</small></div>
         <div class="stat"><span id="invEarned">+0</span><small>From invites</small></div>
       </div>
-      <div class="demo-card">
-        <small><b>Demo mode:</b> real referral tracking arrives with the backend. Use this to preview the flow.</small>
+      <div class="demo-card" id="simCard">
+        <small><b>Preview mode:</b> when the app runs in Telegram, real friends are tracked on the server.</small>
         <button class="btn ghost" id="simBtn">Simulate a friend joining</button>
       </div>
       <h3>Your friends</h3>
       <div id="friendList"></div>
     </section>
 
-    <!-- BONUS -->
     <section class="page" id="page-bonus">
       <h2>Daily bonus</h2>
       <p class="hint">Claim every day to grow your streak. Miss a day and it resets.</p>
@@ -269,15 +241,13 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;b
 <div id="toast"></div>
 
 <script>
-/* ================= CONFIG — edit these later ================= */
+/* ================= CONFIG — EDIT THESE 3 ================= */
 const CONFIG = {
-  botUsername: 'your_bot_username',        // ← after BotFather gives you the bot name
-  channelUrl: 'https://t.me/your_channel', // ← used by the "Join channel" task
-  pointsPerInvite: 5,
-  tapEnergyCost: 1,
-  energyMax: 500,
-  energyRegenPerSec: 1,
-  storageKey: 'tapcoin_v1'
+  api: 'https://tanvexo0.ebisamagarsaa.workers.dev/',                                  // ← paste your Worker URL: 'https://tapcoin-api.your-name.workers.dev'
+  botUsername: 'tanvexoappbot',         // ← your bot's username from BotFather (without @)
+  channelUrl: 'https://t.me/ebtry0',  // ← your news channel link
+  pointsPerInvite: 5, tapEnergyCost: 1, energyMax: 500, energyRegenPerSec: 1,
+  storageKey: 'tapcoin_v2'
 };
 
 /* ================= TELEGRAM ================= */
@@ -294,7 +264,14 @@ try {
 
 const myId = tgUser ? tgUser.id : 7350001;
 const myName = tgUser ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') : 'Guest';
-function referralLink(){ return 'https://t.me/' + CONFIG.botUsername + '?start=ref_' + myId; }
+const startRef = (function(){
+  try {
+    const sp = tg && tg.initDataUnsafe ? tg.initDataUnsafe.start_param : null;
+    const m = sp ? String(sp).match(/ref[_-]?(\d+)/i) : null;
+    return m ? parseInt(m[1], 10) : null;
+  } catch(e){ return null; }
+})();
+function referralLink(){ return 'https://t.me/' + CONFIG.botUsername + '?startapp=ref_' + myId; }
 
 /* ================= ICONS ================= */
 const ICONS = {
@@ -332,6 +309,62 @@ let state = load();
 let dirty = false;
 function save(){ try{ localStorage.setItem(CONFIG.storageKey, JSON.stringify(state)); }catch(e){} dirty = false; }
 
+/* ================= BACKEND ================= */
+let LIVE = false;
+let pendingTaps = 0;
+let syncing = false;
+
+async function api(path, body){
+  const res = await fetch(CONFIG.api.replace(/\/+$/,'') + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': (tg && tg.initData) ? tg.initData : '' },
+    body: JSON.stringify(body || {})
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'API error');
+  return data;
+}
+
+function applyState(s){
+  state.balance = s.balance; state.totalEarned = s.totalEarned; state.taps = s.taps;
+  state.energy = s.energy; state.boost = s.boost; state.referrals = s.referrals;
+  state.friends = s.friends || []; state.dailyStreak = s.dailyStreak;
+  state.lastDailyTs = s.lastDaily; state.dailyClaims = s.dailyClaims;
+  state.completedTasks = s.completedTasks || []; state.channelClicked = s.channelClicked;
+  state.lastEnergyTs = Date.now();
+  pendingTaps = 0;
+  save(); syncUI();
+  if (currentPage === 'tasks') renderTasks();
+  if (currentPage === 'invite') renderInvite();
+  if (currentPage === 'bonus') renderBonus();
+}
+
+async function bootLive(){
+  if (!CONFIG.api || !tg || !tg.initData) return;
+  try {
+    const r = await api('/api/init', { ref: startRef });
+    LIVE = true;
+    applyState(r.state);
+    const b = $('#modeBadge');
+    b.textContent = 'LIVE';
+    b.style.color = '#34d399';
+    b.style.borderColor = 'rgba(52,211,153,.4)';
+    $('#simCard').style.display = 'none';
+  } catch(e){
+    toast('Backend: ' + e.message + ' — preview mode', true);
+  }
+}
+
+async function syncTaps(){
+  if (!LIVE || syncing) return;
+  syncing = true;
+  try {
+    const r = await api('/api/sync', { taps: pendingTaps });
+    applyState(r.state);
+  } catch(e){ /* keep playing locally; retry next cycle */ }
+  syncing = false;
+}
+
 /* ================= HELPERS ================= */
 const $ = s => document.querySelector(s);
 const balEl = $('#balance'), eFillEl = $('#eFill'), eTextEl = $('#eText');
@@ -346,7 +379,7 @@ function toast(msg, err){
   el.classList.toggle('err', !!err);
   el.classList.add('show');
   clearTimeout(toastT);
-  toastT = setTimeout(function(){ el.classList.remove('show'); }, 2200);
+  toastT = setTimeout(function(){ el.classList.remove('show'); }, 2600);
 }
 let lastWarn = 0;
 function throttledToast(m, e){ const n = Date.now(); if (n - lastWarn > 2000){ lastWarn = n; toast(m, e); } }
@@ -415,6 +448,7 @@ coinEl.addEventListener('pointerdown', function(e){
   }
   state.energy -= CONFIG.tapEnergyCost;
   state.taps++;
+  if (LIVE) pendingTaps++;
   const g = state.boost;
   state.balance += g; state.totalEarned += g; dirty = true;
   flyText(e.clientX, e.clientY, '+' + g);
@@ -424,7 +458,6 @@ coinEl.addEventListener('pointerdown', function(e){
   $('#stTaps').textContent = fmt(state.taps);
 });
 
-/* balance count-up */
 let shown = state.balance;
 (function balLoop(){
   const target = state.balance;
@@ -450,8 +483,20 @@ function levelInfo(){
 }
 function boostCost(){ return Math.round(100 * Math.pow(1.8, state.boost - 1) / 10) * 10; }
 
- $('#boostBtn').addEventListener('click', function(){
+ $('#boostBtn').addEventListener('click', async function(){
   if (state.boost >= 10) return;
+  if (LIVE){
+    const c = boostCost();
+    if (state.balance < c){ haptic('rigid'); toast('Need ' + fmt(c - state.balance) + ' more coins', true); return; }
+    this.disabled = true;
+    try {
+      const r = await api('/api/boost');
+      hNotify('success'); toast('Boost upgraded to ×' + r.state.boost + '!');
+      applyState(r.state);
+    } catch(e){ toast(e.message, true); }
+    this.disabled = false;
+    return;
+  }
   const c = boostCost();
   if (state.balance >= c){
     state.balance -= c; state.boost++; dirty = true;
@@ -507,18 +552,29 @@ function renderTasks(){
     if (done) btn.textContent = 'Done';
     else if (t.link && !state.channelClicked) btn.textContent = 'Join';
     else btn.textContent = '+' + t.reward;
-    btn.addEventListener('click', function(){
+    btn.addEventListener('click', async function(){
       if (done) return;
       if (t.link && !state.channelClicked){
-        state.channelClicked = true; dirty = true;
+        if (LIVE){ try { await api('/api/task', { id: 'channel', click: true }); } catch(e){} }
+        else { state.channelClicked = true; dirty = true; }
         try {
           if (tg && tg.openTelegramLink) tg.openTelegramLink(CONFIG.channelUrl);
           else window.open(CONFIG.channelUrl, '_blank');
         } catch(e){}
         toast('Reward unlocked — claim it!');
-        renderTasks(); return;
+        if (LIVE) syncTaps(); else renderTasks();
+        return;
       }
       if (!ready){ haptic('rigid'); return; }
+      btn.disabled = true;
+      if (LIVE){
+        try {
+          const r = await api('/api/task', { id: t.id });
+          hNotify('success'); toast('+' + r.reward + ' coins claimed!');
+          applyState(r.state);
+        } catch(e){ toast(e.message, true); btn.disabled = false; }
+        return;
+      }
       state.completedTasks.push(t.id);
       state.balance += t.reward; state.totalEarned += t.reward; dirty = true;
       hNotify('success'); toast('+' + t.reward + ' coins claimed!');
@@ -586,7 +642,7 @@ const DEMO_NAMES = ['Amina','Rustam','Leyla','Diyor','Sardor','Kamola','Jasur','
 });
 
 /* ================= DAILY BONUS ================= */
-function dailyReady(){ return Date.now() - state.lastDailyTs >= 86400e3; }
+function dailyReady(){ return Date.now() - state.lastDailyTs >= 86400e3 + 2000; }
 function nextDay(){
   const within = state.lastDailyTs > 0 && (Date.now() - state.lastDailyTs) < 48 * 3600e3;
   return within ? (state.dailyStreak >= 7 ? 1 : state.dailyStreak + 1) : 1;
@@ -614,13 +670,24 @@ function updateBonusBtn(){
   } else {
     btn.disabled = true;
     const ms = 86400e3 - (Date.now() - state.lastDailyTs);
-    const h = Math.floor(ms / 3600e3), m = Math.floor(ms % 3600e3 / 60e3), s = Math.floor(ms % 60e3 / 1e3);
+    const h = Math.max(0, Math.floor(ms / 3600e3)), m = Math.max(0, Math.floor(ms % 3600e3 / 60e3)), s = Math.max(0, Math.floor(ms % 60e3 / 1e3));
     btn.textContent = 'Next in ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
   }
   $('#navBonusDot').style.display = ready ? 'block' : 'none';
 }
- $('#claimBtn').addEventListener('click', function(){
+ $('#claimBtn').addEventListener('click', async function(){
   if (!dailyReady()) return;
+  if (LIVE){
+    this.disabled = true;
+    try {
+      const r = await api('/api/daily');
+      confetti(); hNotify('success');
+      toast('+' + r.reward + ' coins — day ' + r.state.dailyStreak + ' streak!');
+      applyState(r.state);
+    } catch(e){ toast(e.message, true); }
+    this.disabled = false;
+    return;
+  }
   state.dailyStreak = nextDay();
   const r = STREAK_REWARDS[state.dailyStreak - 1];
   state.balance += r; state.totalEarned += r;
@@ -636,7 +703,6 @@ function renderHeader(){
   const av = $('#avatar');
   if (tgUser && tgUser.photo_url){ av.innerHTML = '<img src="' + tgUser.photo_url + '" alt="">'; }
   else { av.textContent = myName.charAt(0).toUpperCase(); }
-  if (tg) $('#modeBadge').style.display = 'none';
 }
 
 /* ================= MAIN LOOP ================= */
@@ -651,15 +717,30 @@ setInterval(function(){
     }
   }
   updateBonusBtn();
-  if (++tick % 5 === 0 && dirty) save();
+  if (++tick % 15 === 0){
+    if (LIVE) syncTaps();
+    else if (dirty) save();
+  }
 }, 1000);
-document.addEventListener('visibilitychange', function(){ if (document.hidden && dirty) save(); });
-window.addEventListener('pagehide', function(){ if (dirty) save(); });
+document.addEventListener('visibilitychange', function(){
+  if (document.hidden){ if (dirty) save(); if (LIVE && pendingTaps > 0) syncTaps(); }
+});
+window.addEventListener('pagehide', function(){
+  if (dirty) save();
+  if (LIVE && pendingTaps > 0){
+    try { fetch(CONFIG.api.replace(/\/+$/,'') + '/api/sync', {
+      method: 'POST', keepalive: true,
+      headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': (tg && tg.initData) ? tg.initData : '' },
+      body: JSON.stringify({ taps: pendingTaps })
+    }); } catch(e){}
+  }
+});
 
 /* ================= INIT ================= */
 renderHeader();
 syncUI();
 go('home');
+bootLive();
 </script>
 </body>
-  </html>
+</html>
