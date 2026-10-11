@@ -445,8 +445,8 @@ async function apiSpin(env, tgUser, body) {
   await saveRow(env, row);
   await env.DB.prepare('INSERT INTO spin_history (user_id, bet, mult, payout, created_at) VALUES (?,?,?,?,?)')
     .bind(tgUser.id, bet, m, payout, now()).run();
-  if (m === 0) await logAct(env, tgUser.id, 'game', 'Lucky Wheel — bet lost', -bet);
-  else await logAct(env, tgUser.id, 'game', 'Lucky Wheel win ×' + m, payout - bet);
+  if (m === 0) await logAct(env, tgUser.id, 'game', 'Lucky Wheel — bet lost (' + bet + ' ETB)', -bet);
+  else await logAct(env, tgUser.id, 'game', 'Lucky Wheel ×' + m + ' — ' + bet + ' → ' + payout + ' ETB', payout - bet);
   row._acts = await actsOf(env, tgUser.id);
   return { ok: true, mult: m, payout: payout, bet: bet,
     spinHistory: await spinHistoryOf(env, tgUser.id),
