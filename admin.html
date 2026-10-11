@@ -11,12 +11,14 @@ body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;fon
 h1{font-size:19px;margin-bottom:14px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:14px}
 h2{font-size:11.5px;margin:0 0 10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px;font-size:14px;width:100%;font-family:inherit}
+input,select{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px;font-size:14px;width:100%;font-family:inherit}
 input::placeholder{color:var(--muted)}
-.row{display:flex;gap:8px;margin-top:8px}
-.row input{flex:1;min-width:0}
+select option{background:var(--surface2);color:var(--text)}
+.row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.row input,.row select{flex:1;min-width:100px}
 button{background:var(--gold);color:#45290a;border:none;border-radius:10px;padding:10px 14px;font-weight:700;font-family:inherit;cursor:pointer}
 button:active{transform:scale(.96)}
+button.sm{padding:6px 10px;font-size:11px;border-radius:8px}
 .gray{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .stat{background:var(--surface2);border-radius:12px;padding:10px;text-align:center}
@@ -31,6 +33,7 @@ tr[data-id]:active{background:var(--surface2)}
 .msg{font-size:12.5px;color:var(--green);margin-top:8px;min-height:16px;word-break:break-all}
 .msg.err{color:var(--red)}
 .note{font-size:11px;color:var(--muted);margin-top:6px}
+.wd-act{display:flex;gap:4px}
 </style>
 </head>
 <body>
@@ -50,7 +53,7 @@ tr[data-id]:active{background:var(--surface2)}
 </div>
 
 <div class="card" id="actCard" style="display:none">
-  <h2>Actions</h2>
+  <h2>User actions</h2>
   <div class="row"><input id="userId" type="number" placeholder="User ID"></div>
   <div class="row"><input id="amount" type="number" placeholder="Amount (negative to remove)"></div>
   <div class="row">
@@ -61,6 +64,34 @@ tr[data-id]:active{background:var(--surface2)}
   </div>
   <p class="note">Tip: tap any user row below to fill their ID here.</p>
   <div class="msg" id="actMsg"></div>
+</div>
+
+<div class="card" id="wdCard" style="display:none">
+  <h2>Withdrawals (<span id="pendWd">0</span> pending · <span id="pendWdAmt">0</span> coins)</h2>
+  <table><thead><tr><th>#</th><th>User</th><th>Coins</th><th>Method</th><th>Address</th><th>Status</th><th></th></tr></thead><tbody id="wdBody"></tbody></table>
+</div>
+
+<div class="card" id="tasksCard" style="display:none">
+  <h2>Add task</h2>
+  <div class="row"><input id="tTitle" placeholder="Task title"></div>
+  <div class="row">
+    <select id="tType">
+      <option value="taps">taps (goal = tap count)</option>
+      <option value="invites">invites (goal = friends)</option>
+      <option value="daily">daily (claimed bonus once)</option>
+      <option value="boost">boost (goal = boost level -1)</option>
+      <option value="link">link (join a Telegram link)</option>
+    </select>
+  </div>
+  <div class="row">
+    <input id="tReward" type="number" placeholder="Reward coins">
+    <input id="tGoal" type="number" placeholder="Goal (1 if n/a)">
+  </div>
+  <div class="row"><input id="tLink" placeholder="Link URL (only for link type)"></div>
+  <div class="row"><button id="tAdd">+ Add task</button></div>
+  <div class="msg" id="taskMsg"></div>
+  <h2 style="margin-top:14px">All tasks</h2>
+  <table><thead><tr><th>ID</th><th>Title</th><th>Type</th><th>Reward</th><th>On?</th><th></th></tr></thead><tbody id="tasksBody"></tbody></table>
 </div>
 
 <div class="card" id="topCard" style="display:none">
@@ -115,6 +146,85 @@ function renderRows(tbodyId, rows){
   });
 }
 
+/* ================= WITHDRAWALS ================= */
+function renderWds(rows){
+  const tb = document.getElementById('wdBody');
+  tb.innerHTML = '';
+  if (!rows.length){
+    tb.innerHTML = '<tr><td colspan="7" style="color:var(--muted)">No withdrawal requests yet</td></tr>';
+    return;
+  }
+  rows.forEach(function(w){
+    const tr = document.createElement('tr');
+    const col = w.status === 'paid' ? 'var(--green)' : w.status === 'rejected' ? 'var(--red)' : 'var(--gold)';
+    tr.innerHTML = '<td>' + w.id + '</td><td>' + (w.name || w.user_id) + '</td><td>' + w.amount + '</td><td>' + w.method +
+      '</td><td style="max-width:90px">' + w.address + '</td><td style="color:' + col + '">' + w.status + '</td>';
+    if (w.status === 'pending'){
+      const paid = document.createElement('button'); paid.textContent = 'Paid'; paid.className = 'sm'; paid.style.marginRight = '4px';
+      const rej = document.createElement('button'); rej.textContent = 'Reject'; rej.className = 'sm gray';
+      paid.addEventListener('click', function(){ wdAction(w.id, 'paid'); });
+      rej.addEventListener('click', function(){ if (confirm('Reject & refund ' + w.amount + ' coins to user?')) wdAction(w.id, 'reject'); });
+      const td = document.createElement('td');
+      const wrap = document.createElement('div'); wrap.className = 'wd-act';
+      wrap.appendChild(paid); wrap.appendChild(rej);
+      td.appendChild(wrap); tr.appendChild(td);
+    } else {
+      const td = document.createElement('td'); td.textContent = ''; tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  });
+}
+async function wdAction(id, action){
+  try {
+    const r = await call('/api/admin/wd_action', { id: id, action: action });
+    msg('actMsg', '✅ Withdrawal #' + id + ': ' + (r.result || action));
+    loadData();
+  } catch(e){ msg('actMsg', '❌ ' + e.message, true); }
+}
+
+/* ================= TASKS ================= */
+function renderTasksAdmin(rows){
+  const tb = document.getElementById('tasksBody');
+  tb.innerHTML = '';
+  rows.forEach(function(t){
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + t.id + '</td><td>' + t.title + '</td><td>' + t.type + '</td><td>+' + t.reward + '</td><td>' +
+      (t.active ? '✅' : '⛔') + '</td>';
+    const lnk = document.createElement('button'); lnk.textContent = 'Link'; lnk.className = 'sm gray'; lnk.style.marginRight = '4px';
+    const tog = document.createElement('button'); tog.textContent = t.active ? 'Off' : 'On'; tog.className = 'sm gray'; tog.style.marginRight = '4px';
+    const del = document.createElement('button'); del.textContent = 'Del'; del.className = 'sm gray';
+    lnk.addEventListener('click', async function(){
+      const l = prompt('Set link URL for task #' + t.id, t.link || 'https://t.me/');
+      if (l !== null){ await call('/api/admin/task_action', { action:'setlink', id:t.id, link:l }).catch(function(e){ alert(e.message); }); loadData(); }
+    });
+    tog.addEventListener('click', async function(){ await call('/api/admin/task_action', { action:'toggle', id:t.id }).catch(function(e){ alert(e.message); }); loadData(); });
+    del.addEventListener('click', async function(){
+      if (confirm('Delete task #' + t.id + '?')){ await call('/api/admin/task_action', { action:'delete', id:t.id }).catch(function(e){ alert(e.message); }); loadData(); }
+    });
+    const td = document.createElement('td');
+    const wrap = document.createElement('div'); wrap.className = 'wd-act';
+    wrap.appendChild(lnk); wrap.appendChild(tog); wrap.appendChild(del);
+    td.appendChild(wrap); tr.appendChild(td);
+    tb.appendChild(tr);
+  });
+}
+document.getElementById('tAdd').addEventListener('click', async function(){
+  try {
+    await call('/api/admin/task_action', {
+      action: 'add',
+      title: document.getElementById('tTitle').value,
+      type: document.getElementById('tType').value,
+      reward: document.getElementById('tReward').value,
+      goal: document.getElementById('tGoal').value || 1,
+      link: document.getElementById('tLink').value
+    });
+    msg('taskMsg', '✅ Task added — users see it instantly');
+    ['tTitle','tReward','tGoal','tLink'].forEach(function(i){ document.getElementById(i).value = ''; });
+    loadData();
+  } catch(e){ msg('taskMsg', '❌ ' + e.message, true); }
+});
+
+/* ================= LOAD ================= */
 async function loadData(){
   localStorage.setItem('tc_adm_api', document.getElementById('api').value.trim());
   localStorage.setItem('tc_adm_key', document.getElementById('key').value);
@@ -132,8 +242,14 @@ async function loadData(){
       '<div class="stat"><b>' + s.new24 + '</b><small>NEW 24H</small></div>';
     document.getElementById('statsCard').style.display = 'block';
     document.getElementById('actCard').style.display = 'block';
+    document.getElementById('wdCard').style.display = 'block';
+    document.getElementById('tasksCard').style.display = 'block';
     document.getElementById('topCard').style.display = 'block';
     document.getElementById('recentCard').style.display = 'block';
+    document.getElementById('pendWd').textContent = d.pendingWd.n;
+    document.getElementById('pendWdAmt').textContent = Number(d.pendingWd.amt).toLocaleString();
+    renderWds(d.withdrawals || []);
+    renderTasksAdmin(d.tasks || []);
     renderRows('topBody', d.top);
     renderRows('recentBody', d.recent);
   } catch(e){
@@ -142,11 +258,12 @@ async function loadData(){
 }
 document.getElementById('loadBtn').addEventListener('click', loadData);
 
+/* ================= USER ACTIONS ================= */
 document.querySelectorAll('[data-act]').forEach(function(b){
   b.addEventListener('click', async function(){
     const userId = document.getElementById('userId').value;
     const amount = document.getElementById('amount').value;
-    if (!userId){ msg('actMsg', 'Enter a user ID (tap a row)', true); return; }
+    if (!userId){ msg('actMsg', 'Enter a user ID (tap a row below)', true); return; }
     try {
       const r = await call('/api/admin/action', { action: b.dataset.act, userId: userId, amount: amount });
       const u = r.user;
