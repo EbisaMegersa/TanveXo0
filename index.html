@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <title>TanveXo</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src='//libtl.com/sdk.js' data-zone='10937696' data-sdk='show_10937696'></script>
 <style>
 /* ============================================================
    iOS 27 LIQUID GLASS — DESIGN TOKENS
@@ -213,7 +214,6 @@ svg{display:block}
 .mt{margin-top:10px}
 .page{display:none} .page.active{display:block;animation:fadein .3s var(--spring-soft)}
 @keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-/* section headers: small SF-style glyph + bold text */
 h2.sec{display:flex;align-items:center;gap:8px;font-size:1.35rem;font-weight:700;margin:22px 2px 4px;letter-spacing:-.03em}
 h2.sec .sic{display:flex;color:var(--accent)}
 h2.sec .sic .ic{width:20px;height:20px}
@@ -749,7 +749,7 @@ const CONFIG = {
   botUsername: 'tanvexoappbot',
   channelUrl: 'https://t.me/ebtry0',
   support: '',
-  adsgramBlockId: '',
+  adSdk: 'show_10937696',   /* Monetag rewarded interstitial (SDK loaded in <head>) */
   referralReward: 50, welcomeBonus: 25, adReward: 5,
   adMaxPerDay: 25, adCooldownSec: 1800,
   betMin: 50, betMax: 5000,
@@ -785,7 +785,7 @@ const ICON_PATHS = {
   bolt:'<path d="M13 2 4.5 13.5h5.4L11 22l8.5-11.5h-5.4L13 2z"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
 };
-/* filled status glyphs for the toast (SF checkmark/xmark circle fill) */
+/* filled status glyphs for the toast */
 const TOAST_OK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.53 7.53-5.25 5.25a.75.75 0 0 1-1.06 0L7.97 12.53a.75.75 0 1 1 1.06-1.06l1.72 1.72 4.72-4.72a.75.75 0 1 1 1.06 1.06z"/></svg>';
 const TOAST_ERR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.53 12.03a.75.75 0 1 1-1.06 1.06L12 12.56l-2.47 2.53a.75.75 0 1 1-1.06-1.06L11 11.5 8.47 8.97a.75.75 0 0 1 1.06-1.06L12 10.44l2.47-2.53a.75.75 0 1 1 1.06 1.06L13 11.5l2.53 2.53z"/></svg>';
 function ic(n, size){
@@ -878,7 +878,7 @@ document.getElementById('menuThemeRow').addEventListener('click', function(e){
   sw.dispatchEvent(new Event('change'));
 });
 
-/* ================= I18N — plain text, icons come from SVG ================= */
+/* ================= I18N ================= */
 const STR = {
   en: {
     letsub:"Let's earn together", your_balance:"Your Balance", earn_daily:"Earn daily — check-in, ads & invites",
@@ -1049,7 +1049,6 @@ const $ = s => document.querySelector(s);
 const fmt = n => Math.round(n).toLocaleString('en-US');
 function haptic(t_){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(t_); }catch(e){} }
 function hNotify(t_){ try{ tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(t_); }catch(e){} }
-/* toast with SF-style status icon */
 let toastT = null;
 function toast(msg, err){
   const el = $('#toast'), tIc = $('#toastIc'), tTx = $('#toastText');
@@ -1317,19 +1316,17 @@ function renderHome(){ renderActivity(); renderEarn(); }
  $('#qaInvite').addEventListener('click', function(){ haptic('light'); go('friends'); });
  $('#qaAd').addEventListener('click', function(){ haptic('light'); watchAd(); });
 
-/* ================= ADS ================= */
-let adController = null, adWatching = false;
+/* ================= ADS — Monetag rewarded interstitial ================= */
+let adShowing = false;
 async function showRealAd(){
-  if (!window.Adsgram){
-    await new Promise(function(res, rej){
-      const s = document.createElement('script');
-      s.src = 'https://sad.adsgram.ai/sdk.js';
-      s.onload = res; s.onerror = function(){ rej(new Error('Ad SDK failed to load')); };
-      document.head.appendChild(s);
-    });
+  /* wait up to 6s for the Monetag SDK (show_10937696) to be ready */
+  for (let i = 0; i < 60; i++){
+    if (typeof window[CONFIG.adSdk] === 'function') break;
+    await new Promise(function(r){ setTimeout(r, 100); });
   }
-  if (!adController) adController = window.Adsgram.init({ blockId: CONFIG.adsgramBlockId });
-  await adController.show();
+  const fn = window[CONFIG.adSdk];
+  if (typeof fn !== 'function') throw new Error('Ad failed to load — check your connection');
+  await fn(); /* resolves only when the rewarded interstitial completes */
 }
 function demoAd(){
   return new Promise(function(res){
@@ -1344,13 +1341,13 @@ function demoAd(){
   });
 }
 async function watchAd(){
-  if (adWatching || LOCKED || GATED || !adReady()) return;
-  adWatching = true;
+  if (adShowing || LOCKED || GATED || !adReady()) return;
+  adShowing = true;
   const btn = $('#adBtn'); btn.disabled = true;
   try {
     if (LIVE){
       try {
-        if (CONFIG.adsgramBlockId) await showRealAd(); else await demoAd();
+        await showRealAd();
         const r = await api('/api/ad');
         hNotify('success'); confetti();
         toast(t('t_ad_ok', r.reward));
@@ -1370,7 +1367,7 @@ async function watchAd(){
       renderAll();
     }
   } catch(e){ toast('Ad failed: ' + e.message, true); }
-  adWatching = false;
+  adShowing = false;
   renderEarn(); btn.disabled = false;
 }
  $('#adBtn').addEventListener('click', watchAd);
