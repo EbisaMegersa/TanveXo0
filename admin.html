@@ -1,279 +1,549 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TapCoin Admin</title>
-<style>
-:root{--bg:#0a0d14;--surface:#141a26;--surface2:#1b2334;--border:rgba(255,255,255,.08);--text:#f2f4f8;--muted:#8b93a7;--gold:#f6b73c;--green:#34d399;--red:#f87171}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;font-size:14px;padding:16px;max-width:560px;margin:0 auto}
-h1{font-size:19px;margin-bottom:14px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:14px}
-h2{font-size:11.5px;margin:0 0 10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
-input,select{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px;font-size:14px;width:100%;font-family:inherit}
-input::placeholder{color:var(--muted)}
-select option{background:var(--surface2);color:var(--text)}
-.row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.row input,.row select{flex:1;min-width:100px}
-button{background:var(--gold);color:#45290a;border:none;border-radius:10px;padding:10px 14px;font-weight:700;font-family:inherit;cursor:pointer}
-button:active{transform:scale(.96)}
-button.sm{padding:6px 10px;font-size:11px;border-radius:8px}
-.gray{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{background:var(--surface2);border-radius:12px;padding:10px;text-align:center}
-.stat b{display:block;font-size:17px}
-.stat small{color:var(--muted);font-size:10px}
-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
-td,th{padding:7px 4px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
-th{color:var(--muted);font-size:9.5px;text-transform:uppercase;letter-spacing:.5px}
-tr[data-id]{cursor:pointer}
-tr[data-id]:active{background:var(--surface2)}
-.banflag{color:var(--red);font-weight:700}
-.msg{font-size:12.5px;color:var(--green);margin-top:8px;min-height:16px;word-break:break-all}
-.msg.err{color:var(--red)}
-.note{font-size:11px;color:var(--muted);margin-top:6px}
-.wd-act{display:flex;gap:4px}
-</style>
-</head>
-<body>
-<h1>🪙 TapCoin Admin</h1>
+/* TapCoin API v5 — real channel membership gate, dynamic tasks, withdrawals */
+const ENERGY_MAX = 500, ENERGY_REGEN = 1, TAP_COST = 1, MAX_TAPS_SEC = 12;
+const POINTS_PER_INVITE = 5, BOOST_MAX = 10, DAY = 86400, SPIN_COST = 100;
+const MAX_ACCOUNTS_PER_DEVICE = 2;
+const MIN_WITHDRAW = 5000;
+const DEFAULT_CHANNEL = 'https://t.me/ebtry0'; /* ← used to seed link tasks with empty links */
+const STREAK_REWARDS = [10, 25, 50, 75, 100, 150, 250];
+const SPIN_PRIZES = [
+  { coins:5, w:28 }, { coins:10, w:22 }, { coins:15, w:18 }, { coins:25, w:12 },
+  { coins:50, w:10 }, { coins:100, w:6 }, { coins:250, w:3 }, { energy:true, w:1 }
+];
+function pickPrize(){ let r = Math.random()*100, a = 0; for (let i=0;i<SPIN_PRIZES.length;i++){ a += SPIN_PRIZES[i].w; if (r < a) return i; } return 0; }
+const TASK_TYPES = ['taps','invites','daily','boost','link'];
 
-<div class="card">
-  <h2>Access</h2>
-  <div class="row"><input id="api" placeholder="Worker URL (https://...workers.dev)"></div>
-  <div class="row"><input id="key" type="password" placeholder="Admin password"></div>
-  <div class="row"><button id="loadBtn">Load data</button></div>
-  <div class="msg" id="authMsg"></div>
-</div>
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Telegram-Init-Data, X-Admin-Key',
+  'Access-Control-Max-Age': '86400'
+};
+const j = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
+const now = () => Math.floor(Date.now() / 1000);
+const bannedResp = row => ({ ok: false, error: (row && row.ban_reason) ? row.ban_reason : 'Account banned', locked: true });
 
-<div class="card" id="statsCard" style="display:none">
-  <h2>Overview</h2>
-  <div class="grid" id="statGrid"></div>
-</div>
+let dbReady = null;
+function initDb(env) {
+  if (!dbReady) {
+    dbReady = (async () => {
+      const t0 = now();
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY, name TEXT, username TEXT,
+        balance INTEGER NOT NULL DEFAULT 0, total_earned INTEGER NOT NULL DEFAULT 0,
+        taps INTEGER NOT NULL DEFAULT 0, energy REAL NOT NULL DEFAULT 500, energy_ts INTEGER NOT NULL DEFAULT 0,
+        boost INTEGER NOT NULL DEFAULT 1, daily_streak INTEGER NOT NULL DEFAULT 0,
+        last_daily INTEGER NOT NULL DEFAULT 0, daily_claims INTEGER NOT NULL DEFAULT 0,
+        tasks TEXT NOT NULL DEFAULT '[]', channel_clicked INTEGER NOT NULL DEFAULT 0,
+        referred_by INTEGER, invited INTEGER NOT NULL DEFAULT 0,
+        device_id TEXT, banned INTEGER NOT NULL DEFAULT 0, ban_reason TEXT, last_spin INTEGER NOT NULL DEFAULT 0,
+        migrated INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+      )`).run();
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS referrals (
+        referrer INTEGER NOT NULL, user_id INTEGER PRIMARY KEY, name TEXT, created_at INTEGER NOT NULL
+      )`).run();
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, type TEXT NOT NULL,
+        reward INTEGER NOT NULL, goal INTEGER NOT NULL DEFAULT 1, link TEXT,
+        active INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL
+      )`).run();
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS task_claims (
+        user_id INTEGER NOT NULL, task_id INTEGER NOT NULL, claimed_at INTEGER NOT NULL,
+        PRIMARY KEY (user_id, task_id)
+      )`).run();
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS task_clicks (
+        user_id INTEGER NOT NULL, task_id INTEGER NOT NULL, clicked_at INTEGER NOT NULL,
+        PRIMARY KEY (user_id, task_id)
+      )`).run();
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS withdrawals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, name TEXT,
+        amount INTEGER NOT NULL, method TEXT NOT NULL, address TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL, processed_at INTEGER
+      )`).run();
+      const alters = [
+        'ALTER TABLE users ADD COLUMN device_id TEXT',
+        'ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE users ADD COLUMN ban_reason TEXT',
+        'ALTER TABLE users ADD COLUMN last_spin INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE users ADD COLUMN migrated INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE task_clicks ADD COLUMN verified INTEGER NOT NULL DEFAULT 0'
+      ];
+      for (const a of alters) { try { await env.DB.prepare(a).run(); } catch(e) {} }
+      const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM tasks').first();
+      if (!c || c.n === 0) {
+        const seed = [
+          ['Tap the coin 100 times','taps',50,100],['Tap the coin 1,000 times','taps',250,1000],
+          ['Claim a daily bonus','daily',25,1],['Invite your first friend','invites',100,1],
+          ['Invite 5 friends','invites',500,5],['Upgrade your tap boost','boost',75,1],
+          ['Join our news channel','link',50,1]
+        ];
+        for (let i = 0; i < seed.length; i++) {
+          await env.DB.prepare('INSERT OR IGNORE INTO tasks (id,title,type,reward,goal,link,active,created_at) VALUES (?,?,?,?,?,?,1,?)')
+            .bind(i + 1, seed[i][0], seed[i][1], seed[i][2], seed[i][3], seed[i][1] === 'link' ? DEFAULT_CHANNEL : null, t0).run();
+        }
+      } else {
+        /* fill empty links on link tasks with the default channel */
+        try { await env.DB.prepare("UPDATE tasks SET link = ? WHERE type = 'link' AND (link IS NULL OR link = '')").bind(DEFAULT_CHANNEL).run(); } catch(e) {}
+      }
+    })().catch(e => { dbReady = null; throw e; });
+  }
+  return dbReady;
+}
 
-<div class="card" id="actCard" style="display:none">
-  <h2>User actions</h2>
-  <div class="row"><input id="userId" type="number" placeholder="User ID"></div>
-  <div class="row"><input id="amount" type="number" placeholder="Amount (negative to remove)"></div>
-  <div class="row">
-    <button data-act="add">Add coins</button>
-    <button class="gray" data-act="set">Set balance</button>
-    <button class="gray" data-act="ban">Ban</button>
-    <button class="gray" data-act="unban">Unban</button>
-  </div>
-  <p class="note">Tip: tap any user row below to fill their ID here.</p>
-  <div class="msg" id="actMsg"></div>
-</div>
+async function verifyInitData(initData, botToken) {
+  try {
+    const p = new URLSearchParams(initData);
+    const hash = p.get('hash');
+    if (!hash || !botToken) return null;
+    p.delete('hash');
+    const check = [...p.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([k, v]) => k + '=' + v).join('\n');
+    const enc = new TextEncoder();
+    const k1 = await crypto.subtle.importKey('raw', enc.encode('WebAppData'), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const secret = await crypto.subtle.sign('HMAC', k1, enc.encode(botToken));
+    const k2 = await crypto.subtle.importKey('raw', secret, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const sig = await crypto.subtle.sign('HMAC', k2, enc.encode(check));
+    const hex = [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, '0')).join('');
+    if (hex !== hash) return null;
+    const ad = parseInt(p.get('auth_date') || '0', 10);
+    if (!ad || now() - ad > 86400) return null;
+    const u = JSON.parse(p.get('user') || 'null');
+    return u && u.id ? u : null;
+  } catch (e) { return null; }
+}
 
-<div class="card" id="wdCard" style="display:none">
-  <h2>Withdrawals (<span id="pendWd">0</span> pending · <span id="pendWdAmt">0</span> coins)</h2>
-  <table><thead><tr><th>#</th><th>User</th><th>Coins</th><th>Method</th><th>Address</th><th>Status</th><th></th></tr></thead><tbody id="wdBody"></tbody></table>
-</div>
+/* ================= TELEGRAM BOT API (membership gate) ================= */
+async function botCall(env, method, params) {
+  if (!env.BOT_TOKEN) return { ok: false, description: 'BOT_TOKEN not set' };
+  try {
+    const r = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/' + method, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params || {})
+    });
+    return await r.json();
+  } catch (e) { return { ok: false, description: String(e && e.message || e) }; }
+}
 
-<div class="card" id="tasksCard" style="display:none">
-  <h2>Add task</h2>
-  <div class="row"><input id="tTitle" placeholder="Task title"></div>
-  <div class="row">
-    <select id="tType">
-      <option value="taps">taps (goal = tap count)</option>
-      <option value="invites">invites (goal = friends)</option>
-      <option value="daily">daily (claimed bonus once)</option>
-      <option value="boost">boost (goal = boost level -1)</option>
-      <option value="link">link (join a Telegram link)</option>
-    </select>
-  </div>
-  <div class="row">
-    <input id="tReward" type="number" placeholder="Reward coins">
-    <input id="tGoal" type="number" placeholder="Goal (1 if n/a)">
-  </div>
-  <div class="row"><input id="tLink" placeholder="Link URL (only for link type)"></div>
-  <div class="row"><button id="tAdd">+ Add task</button></div>
-  <div class="msg" id="taskMsg"></div>
-  <h2 style="margin-top:14px">All tasks</h2>
-  <table><thead><tr><th>ID</th><th>Title</th><th>Type</th><th>Reward</th><th>On?</th><th></th></tr></thead><tbody id="tasksBody"></tbody></table>
-</div>
+/* extract @chat from a task link: t.me/ebtry0 → @ebtry0 (public links only) */
+function extractChat(link) {
+  if (!link) return null;
+  const s = String(link).trim();
+  if (/^@?[A-Za-z][A-Za-z0-9_]{2,}$/.test(s)) return s.charAt(0) === '@' ? s : '@' + s;
+  if (/^-100?\d+$/.test(s)) return s;
+  const m = s.match(/t\.me\/(?:s\/)?([A-Za-z][A-Za-z0-9_]{2,})(?:[/?#]|$)/i);
+  if (m && !/^joinchat$/i.test(m[1])) return '@' + m[1];
+  return null;
+}
 
-<div class="card" id="topCard" style="display:none">
-  <h2>Top users</h2>
-  <table><thead><tr><th>ID</th><th>Name</th><th>Coins</th><th>Ref</th><th>Device</th></tr></thead><tbody id="topBody"></tbody></table>
-</div>
+const MEMBER_STATUSES = ['creator', 'administrator', 'member', 'restricted'];
+async function isMember(env, chat, userId) {
+  const r = await botCall(env, 'getChatMember', { chat_id: chat, user_id: userId });
+  if (!r || r.ok !== true) {
+    const d = (r && r.description) || 'unknown error';
+    if (/administrator|rights|admin/i.test(d))
+      return { ok: false, error: 'Verification setup error: add the bot as admin in ' + chat };
+    return { ok: false, error: 'Could not verify membership — try again' };
+  }
+  const m = r.result || {};
+  if (m.status === 'restricted') return { ok: m.is_member === true };
+  return { ok: MEMBER_STATUSES.includes(m.status) };
+}
 
-<div class="card" id="recentCard" style="display:none">
-  <h2>Recent users</h2>
-  <table><thead><tr><th>ID</th><th>Name</th><th>Coins</th><th>Ref</th><th>Device</th></tr></thead><tbody id="recentBody"></tbody></table>
-</div>
+function regen(row) {
+  const t = now();
+  if (row.energy < ENERGY_MAX) row.energy = Math.min(ENERGY_MAX, row.energy + Math.max(0, t - row.energy_ts) * ENERGY_REGEN);
+  row.energy_ts = t;
+  return row;
+}
 
-<script>
-function cfg(){
+async function getRow(env, id) {
+  const r = await env.DB.prepare('SELECT * FROM users WHERE user_id = ?').bind(id).first();
+  if (r) r.tasks = JSON.parse(r.tasks || '[]');
+  return r || null;
+}
+async function friendsOf(env, id) {
+  const { results } = await env.DB.prepare('SELECT name, created_at FROM referrals WHERE referrer = ? ORDER BY created_at DESC LIMIT 100').bind(id).all();
+  return (results || []).map(r => ({ name: r.name || 'Friend', ts: r.created_at * 1000 }));
+}
+async function claimsOf(env, id) {
+  const { results } = await env.DB.prepare('SELECT task_id FROM task_claims WHERE user_id = ?').bind(id).all();
+  return (results || []).map(r => r.task_id);
+}
+async function clicksOf(env, id) {
+  const { results } = await env.DB.prepare('SELECT task_id FROM task_clicks WHERE user_id = ?').bind(id).all();
+  return (results || []).map(r => r.task_id);
+}
+async function withdrawalsOf(env, id) {
+  const { results } = await env.DB.prepare('SELECT id, amount, method, address, status, created_at FROM withdrawals WHERE user_id = ? ORDER BY created_at DESC LIMIT 20').bind(id).all();
+  return (results || []).map(r => ({ id: r.id, amount: r.amount, method: r.method, address: r.address, status: r.status, ts: r.created_at * 1000 }));
+}
+
+async function saveRow(env, row) {
+  await env.DB.prepare(`UPDATE users SET name=?, username=?, balance=?, total_earned=?, taps=?, energy=?, energy_ts=?,
+    boost=?, daily_streak=?, last_daily=?, daily_claims=?, tasks=?, channel_clicked=?, invited=?,
+    device_id=?, banned=?, ban_reason=?, last_spin=?, migrated=?, updated_at=? WHERE user_id=?`)
+    .bind(row.name, row.username, row.balance, row.total_earned, row.taps, row.energy, row.energy_ts,
+      row.boost, row.daily_streak, row.last_daily, row.daily_claims, JSON.stringify(row.tasks || []),
+      row.channel_clicked ? 1 : 0, row.invited, row.device_id || null, row.banned ? 1 : 0,
+      row.ban_reason || null, row.last_spin || 0, row.migrated ? 1 : 0, now(), row.user_id).run();
+}
+
+function toClient(row, friends, claimed, clicked) {
   return {
-    api: localStorage.getItem('tc_adm_api') || '',
-    key: localStorage.getItem('tc_adm_key') || ''
+    balance: row.balance, totalEarned: row.total_earned, taps: row.taps, energy: row.energy,
+    boost: row.boost, referrals: row.invited, dailyStreak: row.daily_streak, lastDaily: row.last_daily * 1000,
+    dailyClaims: row.daily_claims, channelClicked: !!row.channel_clicked,
+    tasksClaimed: claimed || [], tasksClicked: clicked || [],
+    lastSpin: (row.last_spin || 0) * 1000, friends: friends || []
   };
 }
-document.getElementById('api').value = cfg().api;
-document.getElementById('key').value = cfg().key;
 
-async function call(path, body){
-  const c = cfg();
-  const res = await fetch(c.api.replace(/\/+$/,'') + path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Admin-Key': c.key },
-    body: JSON.stringify(body || {})
-  });
-  const d = await res.json();
-  if (!d.ok) throw new Error(d.error || 'Error');
-  return d;
-}
-
-function msg(id, text, err){
-  const el = document.getElementById(id);
-  el.textContent = text;
-  el.classList.toggle('err', !!err);
-}
-
-function renderRows(tbodyId, rows){
-  const tb = document.getElementById(tbodyId);
-  tb.innerHTML = '';
-  rows.forEach(function(u){
-    const tr = document.createElement('tr');
-    tr.setAttribute('data-id', u.user_id);
-    const dev = u.device_id ? u.device_id.slice(-6) : '—';
-    tr.innerHTML = '<td>' + u.user_id + '</td><td>' + (u.name || '?') + (u.banned ? ' <span class="banflag">⛔</span>' : '') +
-      '</td><td>' + u.balance + '</td><td>' + u.invited + '</td><td>' + dev + '</td>';
-    tr.addEventListener('click', function(){ document.getElementById('userId').value = u.user_id; window.scrollTo(0,0); });
-    tb.appendChild(tr);
-  });
-}
-
-/* ================= WITHDRAWALS ================= */
-function renderWds(rows){
-  const tb = document.getElementById('wdBody');
-  tb.innerHTML = '';
-  if (!rows.length){
-    tb.innerHTML = '<tr><td colspan="7" style="color:var(--muted)">No withdrawal requests yet</td></tr>';
-    return;
+async function migrateUser(env, row) {
+  if (row.migrated) return;
+  const order = ['taps100','taps1000','daily','invite1','invite5','boost1','channel'];
+  const t = now();
+  const old = row.tasks || [];
+  for (const o of old) {
+    const i = order.indexOf(o);
+    if (i >= 0) await env.DB.prepare('INSERT OR IGNORE INTO task_claims (user_id, task_id, claimed_at) VALUES (?,?,?)').bind(row.user_id, i + 1, t).run();
   }
-  rows.forEach(function(w){
-    const tr = document.createElement('tr');
-    const col = w.status === 'paid' ? 'var(--green)' : w.status === 'rejected' ? 'var(--red)' : 'var(--gold)';
-    tr.innerHTML = '<td>' + w.id + '</td><td>' + (w.name || w.user_id) + '</td><td>' + w.amount + '</td><td>' + w.method +
-      '</td><td style="max-width:90px">' + w.address + '</td><td style="color:' + col + '">' + w.status + '</td>';
-    if (w.status === 'pending'){
-      const paid = document.createElement('button'); paid.textContent = 'Paid'; paid.className = 'sm'; paid.style.marginRight = '4px';
-      const rej = document.createElement('button'); rej.textContent = 'Reject'; rej.className = 'sm gray';
-      paid.addEventListener('click', function(){ wdAction(w.id, 'paid'); });
-      rej.addEventListener('click', function(){ if (confirm('Reject & refund ' + w.amount + ' coins to user?')) wdAction(w.id, 'reject'); });
-      const td = document.createElement('td');
-      const wrap = document.createElement('div'); wrap.className = 'wd-act';
-      wrap.appendChild(paid); wrap.appendChild(rej);
-      td.appendChild(wrap); tr.appendChild(td);
-    } else {
-      const td = document.createElement('td'); td.textContent = ''; tr.appendChild(td);
+  if (row.channel_clicked) await env.DB.prepare('INSERT OR IGNORE INTO task_clicks (user_id, task_id, clicked_at, verified) VALUES (?,?,?,1)').bind(row.user_id, 7, t).run();
+  row.tasks = []; row.migrated = 1;
+}
+
+async function apiInit(env, tgUser, body) {
+  const t = now();
+  const dev = (body && body.dev) ? String(body.dev).slice(0, 64) : null;
+  let row = await getRow(env, tgUser.id);
+  if (!row) {
+    const name = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || 'Player';
+    let lockDev = false;
+    if (dev) {
+      const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE device_id = ?').bind(dev).first();
+      if (c && c.n >= MAX_ACCOUNTS_PER_DEVICE) lockDev = true;
     }
-    tb.appendChild(tr);
-  });
-}
-async function wdAction(id, action){
-  try {
-    const r = await call('/api/admin/wd_action', { id: id, action: action });
-    msg('actMsg', '✅ Withdrawal #' + id + ': ' + (r.result || action));
-    loadData();
-  } catch(e){ msg('actMsg', '❌ ' + e.message, true); }
+    await env.DB.prepare(`INSERT OR IGNORE INTO users (user_id, name, username, energy, energy_ts, tasks, device_id, banned, ban_reason, created_at, updated_at)
+      VALUES (?, ?, ?, 500, ?, '[]', ?, ?, ?, ?, ?)`)
+      .bind(tgUser.id, name, tgUser.username || null, t, dev,
+        lockDev ? 1 : 0,
+        lockDev ? 'Device limit reached — max ' + MAX_ACCOUNTS_PER_DEVICE + ' accounts per device' : null,
+        t, t).run();
+    row = await getRow(env, tgUser.id);
+    if (row && !row.banned) {
+      const ref = parseInt(body && body.ref, 10);
+      if (row && !row.referred_by && ref && ref !== tgUser.id) {
+        const referrer = await getRow(env, ref);
+        if (referrer && !referrer.banned) {
+          let allowed = true;
+          if (dev) {
+            const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE device_id = ? AND referred_by IS NOT NULL').bind(dev).first();
+            if (c && c.n >= MAX_ACCOUNTS_PER_DEVICE) allowed = false;
+          }
+          if (allowed) {
+            referrer.balance += POINTS_PER_INVITE;
+            referrer.invited += 1;
+            await saveRow(env, referrer);
+            await env.DB.prepare('INSERT OR IGNORE INTO referrals (referrer, user_id, name, created_at) VALUES (?, ?, ?, ?)')
+              .bind(ref, tgUser.id, name, t).run();
+            await env.DB.prepare('UPDATE users SET referred_by=? WHERE user_id=?').bind(ref, tgUser.id).run();
+          }
+        }
+      }
+    }
+  }
+  if (!row) return { ok: false, error: 'Could not create user' };
+  if (row.banned) return bannedResp(row);
+  await migrateUser(env, row);
+  regen(row);
+  await saveRow(env, row);
+  return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await clicksOf(env, tgUser.id)) };
 }
 
-/* ================= TASKS ================= */
-function renderTasksAdmin(rows){
-  const tb = document.getElementById('tasksBody');
-  tb.innerHTML = '';
-  rows.forEach(function(t){
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + t.id + '</td><td>' + t.title + '</td><td>' + t.type + '</td><td>+' + t.reward + '</td><td>' +
-      (t.active ? '✅' : '⛔') + '</td>';
-    const lnk = document.createElement('button'); lnk.textContent = 'Link'; lnk.className = 'sm gray'; lnk.style.marginRight = '4px';
-    const tog = document.createElement('button'); tog.textContent = t.active ? 'Off' : 'On'; tog.className = 'sm gray'; tog.style.marginRight = '4px';
-    const del = document.createElement('button'); del.textContent = 'Del'; del.className = 'sm gray';
-    lnk.addEventListener('click', async function(){
-      const l = prompt('Set link URL for task #' + t.id, t.link || 'https://t.me/');
-      if (l !== null){ await call('/api/admin/task_action', { action:'setlink', id:t.id, link:l }).catch(function(e){ alert(e.message); }); loadData(); }
-    });
-    tog.addEventListener('click', async function(){ await call('/api/admin/task_action', { action:'toggle', id:t.id }).catch(function(e){ alert(e.message); }); loadData(); });
-    del.addEventListener('click', async function(){
-      if (confirm('Delete task #' + t.id + '?')){ await call('/api/admin/task_action', { action:'delete', id:t.id }).catch(function(e){ alert(e.message); }); loadData(); }
-    });
-    const td = document.createElement('td');
-    const wrap = document.createElement('div'); wrap.className = 'wd-act';
-    wrap.appendChild(lnk); wrap.appendChild(tog); wrap.appendChild(del);
-    td.appendChild(wrap); tr.appendChild(td);
-    tb.appendChild(tr);
-  });
+async function apiSync(env, tgUser, body) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found — reload the app' };
+  if (row.banned) return bannedResp(row);
+  const t = now();
+  regen(row);
+  const elapsed = Math.max(0, t - row.updated_at);
+  const claimed = Math.max(0, Math.min(Math.floor(body.taps || 0), Math.floor(row.energy / TAP_COST), elapsed * MAX_TAPS_SEC + 30));
+  if (claimed > 0) {
+    const gain = claimed * row.boost;
+    row.balance += gain; row.total_earned += gain; row.taps += claimed;
+    row.energy = Math.max(0, row.energy - claimed * TAP_COST);
+  }
+  row.energy_ts = t; row.updated_at = t;
+  await saveRow(env, row);
+  return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await clicksOf(env, tgUser.id)) };
 }
-document.getElementById('tAdd').addEventListener('click', async function(){
-  try {
-    await call('/api/admin/task_action', {
-      action: 'add',
-      title: document.getElementById('tTitle').value,
-      type: document.getElementById('tType').value,
-      reward: document.getElementById('tReward').value,
-      goal: document.getElementById('tGoal').value || 1,
-      link: document.getElementById('tLink').value
-    });
-    msg('taskMsg', '✅ Task added — users see it instantly');
-    ['tTitle','tReward','tGoal','tLink'].forEach(function(i){ document.getElementById(i).value = ''; });
-    loadData();
-  } catch(e){ msg('taskMsg', '❌ ' + e.message, true); }
-});
 
-/* ================= LOAD ================= */
-async function loadData(){
-  localStorage.setItem('tc_adm_api', document.getElementById('api').value.trim());
-  localStorage.setItem('tc_adm_key', document.getElementById('key').value);
-  msg('authMsg', 'Loading…');
-  try {
-    const d = await call('/api/admin/stats');
-    msg('authMsg', '✅ Connected');
-    const s = d.stats;
-    document.getElementById('statGrid').innerHTML =
-      '<div class="stat"><b>' + s.users + '</b><small>USERS</small></div>' +
-      '<div class="stat"><b>' + Number(s.coins).toLocaleString() + '</b><small>COINS HELD</small></div>' +
-      '<div class="stat"><b>' + Number(s.earned).toLocaleString() + '</b><small>TOTAL EARNED</small></div>' +
-      '<div class="stat"><b>' + Number(s.taps).toLocaleString() + '</b><small>TAPS</small></div>' +
-      '<div class="stat"><b>' + s.invites + '</b><small>REFERRALS</small></div>' +
-      '<div class="stat"><b>' + s.new24 + '</b><small>NEW 24H</small></div>';
-    document.getElementById('statsCard').style.display = 'block';
-    document.getElementById('actCard').style.display = 'block';
-    document.getElementById('wdCard').style.display = 'block';
-    document.getElementById('tasksCard').style.display = 'block';
-    document.getElementById('topCard').style.display = 'block';
-    document.getElementById('recentCard').style.display = 'block';
-    document.getElementById('pendWd').textContent = d.pendingWd.n;
-    document.getElementById('pendWdAmt').textContent = Number(d.pendingWd.amt).toLocaleString();
-    renderWds(d.withdrawals || []);
-    renderTasksAdmin(d.tasks || []);
-    renderRows('topBody', d.top);
-    renderRows('recentBody', d.recent);
-  } catch(e){
-    msg('authMsg', '❌ ' + e.message, true);
+async function apiDaily(env, tgUser) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  const t = now();
+  if (t - row.last_daily < DAY) return { ok: false, error: 'Bonus already claimed — come back tomorrow' };
+  row.daily_streak = (row.last_daily > 0 && t - row.last_daily < 2 * DAY)
+    ? (row.daily_streak >= STREAK_REWARDS.length ? 1 : row.daily_streak + 1) : 1;
+  const reward = STREAK_REWARDS[row.daily_streak - 1];
+  row.balance += reward; row.total_earned += reward; row.daily_claims += 1;
+  row.last_daily = t; row.updated_at = t;
+  await saveRow(env, row);
+  return { ok: true, reward, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await clicksOf(env, tgUser.id)) };
+}
+
+function dynProgress(row, t, clicked) {
+  switch (t.type) {
+    case 'taps': return row.taps;
+    case 'invites': return row.invited;
+    case 'daily': return row.daily_claims;
+    case 'boost': return row.boost - 1;
+    case 'link': return clicked ? 1 : 0;
+    default: return 0;
   }
 }
-document.getElementById('loadBtn').addEventListener('click', loadData);
 
-/* ================= USER ACTIONS ================= */
-document.querySelectorAll('[data-act]').forEach(function(b){
-  b.addEventListener('click', async function(){
-    const userId = document.getElementById('userId').value;
-    const amount = document.getElementById('amount').value;
-    if (!userId){ msg('actMsg', 'Enter a user ID (tap a row below)', true); return; }
+async function apiTasks(env, tgUser) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  const { results } = await env.DB.prepare('SELECT id, title, type, reward, goal, link FROM tasks WHERE active = 1 ORDER BY id').all();
+  return { ok: true, tasks: results || [] };
+}
+
+async function apiTask(env, tgUser, body) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  const id = parseInt(body.id, 10);
+  const t = await env.DB.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first();
+  if (!t || !t.active) return { ok: false, error: 'Task not found' };
+  const tnow = now();
+  /* link task: record the click (opens the channel) */
+  if (t.type === 'link' && body.click) {
+    if (!t.link) return { ok: false, error: 'Task link is not set yet' };
+    const ex = await env.DB.prepare('SELECT user_id FROM task_clicks WHERE user_id = ? AND task_id = ?').bind(tgUser.id, id).first();
+    if (!ex) await env.DB.prepare('INSERT INTO task_clicks (user_id, task_id, clicked_at, verified) VALUES (?,?,?,0)').bind(tgUser.id, id, tnow).run();
+    return { ok: true, clicked: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await clicksOf(env, tgUser.id)) };
+  }
+  const claimed = await claimsOf(env, tgUser.id);
+  if (claimed.includes(id)) return { ok: false, error: 'Already claimed' };
+  if (t.type === 'link') {
+    /* real-time membership gate */
+    const clickRow = await env.DB.prepare('SELECT verified FROM task_clicks WHERE user_id = ? AND task_id = ?').bind(tgUser.id, id).first();
+    if (!clickRow) return { ok: false, error: 'Tap Join first', notJoined: true };
+    if (!clickRow.verified) {
+      const chat = extractChat(t.link);
+      if (!chat) return { ok: false, error: 'Admin: this task needs a public t.me link to verify joins', notJoined: true };
+      const v = await isMember(env, chat, tgUser.id);
+      if (!v.ok) return { ok: false, error: v.error || 'You must join the channel first', notJoined: true };
+      await env.DB.prepare('UPDATE task_clicks SET verified = 1 WHERE user_id = ? AND task_id = ?').bind(tgUser.id, id).run();
+    }
+  } else {
+    const clicked = (await clicksOf(env, tgUser.id)).includes(id);
+    if (dynProgress(row, t, clicked) < t.goal) return { ok: false, error: 'Task not finished yet' };
+  }
+  await env.DB.prepare('INSERT INTO task_claims (user_id, task_id, claimed_at) VALUES (?,?,?)').bind(tgUser.id, id, tnow).run();
+  row.balance += t.reward; row.total_earned += t.reward; row.updated_at = tnow;
+  await saveRow(env, row);
+  return { ok: true, reward: t.reward, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await clicksOf(env, tgUser.id)) };
+}
+
+function boostCost(b) { return Math.round(100 * Math.pow(1.8, b - 1) / 10) * 10; }
+
+async function apiBoost(env, tgUser) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  if (row.boost >= BOOST_MAX) return { ok: false, error: 'Max boost reached' };
+  const cost = boostCost(row.boost);
+  if (row.balance < cost) return { ok: false, error: 'Need ' + (cost - row.balance) + ' more coins' };
+  row.balance -= cost; row.boost += 1; row.updated_at = now();
+  await saveRow(env, row);
+  return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await clicksOf(env, tgUser.id)) };
+}
+
+async function apiSpin(env, tgUser) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  const t = now();
+  regen(row);
+  const free = t - (row.last_spin || 0) >= DAY;
+  if (!free) {
+    if (row.balance < SPIN_COST) return { ok: false, error: 'Need ' + (SPIN_COST - row.balance) + ' more coins to spin' };
+    row.balance -= SPIN_COST;
+  }
+  row.last_spin = t;
+  const idx = pickPrize();
+  const p = SPIN_PRIZES[idx];
+  const prize = { index: idx };
+  if (p.energy) { row.energy = ENERGY_MAX; prize.energy = true; }
+  else { row.balance += p.coins; row.total_earned += p.coins; prize.coins = p.coins; }
+  row.updated_at = t;
+  await saveRow(env, row);
+  return { ok: true, prize, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await clicksOf(env, tgUser.id)) };
+}
+
+async function apiWithdraw(env, tgUser, body) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  const amount = Math.floor(parseInt(body.amount, 10) || 0);
+  const method = String(body.method || '').trim().slice(0, 40);
+  const address = String(body.address || '').trim().slice(0, 120);
+  if (!method) return { ok: false, error: 'Choose a withdrawal method' };
+  if (address.length < 4) return { ok: false, error: 'Enter your wallet / account details' };
+  if (!amount || amount < MIN_WITHDRAW) return { ok: false, error: 'Minimum withdrawal is ' + MIN_WITHDRAW + ' coins' };
+  if (amount > row.balance) return { ok: false, error: 'Not enough coins' };
+  row.balance -= amount; row.updated_at = now();
+  await saveRow(env, row);
+  await env.DB.prepare('INSERT INTO withdrawals (user_id, name, amount, method, address, status, created_at) VALUES (?,?,?,?,?,\'pending\',?)')
+    .bind(tgUser.id, row.name, amount, method, address, now()).run();
+  return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await clicksOf(env, tgUser.id)) };
+}
+
+async function apiWithdrawals(env, tgUser) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  return { ok: true, withdrawals: await withdrawalsOf(env, tgUser.id) };
+}
+
+/* ================= ADMIN ================= */
+function adminOk(request, env) {
+  const key = request.headers.get('X-Admin-Key') || '';
+  return !!env.ADMIN_PASSWORD && key.length > 0 && key === env.ADMIN_PASSWORD;
+}
+async function adminStats(env) {
+  const agg = await env.DB.prepare('SELECT COUNT(*) AS users, COALESCE(SUM(balance),0) AS coins, COALESCE(SUM(total_earned),0) AS earned, COALESCE(SUM(taps),0) AS taps, COALESCE(SUM(invited),0) AS invites FROM users').first();
+  const nd = await env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE created_at > ?').bind(now() - 86400).first();
+  const top = await env.DB.prepare('SELECT user_id, name, balance, invited, taps, banned, device_id, created_at FROM users ORDER BY balance DESC LIMIT 25').all();
+  const recent = await env.DB.prepare('SELECT user_id, name, balance, invited, banned, device_id, created_at FROM users ORDER BY created_at DESC LIMIT 25').all();
+  const tasks = await env.DB.prepare('SELECT * FROM tasks ORDER BY id').all();
+  const wds = await env.DB.prepare("SELECT * FROM withdrawals ORDER BY (status = 'pending') DESC, created_at DESC LIMIT 50").all();
+  const pend = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS amt FROM withdrawals WHERE status = 'pending'").first();
+  return { ok: true,
+    stats: { users: agg.users, coins: agg.coins, earned: agg.earned, taps: agg.taps, invites: agg.invites, new24: nd ? nd.n : 0 },
+    pendingWd: { n: pend ? pend.n : 0, amt: pend ? pend.amt : 0 },
+    top: top.results || [], recent: recent.results || [],
+    tasks: tasks.results || [], withdrawals: wds.results || [] };
+}
+async function adminTaskAction(env, body) {
+  const t = now();
+  if (body.action === 'add') {
+    const title = String(body.title || '').trim().slice(0, 80);
+    const type = String(body.type || '');
+    const reward = Math.floor(parseInt(body.reward, 10) || 0);
+    const goal = Math.max(1, Math.floor(parseInt(body.goal, 10) || 1));
+    const link = String(body.link || '').trim().slice(0, 200) || null;
+    if (!title) return { ok: false, error: 'Title required' };
+    if (!TASK_TYPES.includes(type)) return { ok: false, error: 'Type must be: ' + TASK_TYPES.join(', ') };
+    if (reward < 1 || reward > 1000000) return { ok: false, error: 'Reward must be 1..1000000' };
+    if (type === 'link' && !link) return { ok: false, error: 'Link tasks need a URL' };
+    await env.DB.prepare('INSERT INTO tasks (title, type, reward, goal, link, active, created_at) VALUES (?,?,?,?,?,1,?)')
+      .bind(title, type, reward, goal, link, t).run();
+    return { ok: true };
+  }
+  const id = parseInt(body.id, 10);
+  if (!id) return { ok: false, error: 'Task id required' };
+  if (body.action === 'toggle') {
+    await env.DB.prepare('UPDATE tasks SET active = 1 - active WHERE id = ?').bind(id).run();
+    return { ok: true };
+  }
+  if (body.action === 'delete') {
+    await env.DB.prepare('DELETE FROM tasks WHERE id = ?').bind(id).run();
+    return { ok: true };
+  }
+  if (body.action === 'setlink') {
+    const link = String(body.link || '').trim().slice(0, 200);
+    await env.DB.prepare('UPDATE tasks SET link = ? WHERE id = ?').bind(link || null, id).run();
+    return { ok: true };
+  }
+  return { ok: false, error: 'Unknown action' };
+}
+async function adminWdAction(env, body) {
+  const id = parseInt(body.id, 10);
+  if (!id) return { ok: false, error: 'Withdrawal id required' };
+  const w = await env.DB.prepare('SELECT * FROM withdrawals WHERE id = ?').bind(id).first();
+  if (!w) return { ok: false, error: 'Withdrawal not found' };
+  if (w.status !== 'pending') return { ok: false, error: 'Already processed' };
+  const t = now();
+  if (body.action === 'paid') {
+    await env.DB.prepare("UPDATE withdrawals SET status = 'paid', processed_at = ? WHERE id = ?").bind(t, id).run();
+    return { ok: true, result: 'paid' };
+  }
+  if (body.action === 'reject') {
+    await env.DB.prepare("UPDATE withdrawals SET status = 'rejected', processed_at = ? WHERE id = ?").bind(t, id).run();
+    await env.DB.prepare('UPDATE users SET balance = balance + ? WHERE user_id = ?').bind(w.amount, w.user_id).run();
+    return { ok: true, result: 'rejected + refunded ' + w.amount + ' coins' };
+  }
+  return { ok: false, error: 'Unknown action' };
+}
+async function adminAction(env, body) {
+  const id = parseInt(body.userId, 10);
+  if (!id) return { ok: false, error: 'userId required' };
+  const t = now();
+  if (body.action === 'add') {
+    await env.DB.prepare('UPDATE users SET balance = MAX(0, balance + ?), updated_at=? WHERE user_id=?').bind(parseInt(body.amount, 10) || 0, t, id).run();
+  } else if (body.action === 'set') {
+    await env.DB.prepare('UPDATE users SET balance = MAX(0, ?), updated_at=? WHERE user_id=?').bind(parseInt(body.amount, 10) || 0, t, id).run();
+  } else if (body.action === 'ban') {
+    await env.DB.prepare("UPDATE users SET banned=1, ban_reason='Banned by admin', updated_at=? WHERE user_id=?").bind(t, id).run();
+  } else if (body.action === 'unban') {
+    await env.DB.prepare('UPDATE users SET banned=0, ban_reason=NULL, updated_at=? WHERE user_id=?').bind(t, id).run();
+  } else return { ok: false, error: 'Unknown action' };
+  const r = await env.DB.prepare('SELECT user_id, name, balance, banned, ban_reason FROM users WHERE user_id=?').bind(id).first();
+  return { ok: true, user: r };
+}
+
+export default {
+  async fetch(request, env) {
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+    const url = new URL(request.url).pathname;
+    if (url === '/') return j({ ok: true, msg: 'TapCoin API v5 is running' });
+    let body = {};
+    if (request.method === 'POST') { try { body = await request.json(); } catch (e) {} }
     try {
-      const r = await call('/api/admin/action', { action: b.dataset.act, userId: userId, amount: amount });
-      const u = r.user;
-      msg('actMsg', '✅ ' + b.dataset.act + ' → ' + (u ? u.name + ' (#' + u.user_id + ') now has ' + u.balance + ' coins' + (u.banned ? ' ⛔' : '') : 'done'));
-      loadData();
-    } catch(e){
-      msg('actMsg', '❌ ' + e.message, true);
+      if (url === '/api/admin/stats') {
+        if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401);
+        await initDb(env);
+        return j(await adminStats(env));
+      }
+      if (url === '/api/admin/action') {
+        if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401);
+        await initDb(env);
+        return j(await adminAction(env, body));
+      }
+      if (url === '/api/admin/task_action') {
+        if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401);
+        await initDb(env);
+        return j(await adminTaskAction(env, body));
+      }
+      if (url === '/api/admin/wd_action') {
+        if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401);
+        await initDb(env);
+        return j(await adminWdAction(env, body));
+      }
+      if (request.method !== 'POST') return j({ ok: false, error: 'Use POST' }, 405);
+      await initDb(env);
+      const initData = request.headers.get('X-Telegram-Init-Data') || '';
+      const tgUser = await verifyInitData(initData, env.BOT_TOKEN || '');
+      if (!tgUser) return j({ ok: false, error: env.BOT_TOKEN ? 'Auth failed — open the app from Telegram' : 'BOT_TOKEN secret is not set in Worker settings' }, 401);
+      switch (url) {
+        case '/api/init':        return j(await apiInit(env, tgUser, body));
+        case '/api/sync':        return j(await apiSync(env, tgUser, body));
+        case '/api/daily':       return j(await apiDaily(env, tgUser));
+        case '/api/tasks':       return j(await apiTasks(env, tgUser));
+        case '/api/task':        return j(await apiTask(env, tgUser, body));
+        case '/api/boost':       return j(await apiBoost(env, tgUser));
+        case '/api/spin':        return j(await apiSpin(env, tgUser));
+        case '/api/withdraw':    return j(await apiWithdraw(env, tgUser, body));
+        case '/api/withdrawals': return j(await apiWithdrawals(env, tgUser));
+      }
+      return j({ ok: false, error: 'Unknown endpoint' }, 404);
+    } catch (e) {
+      return j({ ok: false, error: 'Server error: ' + (e && e.message ? e.message : String(e)) }, 500);
     }
-  });
-});
-</script>
-</body>
-</html>
+  }
+};
