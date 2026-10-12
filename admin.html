@@ -72,6 +72,12 @@ tr[data-id]:active{background:var(--surface2)}
   <table><thead><tr><th>#</th><th>User</th><th>ETB</th><th>Method</th><th>Address</th><th>Status</th><th></th></tr></thead><tbody id="wdBody"></tbody></table>
 </div>
 
+<div class="card" id="txCard" style="display:none">
+  <h2>TanveXo registrations (<span id="pendTx">0</span> pending)</h2>
+  <table><thead><tr><th>#</th><th>User</th><th>Email/Phone</th><th>Status</th><th></th></tr></thead><tbody id="txBody"></tbody></table>
+  <p class="note">Screenshot is stored server-side (D1). To view one: Cloudflare → D1 → tapcoin-db → Console → run: SELECT screenshot FROM tx_registrations WHERE id = ?; then paste the base64 into a browser as data:image/jpeg;base64,...</p>
+</div>
+
 <div class="card" id="tasksCard" style="display:none">
   <h2>Add task</h2>
   <div class="row"><input id="tTitle" placeholder="Task title"></div>
@@ -80,7 +86,7 @@ tr[data-id]:active{background:var(--surface2)}
       <option value="invites">invites (goal = friends)</option>
       <option value="daily">daily (claimed check-in once)</option>
       <option value="ads">ads (goal = ads watched)</option>
-      <option value="link">link (join a Telegram channel — verified)</option>
+      <option value="link">link (Telegram = auto-verified · Twitter/X/any URL = visit &amp; verify)</option>
     </select>
   </div>
   <div class="row">
@@ -148,6 +154,10 @@ function msg(id, text, err){
 function renderRows(tbodyId, rows){
   const tb = document.getElementById(tbodyId);
   tb.innerHTML = '';
+  if (!rows.length){
+    tb.innerHTML = '<tr><td colspan="5" style="color:var(--muted)">No users yet</td></tr>';
+    return;
+  }
   rows.forEach(function(u){
     const tr = document.createElement('tr');
     tr.setAttribute('data-id', u.user_id);
@@ -191,6 +201,42 @@ async function wdAction(id, action){
   try {
     const r = await call('/api/admin/wd_action', { id: id, action: action });
     msg('actMsg', '✅ Withdrawal #' + id + ': ' + (r.result || action));
+    loadData();
+  } catch(e){ msg('actMsg', '❌ ' + e.message, true); }
+}
+
+/* ================= TANVEXO REGISTRATIONS ================= */
+function renderTx(rows){
+  const tb = document.getElementById('txBody');
+  tb.innerHTML = '';
+  if (!rows.length){
+    tb.innerHTML = '<tr><td colspan="5" style="color:var(--muted)">No submissions yet</td></tr>';
+    return;
+  }
+  rows.forEach(function(r){
+    const tr = document.createElement('tr');
+    const col = r.status === 'paid' ? 'var(--green)' : r.status === 'rejected' ? 'var(--red)' : 'var(--gold)';
+    tr.innerHTML = '<td>' + r.id + '</td><td>' + (r.name || r.user_id) + '</td><td style="max-width:120px">' + r.contact +
+      '</td><td style="color:' + col + '">' + r.status + '</td>';
+    if (r.status === 'pending'){
+      const paid = document.createElement('button'); paid.textContent = 'Paid'; paid.className = 'sm'; paid.style.marginRight = '4px';
+      const rej = document.createElement('button'); rej.textContent = 'Reject'; rej.className = 'sm gray';
+      paid.addEventListener('click', function(){ txAction(r.id, 'paid'); });
+      rej.addEventListener('click', function(){ if (confirm('Reject submission #' + r.id + '? The user can resubmit.')) txAction(r.id, 'reject'); });
+      const td = document.createElement('td');
+      const wrap = document.createElement('div'); wrap.className = 'wd-act';
+      wrap.appendChild(paid); wrap.appendChild(rej);
+      td.appendChild(wrap); tr.appendChild(td);
+    } else {
+      const td = document.createElement('td'); td.textContent = ''; tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  });
+}
+async function txAction(id, action){
+  try {
+    const r = await call('/api/admin/tx_action', { id: id, action: action });
+    msg('actMsg', '✅ Registration #' + id + ': ' + (r.result || action));
     loadData();
   } catch(e){ msg('actMsg', '❌ ' + e.message, true); }
 }
@@ -291,13 +337,16 @@ async function loadData(){
     document.getElementById('statsCard').style.display = 'block';
     document.getElementById('actCard').style.display = 'block';
     document.getElementById('wdCard').style.display = 'block';
+    document.getElementById('txCard').style.display = 'block';
     document.getElementById('tasksCard').style.display = 'block';
     document.getElementById('revCard').style.display = 'block';
     document.getElementById('topCard').style.display = 'block';
     document.getElementById('recentCard').style.display = 'block';
     document.getElementById('pendWd').textContent = d.pendingWd.n;
     document.getElementById('pendWdAmt').textContent = Number(d.pendingWd.amt).toLocaleString();
+    document.getElementById('pendTx').textContent = d.pendingTx || 0;
     renderWds(d.withdrawals || []);
+    renderTx(d.txRegistrations || []);
     renderTasksAdmin(d.tasks || []);
     renderReviewsAdmin(d.reviews || []);
     renderRows('topBody', d.top);
