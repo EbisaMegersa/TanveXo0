@@ -1,11 +1,11 @@
-/* TanveXo API v15 — Code 4
-   CHANGES vs v14:
-   - SPIN SYSTEM REMOVED (all spin endpoints, spin_history writes, spinMult)
-   - NEW: TanveXo registration flow
-       POST /api/tx_register  { contact, screenshot }  -> pending submission (validated server-side)
-       POST /api/tx_my        -> user's own latest submission status
-       POST /api/admin/tx_action { id, action: paid|reject|delete }
-   - All v14 atomic-safety patterns retained (balance math, gate, referrals, ads, daily, withdraw) */
+/* TanveXo API v16 — Code 5
+   CHANGES vs v15:
+   - Registration screenshots are delivered TO THE ADMIN'S TELEGRAM as a photo
+     (sendPhoto multipart) with ✅ Approve / ❌ Reject inline buttons — DB stays as backup
+   - /approval command (admin only) lists pending submissions as photos with buttons
+   - Admin actions via inline buttons are admin-ID-verified
+   - /help now shows the sender's Telegram ID (so you can copy your ADMIN_TELEGRAM_ID)
+   - Nav fix was frontend-only; worker otherwise identical to v15 */
 
 /* ================= ECONOMY CONSTANTS ================= */
 const REFERRAL_REWARD = 50, WELCOME_BONUS = 25;
@@ -18,7 +18,6 @@ const EXT_LINK_MIN_STAY = 8;
 const DEFAULT_CHANNEL = 'https://t.me/ebtry0';
 const BOT_USERNAME = 'tanvexoappbot';
 const APP_LINK = 'https://t.me/' + BOT_USERNAME + '/refer';
-/* TanveXo external app — the link shown on the TanveXo tab */
 const TX_APP_LINK = 'https://www.tanvexoapp.com/home?invite_code=342421';
 const REQ_CHANNELS = ['@ebtry0', '@ebisa_emoji'];
 const STREAK_REWARDS = [10, 30, 40, 60, 70, 80, 100];
@@ -87,7 +86,6 @@ function initDb(env) {
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, message TEXT NOT NULL,
         stars INTEGER NOT NULL DEFAULT 5, created_at INTEGER NOT NULL
       )`).run();
-      /* Code 4: TanveXo registration submissions */
       await env.DB.prepare(`CREATE TABLE IF NOT EXISTS tx_registrations (
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, name TEXT,
         contact TEXT NOT NULL, screenshot TEXT NOT NULL,
@@ -166,6 +164,28 @@ async function botCall(env, method, params) {
     const r = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/' + method, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params || {})
     });
+    return await r.json();
+  } catch (e) { return { ok: false, description: String(e && e.message || e) }; }
+}
+
+/* Code 5: multipart sendPhoto — sends a base64 screenshot as a real photo */
+async function botSendPhotoB64(env, chatId, dataUrl, caption, keyboard) {
+  if (!env.BOT_TOKEN) return { ok: false, description: 'BOT_TOKEN not set' };
+  try {
+    const m = String(dataUrl || '').match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+    if (!m) return { ok: false, description: 'Invalid image data' };
+    const mime = m[1];
+    const ext = mime.includes('png') ? 'png' : 'jpg';
+    const b64 = m[2].replace(/\s/g, '');
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const fd = new FormData();
+    fd.append('chat_id', String(chatId));
+    fd.append('photo', new Blob([bytes], { type: mime }), 'proof.' + ext);
+    fd.append('caption', String(caption || '').slice(0, 1024));
+    if (keyboard) fd.append('reply_markup', JSON.stringify({ inline_keyboard: keyboard }));
+    const r = await fetch('https://api.telegram.org/bot' + env.BOT_TOKEN + '/sendPhoto', { method: 'POST', body: fd });
     return await r.json();
   } catch (e) { return { ok: false, description: String(e && e.message || e) }; }
 }
@@ -302,7 +322,6 @@ async function ensureUser(env, u, refId, dev) {
   return row;
 }
 
-/* atomic referral claim (pending→verified IS the lock) */
 async function verifyReferral(env, friendId) {
   const row = await getRow(env, friendId);
   if (!row || !row.referred_by) return { ok: true, nothing: true };
@@ -456,7 +475,6 @@ async function apiTask(env, tgUser, body) {
   return { ok: true, reward: t.reward, state: toClient(fresh, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await txMineOf(env, tgUser.id)) };
 }
 
-/* Code 3 atomic ad claim — unchanged */
 async function apiAd(env, tgUser) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
@@ -489,13 +507,12 @@ async function apiReviews(env) {
   return { ok: true, reviews: await reviewsOf(env) };
 }
 
-/* ================= TANVEXO REGISTRATION (Code 4) ================= */
-/* validate contact: email OR phone (7-15 digits) */
+/* ================= TANVEXO REGISTRATION (Code 5: delivers photo to admin TG) ================= */
 function validContact(s) {
   const v = String(s || '').trim();
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return v;                 /* email */
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return v;
   const digits = v.replace(/[^\d]/g, '');
-  if (digits.length >= 7 && digits.length <= 15) return v;               /* phone */
+  if (digits.length >= 7 && digits.length <= 15) return v;
   return null;
 }
 async function apiTxRegister(env, tgUser, body) {
@@ -505,18 +522,32 @@ async function apiTxRegister(env, tgUser, body) {
   if (!row.channel_ok) return gateErr();
   const contact = validContact(body.contact);
   const screenshot = String(body.screenshot || '').trim();
-  /* server-side validation — empty/invalid = nothing stored, nothing sent */
   if (!contact) return { ok: false, error: 'Please enter a valid email or phone number', field: 'contact' };
   if (!screenshot || screenshot.length < 10) return { ok: false, error: 'Please attach the registration screenshot', field: 'screenshot' };
-  /* rate limit: max 1 pending submission at a time */
   const open = await env.DB.prepare("SELECT id FROM tx_registrations WHERE user_id = ? AND status = 'pending'").bind(tgUser.id).first();
   if (open) return { ok: false, error: 'You already have a pending submission — wait for review' };
   const t = now();
   const r = await env.DB.prepare('INSERT INTO tx_registrations (user_id, name, contact, screenshot, status, created_at) VALUES (?,?,?,?, \'pending\', ?)')
     .bind(tgUser.id, row.name, contact, screenshot, t).run();
-  if (!r || !r.meta || !r.meta.last_row_id) return { ok: false, error: 'Could not submit — try again' };
+  const newId = (r && r.meta && r.meta.last_row_id) ? r.meta.last_row_id : null;
+  if (!newId) return { ok: false, error: 'Could not submit — try again' };
   await logAct(env, tgUser.id, 'tx', 'TanveXo registration submitted', 0);
-  return { ok: true, txRegistration: { id: r.meta.last_row_id, contact, status: 'pending', ts: t * 1000 } };
+  /* Code 5: deliver the screenshot to the admin's Telegram with action buttons */
+  let delivered = false;
+  if (env.ADMIN_TELEGRAM_ID) {
+    const cap = '🆕 TanveXo registration #' + newId +
+      '\n👤 ' + (row.name || 'Player') + ' (ID: ' + tgUser.id + ')' +
+      '\n📧 ' + contact +
+      '\n🕐 ' + new Date(t * 1000).toLocaleString('en') +
+      '\n\nApprove or reject:';
+    const kb = [[
+      { text: '✅ Approve', callback_data: 'txpaid_' + newId },
+      { text: '❌ Reject', callback_data: 'txrej_' + newId }
+    ]];
+    const sent = await botSendPhotoB64(env, env.ADMIN_TELEGRAM_ID, screenshot, cap, kb);
+    delivered = !!(sent && sent.ok);
+  }
+  return { ok: true, delivered: delivered, txRegistration: { id: newId, contact: contact, status: 'pending', ts: t * 1000 } };
 }
 async function apiTxMine(env, tgUser) {
   const row = await getRow(env, tgUser.id);
@@ -571,26 +602,88 @@ async function apiWithdrawals(env, tgUser) {
 
 /* ================= WEBHOOK ================= */
 function esc(s){ return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function isAdminTg(env, tgId) {
+  return !!env.ADMIN_TELEGRAM_ID && String(tgId) === String(env.ADMIN_TELEGRAM_ID);
+}
 async function reply(env, chatId, text, keyboard) {
   const params = { chat_id: chatId, text, parse_mode: 'HTML' };
   if (keyboard) params.reply_markup = { inline_keyboard: keyboard };
   return botCall(env, 'sendMessage', params);
 }
+/* send a stored submission (photo + buttons) to the admin chat */
+async function sendSubmissionToAdmin(env, sub) {
+  const cap = '🆕 TanveXo registration #' + sub.id +
+    '\n👤 ' + (sub.name || 'Player') + ' (ID: ' + sub.user_id + ')' +
+    '\n📧 ' + sub.contact +
+    '\n🕐 ' + new Date(sub.created_at * 1000).toLocaleString('en') +
+    '\n\nApprove or reject:';
+  const kb = [[
+    { text: '✅ Approve', callback_data: 'txpaid_' + sub.id },
+    { text: '❌ Reject', callback_data: 'txrej_' + sub.id }
+  ]];
+  return botSendPhotoB64(env, env.ADMIN_TELEGRAM_ID, sub.screenshot, cap, kb);
+}
+/* shared approve/reject logic (used by inline buttons AND admin panel is separate) */
+async function txProcess(env, id, action) {
+  const r = await env.DB.prepare('SELECT * FROM tx_registrations WHERE id = ?').bind(id).first();
+  if (!r) return { ok: false, msg: 'Submission not found' };
+  if (r.status !== 'pending') return { ok: false, msg: 'Already processed (' + r.status + ')' };
+  const t = now();
+  if (action === 'paid') {
+    await env.DB.prepare("UPDATE tx_registrations SET status = 'paid', processed_at = ? WHERE id = ?").bind(t, id).run();
+    return { ok: true, msg: '✅ Registration #' + id + ' approved' };
+  }
+  if (action === 'reject') {
+    await env.DB.prepare("UPDATE tx_registrations SET status = 'rejected', processed_at = ? WHERE id = ?").bind(t, id).run();
+    return { ok: true, msg: '❌ Registration #' + id + ' rejected' };
+  }
+  return { ok: false, msg: 'Unknown action' };
+}
 async function handleWebhook(env, update) {
   try {
+    /* inline button presses (Approve / Reject on the photo) */
     if (update.callback_query) {
       const cq = update.callback_query;
-      if (!cq.from || cq.data !== 'verify') return;
-      const g = await passGate(env, cq.from.id);
-      if (g && g.ok) {
-        await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '✅ Verified! Welcome to TanveXo' });
-        if (cq.message && cq.message.chat) {
-          await reply(env, cq.message.chat.id,
-            '✅ <b>Verified!</b>\n\nWelcome to TanveXo — let\'s earn together!',
-            [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
+      if (!cq.from) return;
+      const data = String(cq.data || '');
+      if (data === 'verify') {
+        const g = await passGate(env, cq.from.id);
+        if (g && g.ok) {
+          await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '✅ Verified! Welcome to TanveXo' });
+          if (cq.message && cq.message.chat) {
+            await reply(env, cq.message.chat.id,
+              '✅ <b>Verified!</b>\n\nWelcome to TanveXo — let\'s earn together!',
+              [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
+          }
+        } else {
+          await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '❌ You haven\'t joined both channels yet', show_alert: true });
         }
-      } else {
-        await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '❌ You haven\'t joined both channels yet', show_alert: true });
+        return;
+      }
+      /* Code 5: registration approve/reject buttons — admin only */
+      if (data.indexOf('txpaid_') === 0 || data.indexOf('txrej_') === 0) {
+        if (!isAdminTg(env, cq.from.id)) {
+          await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '⛔ Admins only', show_alert: true });
+          return;
+        }
+        const id = parseInt(data.split('_')[1], 10);
+        const action = data.indexOf('txpaid_') === 0 ? 'paid' : 'reject';
+        const res = await txProcess(env, id, action);
+        await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: res.ok ? res.msg : res.msg, show_alert: !res.ok });
+        if (res.ok && cq.message && cq.message.chat) {
+          /* remove the buttons so it can't be double-pressed */
+          try {
+            await botCall(env, 'editMessageReplyMarkup', {
+              chat_id: cq.message.chat.id, message_id: cq.message.message_id,
+              reply_markup: { inline_keyboard: [[{ text: res.msg, callback_data: 'noop' }]] }
+            });
+          } catch (e) {}
+        }
+        return;
+      }
+      if (data === 'noop') {
+        await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id });
+        return;
       }
       return;
     }
@@ -620,7 +713,38 @@ async function handleWebhook(env, update) {
       if (!row) await reply(env, chatId, 'You don\'t have an account yet — open the app first!', [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
       else await reply(env, chatId, '💰 <b>' + esc(row.name) + '</b>\n\nBalance: <b>' + row.balance + ' ETB</b>\nFriends invited: <b>' + row.invited + '</b>\nAds watched: <b>' + (row.ads_watched || 0) + '</b>');
     } else if (cmd === '/help') {
-      await reply(env, chatId, '<b>TanveXo commands:</b>\n/start — open the app\n/balance — check your ETB\n/help — this message');
+      /* shows your ID — copy it into the ADMIN_TELEGRAM_ID secret */
+      await reply(env, chatId,
+        '<b>TanveXo commands:</b>\n/start — open the app\n/balance — check your ETB\n/approval — (admin) pending registrations\n\n🆔 Your Telegram ID: <code>' + msg.from.id + '</code>');
+    } else if (cmd === '/approval') {
+      /* Code 5: admin lists pending submissions as photos with buttons */
+      if (!isAdminTg(env, msg.from.id)) {
+        await reply(env, chatId, '⛔ Admins only.');
+        return;
+      }
+      if (!env.ADMIN_TELEGRAM_ID) {
+        await reply(env, chatId, '⚠️ Set the <b>ADMIN_TELEGRAM_ID</b> secret in the Worker settings first.');
+        return;
+      }
+      const { results } = await env.DB.prepare("SELECT * FROM tx_registrations WHERE status = 'pending' ORDER BY created_at ASC LIMIT 5").all();
+      if (!results || !results.length) {
+        await reply(env, chatId, '✅ No pending registrations.');
+        return;
+      }
+      await reply(env, chatId, '📋 <b>' + results.length + ' pending registration(s):</b>');
+      for (const sub of results) {
+        const sent = await sendSubmissionToAdmin(env, sub);
+        if (!sent || !sent.ok) {
+          /* photo failed (too large etc.) — fall back to text card with buttons */
+          await reply(env, chatId,
+            '🆕 Registration #' + sub.id + '\n👤 ' + esc(sub.name) + ' (ID: ' + sub.user_id + ')\n📧 ' + esc(sub.contact) +
+            '\n\n⚠️ Photo could not be sent — check it in the admin panel.',
+            [[
+              { text: '✅ Approve', callback_data: 'txpaid_' + sub.id },
+              { text: '❌ Reject', callback_data: 'txrej_' + sub.id }
+            ]]);
+        }
+      }
     } else {
       await reply(env, chatId, 'Tap /start to open TanveXo 🎮');
     }
@@ -655,23 +779,13 @@ async function adminStats(env) {
 async function adminTxAction(env, body) {
   const id = parseInt(body.id, 10);
   if (!id) return { ok: false, error: 'Registration id required' };
-  const r = await env.DB.prepare('SELECT * FROM tx_registrations WHERE id = ?').bind(id).first();
-  if (!r) return { ok: false, error: 'Submission not found' };
-  if (r.status !== 'pending') return { ok: false, error: 'Already processed' };
-  const t = now();
-  if (body.action === 'paid') {
-    await env.DB.prepare("UPDATE tx_registrations SET status = 'paid', processed_at = ? WHERE id = ?").bind(t, id).run();
-    return { ok: true, result: 'paid' };
-  }
-  if (body.action === 'reject') {
-    await env.DB.prepare("UPDATE tx_registrations SET status = 'rejected', processed_at = ? WHERE id = ?").bind(t, id).run();
-    return { ok: true, result: 'rejected' };
-  }
+  const res = await txProcess(env, id, body.action === 'delete' ? 'delete' : body.action);
   if (body.action === 'delete') {
     await env.DB.prepare('DELETE FROM tx_registrations WHERE id = ?').bind(id).run();
     return { ok: true, result: 'deleted' };
   }
-  return { ok: false, error: 'Unknown action' };
+  if (!res.ok) return { ok: false, error: res.msg };
+  return { ok: true, result: body.action };
 }
 async function adminReviewAction(env, body) {
   const t = now();
@@ -757,7 +871,7 @@ export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url = new URL(request.url).pathname;
-    if (url === '/') return j({ ok: true, msg: 'TanveXo API v15 (Code 4) is running' });
+    if (url === '/') return j({ ok: true, msg: 'TanveXo API v16 (Code 5) is running' });
     let body = {};
     if (request.method === 'POST') { try { body = await request.json(); } catch (e) {} }
     try {
