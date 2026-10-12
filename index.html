@@ -10,7 +10,7 @@
 <script src='//libtl.com/sdk.js' data-zone='10937696' data-sdk='show_10937696'></script>
 <style>
 /* ============================================================
-   iOS 27 LIQUID GLASS — TOKENS (blue light / green dark)
+   iOS 27 LIQUID GLASS — TOKENS
    ============================================================ */
 :root{
   color-scheme: light;
@@ -33,10 +33,6 @@
   --glass-inner:inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 1px rgba(0,0,0,.06);
   --card-edge:inset 0 0 0 .5px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.9);
   --card-shadow:0 6px 22px rgba(0,0,0,.07);
-  --seg-d1:#E9E9EE; --seg-t-d1:#6C6C72;
-  --seg-d2:#DBDBE1; --seg-t-d2:#8A8A90;
-  --seg-g:var(--accent); --seg-t-g:#fff;
-  --seg-w:#1C1C1E; --seg-t-w:#fff;
   --r-sm:14px; --r-md:18px; --r-lg:24px; --r-xl:30px; --r-capsule:999px;
   --spring:cubic-bezier(.34,1.28,.48,1);
   --spring-soft:cubic-bezier(.22,1.1,.36,1);
@@ -60,9 +56,6 @@
   --glass-inner:inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1px 1px rgba(0,0,0,.3);
   --card-edge:inset 0 0 0 .5px rgba(255,255,255,.08), inset 0 1px 0 rgba(255,255,255,.07);
   --card-shadow:0 6px 24px rgba(0,0,0,.4);
-  --seg-d1:#2C2C2E; --seg-t-d1:#D8D8DC;
-  --seg-d2:#3A3A3C; --seg-t-d2:#A0A0A6;
-  --seg-w:#F2F2F7; --seg-t-w:#111;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]):not([data-theme="dark"]){
@@ -82,9 +75,6 @@
     --glass-inner:inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1px 1px rgba(0,0,0,.3);
     --card-edge:inset 0 0 0 .5px rgba(255,255,255,.08), inset 0 1px 0 rgba(255,255,255,.07);
     --card-shadow:0 6px 24px rgba(0,0,0,.4);
-    --seg-d1:#2C2C2E; --seg-t-d1:#D8D8DC;
-    --seg-d2:#3A3A3C; --seg-t-d2:#A0A0A6;
-    --seg-w:#F2F2F7; --seg-t-w:#111;
   }
 }
 @media (prefers-reduced-transparency: reduce){
@@ -114,7 +104,7 @@ body.gated #app, body.gated .topnav, body.gated nav.tabbar{ display:none!importa
 svg{display:block}
 
 /* ============================================================
-   LIQUID GLASS — MORPHISM (chrome only)
+   LIQUID GLASS — MORPHISM
    ============================================================ */
 .lg{position:relative;
   background:var(--glass);
@@ -268,14 +258,14 @@ h2.sec .sic .ic{width:20px;height:20px}
 .adline b{color:var(--label);font-weight:600}
 
 /* ================= LISTS ================= */
-.act,.rev,.sh,.hist,.friend,.task{display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 0}
-.act + .act,.rev + .rev,.sh + .sh,.hist + .hist,.friend + .friend,.task + .task{border-top:.5px solid var(--sep)}
-.act-ic,.sh-ic{width:36px;height:36px;border-radius:11px;background:var(--fill);display:grid;place-items:center;flex-shrink:0;color:var(--accent)}
-.act-ic.neg,.sh-ic.neg{color:var(--red)}
-.act-ic .ic,.sh-ic .ic{width:17px;height:17px}
-.act-main,.sh-main,.rev-main,.hist-main{flex:1;min-width:0}
-.act-main b,.sh-main b,.hist-main b{font-size:.87rem;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.act-main small,.sh-main small,.hist-main small,.rev-time{color:var(--label2);font-size:.72rem;font-weight:500}
+.act,.rev,.hist,.friend,.task{display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 0}
+.act + .act,.rev + .rev,.hist + .hist,.friend + .friend,.task + .task{border-top:.5px solid var(--sep)}
+.act-ic{width:36px;height:36px;border-radius:11px;background:var(--fill);display:grid;place-items:center;flex-shrink:0;color:var(--accent)}
+.act-ic.neg{color:var(--red)}
+.act-ic .ic{width:17px;height:17px}
+.act-main,.rev-main,.hist-main{flex:1;min-width:0}
+.act-main b,.hist-main b{font-size:.87rem;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-main small,.hist-main small,.rev-time{color:var(--label2);font-size:.72rem;font-weight:500}
 .act-amt{font-weight:600;font-size:.9rem;white-space:nowrap;font-variant-numeric:tabular-nums}
 .act-amt small{display:block;text-align:right;font-size:.62rem;color:var(--label2);font-weight:500}
 .rev{align-items:flex-start}
@@ -326,51 +316,34 @@ h2.sec .sic .ic{width:20px;height:20px}
 .empty{color:var(--label2);font-size:.84rem;text-align:center;padding:16px 0;line-height:1.5;font-weight:500}
 
 /* ============================================================
-   GAME — metallic ring wheel + glass hub (design unchanged)
+   TANVEXO TAB — icon + link + screenshot proof
    ============================================================ */
-.spin-wrap{position:relative;width:min(76vw,288px);aspect-ratio:1;margin:18px auto 10px}
-.wheel-ring{position:absolute;inset:-9px;border-radius:50%;z-index:0;
-  background:conic-gradient(from 20deg,#C7C8CF,#F7F7FA 12%,#AEB0B8 26%,#EDEEF2 41%,#BFC1C9 56%,#FBFBFD 71%,#ABADB6 86%,#E5E6EB);
-  box-shadow:0 14px 34px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.45)}
-.wheel{width:100%;height:100%;border-radius:50%;position:relative;z-index:1;
-  box-shadow:0 10px 26px rgba(0,0,0,.28)}
-.wheel-sheen{position:absolute;inset:0;border-radius:50%;z-index:1;pointer-events:none;
-  background:radial-gradient(120% 90% at 28% 10%, rgba(255,255,255,.32), transparent 46%),
-             radial-gradient(110% 110% at 72% 100%, rgba(0,0,0,.14), transparent 55%)}
-.wl,.wdot{position:absolute;inset:0;display:flex;justify-content:center;transform:rotate(var(--a))}
-.wl b{margin-top:20px;font-size:.9rem;font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.15)}
-.wdot i{width:6px;height:6px;margin-top:8px;border-radius:50%;background:var(--label3)}
-.spin-hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:94px;height:94px;border-radius:50%;z-index:2;
-  font-family:inherit;font-weight:700;font-size:1rem;letter-spacing:.05em;color:var(--label);cursor:pointer;
-  background:var(--glass-strong);
-  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
-  box-shadow:var(--glass-inner), var(--glass-shadow);
-  transition:transform .18s var(--spring)}
-.spin-hub::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1.4px;
-  background:var(--glass-ring);
-  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);mask-composite:exclude}
-.spin-hub:active{transform:translate(-50%,-50%) scale(.9)}
-.spin-hub:disabled{opacity:.55}
-.spin-pointer{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:0;height:0;z-index:3;
-  border-left:11px solid transparent;border-right:11px solid transparent;border-top:22px solid var(--accent);
-  filter:drop-shadow(0 2px 6px var(--accent-glow))}
-.spin-result{min-height:38px;text-align:center;margin-bottom:8px}
-.spin-result .sr-line{font-weight:700;font-size:1.3rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums;display:block}
-.spin-result.win .sr-line{color:var(--accent)} .spin-result.lose .sr-line{color:var(--label2)}
-.spin-result .sr-detail{display:block;font-size:.75rem;font-weight:600;color:var(--label2);margin-top:2px}
-.spin-result.pop{animation:pop .7s var(--spring)}
-@keyframes pop{0%{transform:scale(.6);opacity:0}45%{transform:scale(1.15)}100%{transform:scale(1)}}
-.bet-row{display:flex;gap:9px;margin-bottom:11px}
-.bet-row input{flex:1;min-width:0}
-.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
-.chip{background:var(--fill);border:none;color:var(--label);border-radius:var(--r-sm);padding:12px 0;
-  font-family:inherit;font-weight:600;font-size:.85rem;cursor:pointer;min-height:44px;
-  transition:transform var(--dur-press) var(--spring)}
-.chip:active{transform:scale(.93)}
-.lbl2{font-size:.68rem;letter-spacing:.12em;color:var(--label2);font-weight:600;margin:2px 0 8px;text-transform:uppercase}
-.fine{font-size:.72rem;color:var(--label2);text-align:center;margin-top:12px;line-height:1.6;font-weight:500}
+.tx-logo{width:96px;height:96px;border-radius:26px;margin:18px auto 14px;display:grid;place-items:center;
+  background:linear-gradient(160deg,var(--accent-hi),var(--accent-deep));
+  box-shadow:0 14px 34px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.4);
+  color:#fff;font-weight:800;font-size:2rem;letter-spacing:-.03em;user-select:none}
+.tx-logo small{display:block;font-size:.55rem;font-weight:700;letter-spacing:.14em;opacity:.9;margin-top:2px}
+.tx-steps{counter-reset:tx; text-align:left; margin:4px 0 0; padding:0}
+.tx-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0;counter-increment:tx}
+.tx-step + .tx-step{border-top:.5px solid var(--sep)}
+.tx-step::before{content:counter(tx);width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  background:var(--accent-tint);color:var(--accent);font-weight:700;font-size:.8rem;
+  display:grid;place-items:center;margin-top:1px}
+.tx-step div{flex:1}
+.tx-step b{display:block;font-size:.9rem;font-weight:600}
+.tx-step small{color:var(--label2);font-size:.78rem;line-height:1.5;font-weight:500;display:block;margin-top:1px}
+.tx-shot{display:flex;align-items:center;gap:12px;background:var(--fill);border:1.5px dashed var(--label3);
+  border-radius:var(--r-md);padding:14px;margin:12px 0;cursor:pointer;transition:border-color .2s}
+.tx-shot.has{border-style:solid;border-color:var(--accent);background:var(--accent-tint)}
+.tx-shot .ic{width:20px;height:20px;color:var(--accent);flex-shrink:0}
+.tx-shot b{font-size:.88rem;font-weight:600;display:block}
+.tx-shot small{color:var(--label2);font-size:.75rem;font-weight:500}
+#txShotInput{display:none}
+.tx-status{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--r-md);margin-top:12px;font-size:.85rem;font-weight:600}
+.tx-status.pend{background:var(--fill);color:var(--label2)}
+.tx-status.paid{background:var(--accent-tint);color:var(--accent)}
+.tx-status.rej{background:var(--red-tint);color:var(--red)}
+.tx-status .ic{width:18px;height:18px;flex-shrink:0}
 
 /* ================= INPUTS ================= */
 input.wd-input{width:100%;background:var(--fill);border:1.5px solid transparent;color:var(--label);
@@ -408,13 +381,13 @@ input.wd-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3p
 .hist-amt{font-weight:600;font-size:.92rem;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 
 /* ============================================================
-   TAB BAR — Liquid Glass capsule
+   TAB BAR — 4 tabs (spin removed)
    ============================================================ */
 nav.tabbar{
   position:fixed;bottom:calc(var(--tg-bot) + 10px);left:50%;
   transform:translateX(-50%);
   width:min(440px,calc(100% - 24px));
-  display:grid;grid-template-columns:repeat(5,1fr);padding:6px;
+  display:grid;grid-template-columns:repeat(4,1fr);padding:6px;
   border-radius:var(--r-xl);z-index:60;
 }
 .nav-btn{background:none;border:none;color:var(--label2);font-family:inherit;font-weight:600;
@@ -428,7 +401,7 @@ nav.tabbar{
 .nav-btn:active .nv-ic{transform:scale(.9)}
 
 /* ============================================================
-   FIRST-OPEN CHANNEL GATE — popup card, no skip
+   CHANNEL GATE — popup card, no skip
    ============================================================ */
 #gateWrap{position:fixed;inset:0;background:rgba(0,0,0,.55);
   -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
@@ -454,7 +427,7 @@ nav.tabbar{
 .g-err{color:var(--red);font-size:.82rem;margin-top:12px;min-height:20px;font-weight:600}
 
 /* ============================================================
-   BANNED — "You're banned"
+   BANNED
    ============================================================ */
 #banScreen{position:fixed;inset:0;background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   z-index:130;display:none;align-items:center;justify-content:center;padding:28px}
@@ -490,7 +463,6 @@ nav.tabbar{
 #toast.err{color:var(--red)}
 #toast.err .t-ic{color:var(--red)}
 
-/* confetti + ad overlay */
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:95;overflow:hidden}
 #confetti i{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{transform:translate(var(--x),108vh) rotate(var(--r));opacity:.7}}
@@ -511,7 +483,6 @@ nav.tabbar{
   <p><b>Advertisement</b><br>Your reward unlocks when the ad finishes.</p>
 </div>
 
-<!-- Liquid Glass: collapsible top nav -->
 <div class="topnav lg" id="topnav">
   <b>TanveXo</b>
   <button class="icon-glass" id="menuBtn2" aria-label="Menu">
@@ -595,30 +566,34 @@ nav.tabbar{
       </div>
     </section>
 
-    <!-- GAME -->
-    <section class="page" id="page-game">
-      <div class="card">
-        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg> <span data-i18n="lucky">Lucky Wheel</span></div>
-        <div class="spin-wrap">
-          <div class="wheel-ring"></div>
-          <div class="spin-pointer"></div>
-          <div class="wheel" id="wheel"><div id="wheelDeco"></div></div>
-          <div class="wheel-sheen"></div>
-          <button class="spin-hub" id="spinHub">SPIN</button>
-        </div>
-        <div class="spin-result" id="spinResult"></div>
-        <div class="lbl2" data-i18n="your_bet">YOUR BET</div>
-        <div class="bet-row">
-          <input class="wd-input" id="betInput" type="number" inputmode="numeric" placeholder="50">
-          <button class="btn green" id="betMax" style="padding:0 18px;min-height:50px;font-size:.85rem">MAX</button>
-        </div>
-        <div class="chips" id="betChips"></div>
-        <button class="btn green big" id="spinBtn" data-i18n="spin_wheel">Spin the Wheel</button>
-        <p class="fine" data-i18n="fine_game"></p>
+    <!-- TANVEXO (replaces Game) -->
+    <section class="page" id="page-tanvexo">
+      <div class="card" style="text-align:center">
+        <div class="tx-logo">TX<small>TANVEXO</small></div>
+        <div style="font-size:1.1rem;font-weight:700;letter-spacing:-.02em" data-i18n="tx_title">Register on TanveXo &amp; get rewarded</div>
+        <p class="hint" data-i18n="tx_sub" style="margin:8px 0 0">Create your account on TanveXo using the button below, then send us your registration proof to claim your reward.</p>
+        <a class="btn green big mt" id="txOpenBtn" href="#" target="_blank" rel="noopener" style="text-decoration:none;margin-top:16px">
+          <span data-i18n="tx_open">Open TanveXo</span>
+          <svg class="ic" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
+        </a>
       </div>
+
       <div class="card">
-        <div class="ct"><span id="chartIc"></span> <span data-i18n="spin_hist">Spin History</span></div>
-        <div id="spinHistList"></div>
+        <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4 12 14l-3-3"/></svg> <span data-i18n="tx_proof_h">Send registration proof</span></div>
+        <div class="lbl2" data-i18n="tx_contact_lbl">EMAIL OR PHONE</div>
+        <input class="wd-input" id="txContact" data-tx-ph="contact" placeholder="Email or phone number">
+        <div class="lbl2" data-i18n="tx_shot_lbl">REGISTRATION SCREENSHOT</div>
+        <div class="tx-shot" id="txShotBox">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="12" cy="12" r="3.2"/><path d="M7 5l1.2-2h7.6L17 5"/></svg>
+          <div style="flex:1;min-width:0">
+            <b id="txShotTitle" data-i18n="tx_attach">Attach screenshot</b>
+            <small id="txShotName" data-i18n="tx_none">No file selected</small>
+          </div>
+        </div>
+        <input type="file" id="txShotInput" accept="image/*">
+        <div id="txStatusWrap"></div>
+        <button class="btn green big mt" id="txSendBtn"><span data-i18n="tx_send">Send to Admin</span></button>
+        <p class="fine" data-i18n="tx_fine">We review manually and update your status here.</p>
       </div>
     </section>
 
@@ -685,17 +660,15 @@ nav.tabbar{
     </section>
   </main>
 
-  <!-- Liquid Glass: floating tab bar -->
   <nav class="tabbar lg" id="tabbar">
     <button class="nav-btn active" data-page="home"><span class="nv-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/></svg></span><span data-i18n="nav_home">Home</span></button>
     <button class="nav-btn" data-page="tasks"><span class="nv-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5.5"/></svg></span><span data-i18n="nav_tasks">Tasks</span></button>
-    <button class="nav-btn" data-page="game"><span class="nv-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></span><span data-i18n="nav_game">Game</span></button>
+    <button class="nav-btn" data-page="tanvexo"><span class="nv-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M8.5 15.5v-7l4.5 4.5 4.5-4.5v7"/></svg></span><span data-i18n="nav_tx">TanveXo</span></button>
     <button class="nav-btn" data-page="friends"><span class="nv-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span data-i18n="nav_friends">Friends</span></button>
     <button class="nav-btn" data-page="wallet"><span class="nv-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/><path d="M17 12h4"/><circle cx="16" cy="12" r="1" fill="currentColor"/></svg></span><span data-i18n="nav_wallet">Wallet</span></button>
   </nav>
 </div>
 
-<!-- Liquid Glass: ⋯ dropdown menu -->
 <div id="menuOverlay">
   <div class="menu lg" id="menuPanel">
     <div class="menu-status"><i id="menuDot"></i><span id="menuStatus">PREVIEW</span></div>
@@ -713,11 +686,11 @@ nav.tabbar{
         </span>
       </span>
     </div>
-    <div class="menu-info">TanveXo • Code 2</div>
+    <div class="menu-info">TanveXo • Code 4</div>
   </div>
 </div>
 
-<!-- FIRST-OPEN CHANNEL GATE — popup card, no skip -->
+<!-- CHANNEL GATE -->
 <div id="gateWrap">
   <div class="gate-card">
     <div class="g-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
@@ -730,7 +703,7 @@ nav.tabbar{
   </div>
 </div>
 
-<!-- BANNED — "You're banned" -->
+<!-- BANNED -->
 <div id="banScreen">
   <div class="alert">
     <div class="ban-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg></div>
@@ -740,7 +713,6 @@ nav.tabbar{
   </div>
 </div>
 
-<!-- Toast -->
 <div id="toast"><span class="t-ic" id="toastIc"></span><span id="toastText"></span></div>
 
 <script>
@@ -751,9 +723,9 @@ const CONFIG = {
   channelUrl: 'https://t.me/ebtry0',
   support: '',
   adSdk: 'show_10937696',
+  txAppLink: 'https://www.tanvexoapp.com/home?invite_code=342421',
   referralReward: 50, welcomeBonus: 25, adReward: 5,
   adMaxPerDay: 25, adCooldownSec: 3,
-  betMin: 50, betMax: 5000,
   reqAds: 25, reqFriends: 15, withdrawMin: 1000,
   methods: [
     { n:'Telebirr', img:'https://cdn.phototourl.com/member/2026-10-07-1415c5f3-9d5b-4611-8a1e-0e98b8b41bae.jpg', p:'Telebirr phone number e.g. 09xxxxxxxx', pAm:'የቴሌብር ስልክ ቁጥር ለምሳሌ 09xxxxxxxx' },
@@ -766,14 +738,13 @@ const CONFIG = {
     { n:'Crypto USDT', img:'https://cdn.phototourl.com/member/2026-10-07-cfc002bb-b0f6-46e0-b46d-c34cd79b84fa.png', p:'USDT TRC-20 wallet address', pAm:'የUSDT TRC-20 ዋሌት አድራሻ' },
     { n:'Binance Pay', img:'https://cdn.phototourl.com/member/2026-10-07-3c1c8522-4773-47e4-b0c4-14e1451b0f2d.png', p:'Binance Pay ID', pAm:'የቢናንስ ፔይ አይዲ' }
   ],
-  storageKey: 'tanvexo_v2'
+  storageKey: 'tanvexo_v3'
 };
 
 /* ================= SVG ICONS ================= */
 const ICON_PATHS = {
   play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5 16 12l-6 3.5z"/>',
   check:'<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5.5"/>',
-  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
   flame:'<path d="M12 2s5 4.5 5 9.5a5 5 0 0 1-10 0c0-2.1 1-3.9 2.1-5.2.3 1.1.9 2 2 2.2-.6-2.2-.5-4.4.9-6.5z"/>',
   users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   userplus:'<path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>',
@@ -782,9 +753,10 @@ const ICON_PATHS = {
   star:'<path d="M12 2l3.1 6.3 6.9.9-5 4.8 1.2 6.9L12 17.8 5.8 20.9 7 14 2 9.2l6.9-.9L12 2z"/>',
   link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
   list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1" fill="currentColor"/><circle cx="3.5" cy="12" r="1" fill="currentColor"/><circle cx="3.5" cy="18" r="1" fill="currentColor"/>',
-  chart:'<path d="M3 3v17a1 1 0 0 0 1 1h17"/><path d="M7 14l4-4 3 3 5-6"/>',
   bolt:'<path d="M13 2 4.5 13.5h5.4L11 22l8.5-11.5h-5.4L13 2z"/>',
-  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  send:'<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/>',
+  wait:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
 };
 const TOAST_OK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.53 7.53-5.25 5.25a.75.75 0 0 1-1.06 0L7.97 12.53a.75.75 0 1 1 1.06-1.06l1.72 1.72 4.72-4.72a.75.75 0 1 1 1.06 1.06z"/></svg>';
 const TOAST_ERR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.53 12.03a.75.75 0 1 1-1.06 1.06L12 12.56l-2.47 2.53a.75.75 0 1 1-1.06-1.06L11 11.5 8.47 8.97a.75.75 0 0 1 1.06-1.06L12 10.44l2.47-2.53a.75.75 0 1 1 1.06 1.06L13 11.5l2.53 2.53z"/></svg>';
@@ -796,7 +768,6 @@ document.getElementById('giftIc').innerHTML = ic('gift', 20);
 document.getElementById('linkIc').innerHTML = ic('link', 20);
 document.getElementById('usersIc').innerHTML = ic('users', 20);
 document.getElementById('histIc').innerHTML = ic('list', 20);
-document.getElementById('chartIc').innerHTML = ic('chart', 20);
 document.getElementById('boltIc').innerHTML = ic('bolt', 20);
 document.getElementById('clockIc').innerHTML = ic('clock', 20);
 document.getElementById('starIc').innerHTML = ic('star', 20);
@@ -894,35 +865,41 @@ const STR = {
     tasks_hint:"Tap Start, join/follow, come back and tap Verify.",
     ref_bonus:"Referral bonus",
     ref_txt:"Invite friends and earn +50 ETB each — they get a +25 ETB welcome bonus after joining our channels. Share your link from the Friends tab!",
-    lucky:"Lucky Wheel", your_bet:"YOUR BET", spin_wheel:"Spin the Wheel",
-    fine_game:"Multipliers: ×1.5 · ×2 · ×3 on your bet — results are decided on the server. Play for fun.",
-    spin_hist:"Spin History", no_spins:"No spins yet — place your first bet!",
-    hist_win:"Win ×{m}", hist_lose:"Bet lost", hist_bet:"Bet {n}",
-    hist_from:"{b} → {p} ETB",
     your_link:"Your referral link", copy:"Copy", share:"Share",
     fr_txt:"You get +50 ETB when your friend joins both channels. They get a +25 ETB welcome bonus.",
     s_friends:"Friends", s_pending:"Pending", s_earned:"ETB earned", your_friends:"Your friends",
     no_friends:"No friends yet — share your link to earn +50 ETB per friend.",
-    avail:"Available to withdraw", req_done:"Requirements complete — you can withdraw ✓",
-    req_left:"{n} of 2 requirements left", wd_reqs:"Withdrawal Requirements",
-    r_ads:"Ads watched", r_fr:"Friends invited",
-    req_note:"Watch 25 ads and invite 15 friends to unlock withdrawals. These are used up when you withdraw — earn them again for your next withdrawal.",
-    request_wd:"Request Withdrawal", amount:"AMOUNT", method:"METHOD", account:"YOUR ACCOUNT",
-    req_btn:"Request Withdrawal", wd_fine:"Processed manually within 24–48 hours. Double-check your account details.",
-    history:"History", no_wd:"No withdrawal requests yet.",
-    st_paid:"Paid", st_pending:"Pending", st_rej:"Rejected",
-    nav_home:"Home", nav_tasks:"Tasks", nav_game:"Game", nav_friends:"Friends", nav_wallet:"Wallet",
+    nav_home:"Home", nav_tasks:"Tasks", nav_tx:"TanveXo", nav_friends:"Friends", nav_wallet:"Wallet",
     banned_h:"You're banned", contact:"Contact support",
     gate_h:"Join both channels", gate_p:"Everyone must join our two channels to use TanveXo. Invited friends also unlock their +25 ETB welcome bonus here.",
     gate_req:"Required to continue — no skip",
     gate_check:"I joined — Verify", gate_fail:"Please join both channels first",
+    tx_title:"Register on TanveXo & get rewarded",
+    tx_sub:"Create your account on TanveXo using the button below, then send us your registration proof to claim your reward.",
+    tx_open:"Open TanveXo",
+    tx_proof_h:"Send registration proof",
+    tx_contact_lbl:"EMAIL OR PHONE",
+    tx_contact_ph:"Email or phone number",
+    tx_shot_lbl:"REGISTRATION SCREENSHOT",
+    tx_attach:"Attach screenshot",
+    tx_none:"No file selected",
+    tx_has:"Screenshot ready",
+    tx_send:"Send to Admin",
+    tx_fine:"We review manually and update your status here.",
+    tx_st_pend:"⏳ Submitted — waiting for review",
+    tx_st_paid:"✅ Approved! Your reward is on the way",
+    tx_st_rej:"❌ Rejected — please submit again with a valid proof",
     t_claimed:"+{r} ETB claimed!", t_copied:"Invite link copied!", t_join_back:"Visit the link, come back and tap Verify",
-    t_not_enough:"Not enough ETB for that bet", t_submitted:"Request submitted! Paid within 24–48h.",
-    t_locked_req:"Locked — meet the requirements first (25 ads · 15 friends)",
+    t_submitted:"Submitted to admin! We'll review it shortly.",
+    t_please_contact:"Please enter your email or phone",
+    t_please_contact_bad:"Please enter a valid email or phone",
+    t_please_shot:"Please attach the registration screenshot",
+    t_please_both:"Please fill in your contact and attach the screenshot",
     t_min_wd:"Minimum is {n} ETB", t_enter_acc:"Enter your account details",
-    t_ad_ok:"+{r} ETB for watching!", t_spin_win:"+{a} ETB · ×{m}", t_spin_lose:"-{a} ETB",
+    t_locked_req:"Locked — meet the requirements first (25 ads · 15 friends)",
+    t_ad_ok:"+{r} ETB for watching!",
     ago_now:"just now", ago_min:"{n} min ago", ago_hr:"{n} hr ago", ago_d:"{n} d ago",
-    spin_hub:"SPIN", m_theme:"Dark Mode", m_lang:"Language"
+    m_theme:"Dark Mode", m_lang:"Language"
   },
   am: {
     letsub:"አብረን እናትርፍ!", your_balance:"ቀሪ ሂሳብ", earn_daily:"በየቀኑ ያትርፉ — ቼክ-ኢን፣ ማስታወቂያና ጋብዣ",
@@ -938,43 +915,48 @@ const STR = {
     tasks_hint:"ጀምር → ይቀላቀሉ → ተመለስተው አረጋግጥ ይንኩ።",
     ref_bonus:"የጋብዣ ቦነስ",
     ref_txt:"ጓደኞችዎን ይጋብዙ — ለእያንዳንዱ +50 ETB ያገኛሉ፤ ጓደኛዎ ቻናሎችን ከተቀላቀለ +25 ETB የእንጋቢ ስጦታ ይቀበላል።",
-    lucky:"ሎኪ ዊል", your_bet:"የእርስዎ መደጋ", spin_wheel:"ዊሉን ያሽከርክሩ",
-    fine_game:"×1.5 · ×2 · ×3 — ውጤቱ በሰርቨር ላይ ይወሰናል። ለመዝናናት ብቻ!",
-    spin_hist:"የመንኪያ ታሪክ", no_spins:"ገና አልተጫወተም — የመጀመሪያ መደጋዎን ይጥሉ!",
-    hist_win:"አሸነፈ ×{m}", hist_lose:"መደጋ አልተሳካም", hist_bet:"መደጋ {n}",
-    hist_from:"{b} → {p} ETB",
     your_link:"የጋብዣ ሊንክዎ", copy:"ቅዳ", share:"አጋራ",
     fr_txt:"ጓደኛዎ ሁለቱንም ቻናሎች ሲቀላቀል +50 ETB ያገኛሉ፤ እሱም +25 ETB ይቀበላል።",
     s_friends:"ጓደኞች", s_pending:"በመጠባበቅ ላይ", s_earned:"ያትረፉት ETB", your_friends:"የእርስዎ ጓደኞች",
     no_friends:"ገና ጓደኛ የለም — ሊንክዎን ያጋሩ!",
-    avail:"ለማውጣት የሚገኝ", req_done:"መስፈርቶቹ ተሟልተዋል — ማውጣት ትችላለህ ✓",
-    req_left:"ከ2 መስፈርቶች {n} ቀሪዋል", wd_reqs:"የማውጣት መስፈርቶች",
-    r_ads:"የታዩ ማስታወቂያዎች", r_fr:"የተጋበዙ ጓደኞች",
-    req_note:"ለማውጣት 25 ማስታወቂያዎች ይመልከቱ እና 15 ጓደኞች ይጋብዙ። ሲያወጡ እነዚህ ይቀንሳሉ — ለቀጣዩ ዙር እንደገና ይስሩ።",
-    request_wd:"የማውጣት ጥያቄ", amount:"መጠን", method:"ዘዴ", account:"የእርስዎ መለያ",
-    req_btn:"መውጣት ይጠይቁ", wd_fine:"በእጅ በ24–48 ሰዓት ውስጥ ይከፈላል። መረጃዎን ደግም ያረጋግጡ።",
-    history:"ታሪክ", no_wd:"ገና የመውጣት ጥያቄ የለም።",
-    st_paid:"ተከፍሏል", st_pending:"በመጠባበቅ ላይ", st_rej:"ተቀንቋዋል",
-    nav_home:"መነሻ", nav_tasks:"ተግባራት", nav_game:"ጨዋታ", nav_friends:"ጓደኞች", nav_wallet:"ዋሌት",
+    nav_home:"መነሻ", nav_tasks:"ተግባራት", nav_tx:"TanveXo", nav_friends:"ጓደኞች", nav_wallet:"ዋሌት",
     banned_h:"ታግደዋል!", contact:"ድጋፍ ያግኙ",
     gate_h:"ሁለቱንም ቻናሎች ይቀላቀሉ", gate_p:"TanveXoን ለመጠቀም ሁለቱንም ቻናሎች መቀላቀል ያስፈልጋል። የተጋቡ ጓደኞች +25 ETB ቦነሳቸውን ከዚህ ያገኛሉ።",
     gate_req:"ለመቀጠል ያስፈልጋል — መዝለል አይቻልም",
     gate_check:"ተቀላቅያለሁ — አረጋግጥ", gate_fail:"እባክዎ ሁለቱንም ቻናሎች ይቀላቀሉ",
+    tx_title:"በTanveXo ይመዝገቡ & ይተረፉ",
+    tx_sub:"ከታች ባለው አዝራር በTanveXo መለያ ይክፈቱ፣ ከዛ የምዝገባ ማረጋገጫዎን ይላኩ — ሽልማትዎን ለማግኘት።",
+    tx_open:"TanveXo ይክፈቱ",
+    tx_proof_h:"የምዝገባ ማረጋገጫ ይላኩ",
+    tx_contact_lbl:"ኢሜይል ወይም ስልክ",
+    tx_contact_ph:"ኢሜይል ወይም ስልክ ቁጥር",
+    tx_shot_lbl:"የምዝገባ ስክሪንሾት",
+    tx_attach:"ስክሪንሾት ያያንዱ",
+    tx_none:"ፋይል አልተመረጠም",
+    tx_has:"ስክሪንሾት ዝግጁ ነው",
+    tx_send:"ለአስተዳዳሪ ይላኩ",
+    tx_fine:"በእጅ እንመረመራለን — ሁኔታዎ እዚህ ይታያል።",
+    tx_st_pend:"⏳ ተልኳል — በጥናት ላይ",
+    tx_st_paid:"✅ ጸድቋል! ሽልማትዎ በመንገድ ላይ ነው",
+    tx_st_rej:"❌ ውድቅ ደርሷል — ትክክለኛ ማረጋገጫ አቅርበው እንደገና ይላኩ",
     t_claimed:"+{r} ETB ተቀብለዋል!", t_copied:"ሊንክ ተቀድቷል!", t_join_back:"ሊንኩን ይጎብኙ፣ ተመለስተው አረጋግጥ ይንኩ",
-    t_not_enough:"ለዚህ መደጋ በቂ ETB የለም", t_submitted:"ጥያቄ ተልኳል! በ24–48 ሰዓት ይከፈላል።",
-    t_locked_req:"ተዘግቷል — መስፈርቱን ይሙሉ (25 ማስታወቂያ • 15 ጓደኛ)",
+    t_submitted:"ለአስተዳዳሪ ተልኳል! በቅርቡ እንመረምራለን።",
+    t_please_contact:"እባክዎ ኢሜይል ወይም ስልክ ያስገቡ",
+    t_please_contact_bad:"እባክዎ ትክክለኛ ኢሜይል ወይም ስልክ ያስገቡ",
+    t_please_shot:"እባክዎ የምዝገባ ስክሪንሾት ያያንዱ",
+    t_please_both:"እባክዎ መረጃዎን ይሙሉ እና ስክሪንሾት ያያንዱ",
     t_min_wd:"አነስተኛው {n} ETB ነው", t_enter_acc:"የመለያ መረጃዎን ያስገቡ",
-    t_ad_ok:"ለመመልከት +{r} ETB!", t_spin_win:"+{a} ETB · ×{m}", t_spin_lose:"-{a} ETB",
+    t_locked_req:"ተዘግቷል — መስፈርቱን ይሙሉ (25 ማስታወቂያ • 15 ጓደኛ)",
+    t_ad_ok:"ለመመልከት +{r} ETB!",
     ago_now:"አሁን", ago_min:"ከ{n} ደቂቃ በፊት", ago_hr:"ከ{n} ሰዓት በፊት", ago_d:"ከ{n} ቀን በፊት",
-    spin_hub:"አሽክረርክር", m_theme:"ጨለማ ሁነታ", m_lang:"ቋንቋ"
+    m_theme:"ጨለማ ሁነታ", m_lang:"ቋንቋ"
   }
 };
 let LANG = 'en';
 try { LANG = localStorage.getItem('tx_lang') || 'en'; } catch(e){}
 function t(k, a, b){
   let s = (STR[LANG] && STR[LANG][k] != null) ? STR[LANG][k] : (STR.en[k] != null ? STR.en[k] : k);
-  if (a != null) s = s.replace('{a}', a).replace('{r}', a).replace('{n}', a).replace('{m}', a);
-  if (b != null) s = s.replace('{b}', b).replace('{p}', b).replace('{t}', b);
+  if (a != null) s = s.replace('{a}', a).replace('{r}', a).replace('{n}', a).replace('{b}', b);
   return s;
 }
 function ago(ts){
@@ -986,7 +968,7 @@ function ago(ts){
 }
 function applyStatic(){
   document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent = t(el.dataset.i18n); });
-  const hub = document.getElementById('spinHub'); if (hub) hub.textContent = t('spin_hub');
+  document.querySelectorAll('[data-tx-ph]').forEach(function(el){ el.placeholder = t('tx_contact_ph'); });
   setSeg();
 }
 function setSeg(){
@@ -996,7 +978,7 @@ function setSeg(){
 function switchLang(l){
   LANG = l;
   try { localStorage.setItem('tx_lang', LANG); } catch(e){}
-  applyStatic(); renderAll(); renderTasksPage(); renderSpinHistory(); renderReviews();
+  applyStatic(); renderAll(); renderTasksPage(); renderReviews();
   haptic('light');
 }
 document.getElementById('segEnM').addEventListener('click', function(e){ e.stopPropagation(); switchLang('en'); });
@@ -1035,8 +1017,9 @@ function openUrl(url){
 const STREAK_REWARDS = [10,30,40,60,70,80,100];
 const DEFAULTS = { balance:0, totalEarned:0, referrals:0, friends:[],
   dailyStreak:0, lastDailyTs:0, dailyClaims:0, claimedTasks:[],
-  adsWatched:0, adsToday:0, lastAdTs:0, spins:0,
-  reqAds:0, reqFriends:0, activities:[], withdrawals:[], reviews:[], serverTasks:[], spinHistory:[] };
+  adsWatched:0, adsToday:0, lastAdTs:0,
+  reqAds:0, reqFriends:0, activities:[], withdrawals:[], reviews:[], serverTasks:[],
+  txRegistration:null, txLink:'' };
 function load(){
   try {
     const raw = localStorage.getItem(CONFIG.storageKey);
@@ -1105,7 +1088,7 @@ function go(page){
   document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.page === page); });
   if (page === 'home'){ renderHome(); loadReviews(); }
   if (page === 'tasks') renderTasksPage();
-  if (page === 'game'){ renderSpinHistory(); if (LIVE) loadSpinHistory(); }
+  if (page === 'tanvexo') renderTx();
   if (page === 'friends') renderFriends();
   if (page === 'wallet'){ renderWallet(); if (LIVE) loadWithdrawals(); }
   window.scrollTo(0, 0);
@@ -1132,6 +1115,7 @@ async function api(path, body){
     const err = new Error(data.error || 'API error');
     if (data.locked) err.locked = true;
     if (data.notJoined) err.notJoined = true;
+    if (data.field) err.field = data.field;
     if (data.gate){ err.gate = true; err.channels = data.channels || []; }
     throw err;
   }
@@ -1143,9 +1127,10 @@ function applyState(s){
   state.dailyStreak = s.dailyStreak; state.lastDailyTs = s.lastDaily; state.dailyClaims = s.dailyClaims;
   state.claimedTasks = s.tasksClaimed || [];
   state.adsWatched = s.adsWatched || 0; state.adsToday = s.adsToday || 0; state.lastAdTs = s.lastAd || 0;
-  state.spins = s.spins || 0;
   state.reqAds = s.reqAds || 0; state.reqFriends = s.reqFriends || 0;
   state.activities = s.activities || [];
+  state.txRegistration = s.txRegistration || null;
+  if (s.txLink) state.txLink = s.txLink;
   save(); renderAll();
 }
 function renderAll(){
@@ -1153,6 +1138,7 @@ function renderAll(){
   $('#wdBal').textContent = fmt(state.balance);
   if (currentPage === 'home') renderHome();
   if (currentPage === 'tasks') renderTasksPage();
+  if (currentPage === 'tanvexo') renderTx();
   if (currentPage === 'friends') renderFriends();
   if (currentPage === 'wallet') renderWallet();
 }
@@ -1185,7 +1171,7 @@ async function refreshState(){
   }
 }
 
-/* ================= FIRST-OPEN CHANNEL GATE ================= */
+/* ================= CHANNEL GATE ================= */
 function showGate(channels){
   GATED = true;
   document.body.classList.add('gated');
@@ -1230,7 +1216,7 @@ let hideBal = false;
   $('#balance').classList.toggle('hidden-bal', hideBal);
   haptic('light');
 });
-const ACT_TYPE_IC = { ad:'play', task:'check', game:'target', daily:'flame', ref:'users', wd:'wallet', bonus:'gift' };
+const ACT_TYPE_IC = { ad:'play', task:'check', daily:'flame', ref:'users', wd:'link', bonus:'gift', tx:'send' };
 function renderActivity(){
   const list = $('#activityList');
   const acts = state.activities || [];
@@ -1247,7 +1233,7 @@ function renderActivity(){
 }
 const DEMO_REVIEWS = [
   { name:'Abebe', message:'Got paid in 2 hours. Best app!', stars:5, ts:Date.now() - 2*60000 },
-  { name:'Hanna', message:'The wheel is so fun, won ×3 twice!', stars:5, ts:Date.now() - 25*60000 },
+  { name:'Hanna', message:'The rewards are real, fast review!', stars:5, ts:Date.now() - 25*60000 },
   { name:'Kebede', message:'Invite friends, it really pays.', stars:4, ts:Date.now() - 3*3600000 }
 ];
 function renderReviews(){
@@ -1490,198 +1476,77 @@ function renderTasksPage(){ renderStreak(); renderTasksList(); }
 });
 
 /* ============================================================
-   GAME — SPIN SYSTEM (Code 2 rebuild: deadlock-proof, race-safe)
-   Design unchanged. Only the mechanics below were rebuilt.
+   TANVEXO TAB — link + proof submission
    ============================================================ */
-const SEGV = [
-  { t:'×1.5', c:'d1' },{ t:'✕', c:'d2' },{ t:'×1.5', c:'d1' },{ t:'✕', c:'d2' },
-  { t:'×3', c:'g' },{ t:'✕', c:'d2' },{ t:'×2', c:'w' },{ t:'✕', c:'d2' }
-];
-const SEG = 45;
-const SPIN_ANIM_MIN_MS = 4200, SPIN_ANIM_MAX_MS = 5100;
-const SPIN_HARD_TIMEOUT_MS = 7000;   /* absolute safety net: always finishes, even if transitionend never fires */
-
-/* spin state machine: idle → request → animate → finish → idle */
-let spinPhase = 'idle';       /* idle | request | animate */
-let wheelRot = 0;             /* always normalized to 0..359 after each spin */
-let spinFinishFired = false;  /* idempotent finish guard */
-let spinHardTimer = null;     /* hard timeout handle */
-let spinToken = 0;            /* invalidates stale async flows */
-
-function buildWheel(){
-  const wheel = $('#wheel');
-  /* preserve current visual rotation + transition across rebuilds (theme/lang switch) */
-  const keep = wheel.style.transform || 'rotate(0deg)';
-  const keepTransition = wheel.style.transition || '';
-  let grad = 'conic-gradient(from -22.5deg';
-  SEGV.forEach(function(s, i){ grad += ',var(--seg-' + s.c + ') ' + (i * 45) + 'deg ' + ((i + 1) * 45) + 'deg'; });
-  wheel.style.background = grad + ')';
-  const deco = $('#wheelDeco');
-  deco.innerHTML = '';
-  SEGV.forEach(function(s, i){
-    const lb = document.createElement('div');
-    lb.className = 'wl'; lb.style.setProperty('--a', (i * SEG) + 'deg');
-    lb.innerHTML = '<b style="color:var(--seg-t-' + s.c + ')">' + s.t + '</b>';
-    deco.appendChild(lb);
-    const dt = document.createElement('div');
-    dt.className = 'wdot'; dt.style.setProperty('--a', (i * SEG + 22.5) + 'deg');
-    dt.innerHTML = '<i></i>';
-    deco.appendChild(dt);
-  });
-  /* restore — never wipe an in-flight animation */
-  wheel.style.transition = keepTransition;
-  wheel.style.transform = keep;
+let txShotFile = null, txShotB64 = '';
+function validContactLocal(s){
+  const v = String(s || '').trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return true;
+  const digits = v.replace(/[^\d]/g, '');
+  return digits.length >= 7 && digits.length <= 15;
 }
-
-function spinLockUI(on){
-  $('#spinBtn').disabled = on;
-  $('#spinHub').disabled = on;
-}
-
-/* finish runs exactly once per spin; everything funnels through here */
-function finishSpin(){
-  if (spinFinishFired) return;
-  spinFinishFired = true;
-  if (spinHardTimer){ clearTimeout(spinHardTimer); spinHardTimer = null; }
-  spinPhase = 'idle';
-  spinLockUI(false);
-}
-
-function animateWheel(idx, onDone){
-  const wheel = $('#wheel');
-  spinFinishFired = false;
-  spinPhase = 'animate';
-  const turns = 6 + Math.floor(Math.random() * 2);
-  const dur = SPIN_ANIM_MIN_MS + Math.floor(Math.random() * (SPIN_ANIM_MAX_MS - SPIN_ANIM_MIN_MS));
-  /* current normalized rotation (0..359) */
-  const cur = ((wheelRot % 360) + 360) % 360;
-  /* land centered on target segment, tiny jitter, always forward, always > 5 turns */
-  let target = cur + turns * 360 + ((360 - idx * SEG) - cur + 360) % 360 + (Math.floor(Math.random() * 20) - 10);
-  if (target - cur < turns * 360) target += 360;
-  wheelRot = target % 360; /* store normalized to avoid precision drift over many spins */
-  wheel.style.transition = 'transform ' + dur + 'ms cubic-bezier(.12,.72,.08,1)';
-  wheel.style.transform = 'rotate(' + target + 'deg)';
-  /* transitionend = natural finish */
-  wheel.addEventListener('transitionend', finishSpin, { once:true });
-  /* hard timeout = guaranteed finish (backgrounded tab, dropped event, etc.) */
-  spinHardTimer = setTimeout(finishSpin, Math.max(dur + 250, SPIN_HARD_TIMEOUT_MS - (Date.now() % 1000)));
-  /* when finish fires for the first time, run the completion callback */
-  const wrapFinish = function(){
-    finishSpin();
-    try { onDone(); } catch(e){ /* never leave the UI dead */ spinLockUI(false); }
-  };
-  const check = setInterval(function(){
-    if (spinPhase === 'idle'){ clearInterval(check); wrapFinish(); }
-  }, 60);
-  /* safety: also honor the hard timeout by polling until idle happens (finishSpin guarantees it) */
-}
-
-function showSpinResult(m, payout, bet){
-  const el = $('#spinResult');
-  el.classList.remove('pop','win','lose'); void el.offsetWidth;
-  if (m === 0){
-    el.innerHTML = '<span class="sr-line">' + t('t_spin_lose', bet) + '</span>';
-    el.classList.add('lose');
+function renderTx(){
+  /* link button */
+  const link = state.txLink || CONFIG.txAppLink;
+  const open = $('#txOpenBtn');
+  open.href = link;
+  /* screenshot picker state */
+  const box = $('#txShotBox');
+  box.classList.toggle('has', !!txShotFile);
+  $('#txShotTitle').textContent = txShotFile ? t('tx_has') : t('tx_attach');
+  $('#txShotName').textContent = txShotFile ? txShotFile.name : t('tx_none');
+  /* existing submission status */
+  const wrap = $('#txStatusWrap');
+  const reg = state.txRegistration;
+  if (reg && reg.status === 'pending'){
+    wrap.innerHTML = '<div class="tx-status pend">' + ic('wait', 18) + '<span>' + t('tx_st_pend') + '</span></div>';
+    $('#txSendBtn').disabled = true;
+  } else if (reg && reg.status === 'paid'){
+    wrap.innerHTML = '<div class="tx-status paid">' + ic('check', 18) + '<span>' + t('tx_st_paid') + '</span></div>';
+    $('#txSendBtn').disabled = true;
+  } else if (reg && reg.status === 'rejected'){
+    wrap.innerHTML = '<div class="tx-status rej">' + ic('star', 18) + '<span>' + t('tx_st_rej') + '</span></div>';
+    $('#txSendBtn').disabled = false;
   } else {
-    el.innerHTML = '<span class="sr-line">' + t('t_spin_win', payout - bet, m) + '</span>' +
-      '<span class="sr-detail">' + fmt(bet) + ' × ' + m + ' = ' + fmt(payout) + ' ETB</span>';
-    el.classList.add('win');
-    if (m >= 2) confetti();
+    wrap.innerHTML = '';
+    $('#txSendBtn').disabled = false;
   }
-  el.classList.add('pop');
 }
-function renderSpinHistory(){
-  const list = $('#spinHistList');
-  const h = (state.spinHistory || []).slice(0, 6);
-  if (!h.length){
-    list.innerHTML = '<div class="empty">' + t('no_spins') + '</div>';
-    return;
-  }
-  list.innerHTML = h.map(function(s){
-    const win = s.mult > 0;
-    return '<div class="sh"><div class="sh-ic' + (win ? '' : ' neg') + '">' + ic('target', 16) + '</div>' +
-      '<div class="sh-main"><b>' + (win ? t('hist_win', s.mult) : t('hist_lose')) + '</b>' +
-      '<small>' + (win ? t('hist_from', fmt(s.bet), fmt(s.payout)) : t('hist_bet', fmt(s.bet))) + ' · ' + ago(s.ts) + '</small></div>' +
-      '<div class="act-amt" style="color:' + (win ? 'var(--accent)' : 'var(--red)') + '">' +
-      (win ? '+' + fmt(s.payout - s.bet) : '-' + fmt(s.bet)) + '<small>ETB</small></div></div>';
-  }).join('');
-}
-async function loadSpinHistory(){
-  if (!LIVE) return;
-  try { const r = await api('/api/spin_history'); state.spinHistory = r.history || []; save(); renderSpinHistory(); } catch(e){}
-}
-function betVal(){
-  let b = parseInt($('#betInput').value, 10) || 0;
-  b = Math.max(CONFIG.betMin, Math.min(CONFIG.betMax, b));
-  return b;
-}
- $('#betMax').addEventListener('click', function(){ $('#betInput').value = Math.min(CONFIG.betMax, Math.max(0, Math.floor(state.balance))); });
-(function buildChips(){
-  const wrap = $('#betChips');
-  [50, 100, 500, 1000, 5000].forEach(function(v){
-    const c = document.createElement('button');
-    c.className = 'chip'; c.textContent = v;
-    c.addEventListener('click', function(){ $('#betInput').value = v; haptic('light'); });
-    wrap.appendChild(c);
-  });
-})();
-
-async function doSpin(){
-  /* synchronous lock FIRST — no double-entry from hub+button rapid taps */
-  if (spinPhase !== 'idle' || LOCKED || GATED) return;
-  spinPhase = 'request';
-  spinLockUI(true);
-  const myToken = ++spinToken;   /* token invalidates this flow if anything stale resolves later */
-  const bet = betVal();
-  haptic('medium');
-  $('#spinResult').textContent = '';
-  if (LIVE){
-    try {
-      const r = await api('/api/spin', { bet: bet });
-      if (myToken !== spinToken) return;      /* stale response — ignore silently */
-      /* apply result + history FIRST, then animate; completion only re-enables UI */
-      applyState(r.state);
-      if (r.spinHistory){ state.spinHistory = r.spinHistory; save(); renderSpinHistory(); }
-      animateWheel(segForMult(r.mult), function(){
-        if (myToken !== spinToken) return;
-        showSpinResult(r.mult, r.payout, bet);
-        hNotify(r.mult === 0 ? 'error' : 'success');
-      });
-    } catch(e){
-      finishSpin();   /* always release the lock on any API error */
-      if (e && e.locked){ showBanScreen(e.message); return; }
-      if (e && e.gate){ showGate(e.channels); return; }
-      toast(e.message, true);
-    }
-    return;
-  }
-  /* PREVIEW path — same finish flow as LIVE */
+ $('#txShotBox').addEventListener('click', function(){ $('#txShotInput').click(); });
+ $('#txShotInput').addEventListener('change', function(){
+  const f = this.files && this.files[0];
+  if (!f) return;
+  if (f.size > 4 * 1024 * 1024){ toast('Screenshot too large — max 4MB', true); this.value = ''; return; }
+  txShotFile = f;
+  const rd = new FileReader();
+  rd.onload = function(){ txShotB64 = String(rd.result || ''); renderTx(); };
+  rd.readAsDataURL(f);
+});
+ $('#txSendBtn').addEventListener('click', async function(){
+  if (LOCKED || GATED) return;
+  if (!LIVE){ toast('Open from Telegram to submit', true); return; }
+  /* VALIDATION — nothing is sent if anything is empty/invalid */
+  const contact = $('#txContact').value.trim();
+  if (!contact){ toast(t('t_please_both'), true); haptic('rigid'); return; }
+  if (!validContactLocal(contact)){ toast(t('t_please_contact_bad'), true); haptic('rigid'); return; }
+  if (!txShotB64){ toast(t('t_please_shot'), true); haptic('rigid'); return; }
+  this.disabled = true;
   try {
-    let r = Math.random() * 100, m = r < 55 ? 0 : r < 80 ? 1.5 : r < 92 ? 2 : 3;
-    const payout = Math.floor(bet * m);
-    state.balance += payout - bet;
-    if (payout > bet) state.totalEarned += payout - bet;
-    state.spins++;
-    state.spinHistory.unshift({ bet: bet, mult: m, payout: payout, ts: Date.now() });
-    state.spinHistory = state.spinHistory.slice(0, 6);
-    state.activities.unshift({ type:'game', title: m === 0 ? 'Lucky Wheel — bet lost (' + bet + ' ETB)' : 'Lucky Wheel ×' + m + ' — ' + bet + ' → ' + payout + ' ETB', amount: m === 0 ? -bet : payout - bet, ts:Date.now() });
+    const r = await api('/api/tx_register', { contact: contact, screenshot: txShotB64 });
+    state.txRegistration = r.txRegistration || { contact: contact, status: 'pending', ts: Date.now() };
+    state.activities.unshift({ type:'tx', title:'TanveXo registration submitted', amount:0, ts:Date.now() });
     dirty = true; save();
-    applyState({ balance: state.balance, totalEarned: state.totalEarned, referrals: state.referrals, friends: state.friends, dailyStreak: state.dailyStreak, lastDaily: state.lastDailyTs, dailyClaims: state.dailyClaims, tasksClaimed: state.claimedTasks, adsWatched: state.adsWatched, adsToday: state.adsToday, lastAd: state.lastAdTs, spins: state.spins, reqAds: state.reqAds, reqFriends: state.reqFriends, activities: state.activities });
-    renderSpinHistory();
-    animateWheel(segForMult(m), function(){
-      showSpinResult(m, payout, bet);
-      hNotify(m === 0 ? 'error' : 'success');
-    });
+    confetti(); hNotify('success');
+    toast(t('t_submitted'));
+    renderTx(); renderActivity();
   } catch(e){
-    finishSpin();
-    toast(e.message, true);
+    if (e && e.locked){ showBanScreen(e.message); }
+    else if (e && e.gate){ showGate(e.channels); }
+    else if (e && e.field === 'contact'){ toast(t('t_please_contact_bad'), true); }
+    else if (e && e.field === 'screenshot'){ toast(t('t_please_shot'), true); }
+    else toast(e.message, true);
   }
-}
- $('#spinBtn').addEventListener('click', doSpin);
- $('#spinHub').addEventListener('click', doSpin);
-/* never allow a spin to leave the UI locked if the tab was hidden mid-spin */
-document.addEventListener('visibilitychange', function(){
-  if (!document.hidden && spinPhase === 'animate'){ finishSpin(); }
+  this.disabled = false;
 });
 
 /* ================= FRIENDS ================= */
@@ -1702,7 +1567,7 @@ function renderFriends(){
       ? '<div class="f-av"><img src="' + f.photo + '" alt="" onerror="this.remove()"></div>'
       : '<div class="f-av">' + initial + '</div>';
     const right = f.status === 'pending'
-      ? '<span class="fpill pend">' + t('st_pending') + '</span>'
+      ? '<span class="fpill pend">' + t('s_pending') + '</span>'
       : '<span class="fpill rcv">+' + CONFIG.referralReward + ' ETB</span>';
     return '<div class="friend">' + av + '<b>' + f.name + '</b>' + right + '</div>';
   }).join('');
@@ -1764,22 +1629,20 @@ function renderWallet(){
         wdMethod = m.n;
         [...mWrap.children].forEach(function(c){ c.classList.remove('sel'); });
         d.classList.add('sel');
-        $('#wdAddress').placeholder = LANG === 'am' ? m.pAm : m.p;
         haptic('light');
       });
       mWrap.appendChild(d);
     });
-    $('#wdAddress').placeholder = LANG === 'am' ? CONFIG.methods[0].pAm : CONFIG.methods[0].p;
   }
   const list = $('#wdList');
   if (!state.withdrawals.length){
-    list.innerHTML = '<div class="empty">' + t('no_wd') + '</div>';
+    list.innerHTML = '<div class="empty">—</div>';
     return;
   }
   list.innerHTML = state.withdrawals.map(function(w){
     const m = CONFIG.methods.find(function(x){ return x.n === w.method; });
     const d = new Date(w.ts);
-    const stTxt = w.status === 'paid' ? t('st_paid') : w.status === 'pending' ? t('st_pending') : t('st_rej');
+    const stTxt = w.status === 'paid' ? t('st_paid') : w.status === 'pending' ? t('s_pending') : 'Rejected';
     return '<div class="hist"><img src="' + (m ? m.img : '') + '" alt="" onerror="this.style.display=\'none\'">' +
       '<div class="hist-main"><b>' + w.method + '</b><small>' + d.toLocaleDateString('en', { year:'numeric', month:'short', day:'numeric' }) + '</small><br>' +
       '<span class="st ' + w.status + '">' + stTxt + '</span></div>' +
@@ -1843,14 +1706,15 @@ setInterval(function(){
     else if (dirty) save();
   }
 }, 1000);
+document.addEventListener('visibilitychange', function(){
+  if (document.hidden){ if (dirty) save(); if (LIVE && !LOCKED && !GATED) refreshState(); }
+});
 
 /* ================= INIT ================= */
 applyTgInsets();
 applyTheme();
 applyStatic();
-buildWheel();
 renderAll();
-renderSpinHistory();
 loadReviews();
 go('home');
 bootLive();
