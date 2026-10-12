@@ -1,18 +1,15 @@
-/* TanveXo API v14 — Code 3
-   CHANGES vs v13 (system only, API responses identical):
-   - All balance mutations are ATOMIC SQL (no read-modify-write races)
-   - Spin: single conditional UPDATE (balance check inside SQL) + changes gate
-   - Ads: atomic day-rollover + conditional claim (no double-claim)
-   - Daily: optimistic lock on last_daily (no double-claim)
-   - Withdraw: D1 batch transaction (atomic deduct + insert, no double-spend)
-   - Referrals: atomic status claim (pending→verified) with revert on failed gate
-   - Tasks: INSERT OR IGNORE changes-gate before crediting (no double-claim)
-   - Probabilistic pruning of activities/spin_history per user */
+/* TanveXo API v15 — Code 4
+   CHANGES vs v14:
+   - SPIN SYSTEM REMOVED (all spin endpoints, spin_history writes, spinMult)
+   - NEW: TanveXo registration flow
+       POST /api/tx_register  { contact, screenshot }  -> pending submission (validated server-side)
+       POST /api/tx_my        -> user's own latest submission status
+       POST /api/admin/tx_action { id, action: paid|reject|delete }
+   - All v14 atomic-safety patterns retained (balance math, gate, referrals, ads, daily, withdraw) */
 
 /* ================= ECONOMY CONSTANTS ================= */
 const REFERRAL_REWARD = 50, WELCOME_BONUS = 25;
 const AD_REWARD = 5, AD_COOLDOWN = 3, AD_MAX_PER_DAY = 25;
-const SPIN_MIN_BET = 50, SPIN_MAX_BET = 5000;
 const WD_REQ_ADS = 25, WD_REQ_FRIENDS = 15;
 const MIN_WITHDRAW = 1000;
 const MAX_ACCOUNTS_PER_DEVICE = 2;
@@ -21,10 +18,11 @@ const EXT_LINK_MIN_STAY = 8;
 const DEFAULT_CHANNEL = 'https://t.me/ebtry0';
 const BOT_USERNAME = 'tanvexoappbot';
 const APP_LINK = 'https://t.me/' + BOT_USERNAME + '/refer';
+/* TanveXo external app — the link shown on the TanveXo tab */
+const TX_APP_LINK = 'https://www.tanvexoapp.com/home?invite_code=342421';
 const REQ_CHANNELS = ['@ebtry0', '@ebisa_emoji'];
 const STREAK_REWARDS = [10, 30, 40, 60, 70, 80, 100];
 const TASK_TYPES = ['invites', 'daily', 'ads', 'link'];
-function spinMult(){ let r = Math.random() * 100; if (r < 55) return 0; if (r < 80) return 1.5; if (r < 92) return 2; return 3; }
 
 const gateErr = () => ({ ok: false, gate: true, error: 'Join both channels to continue', channels: REQ_CHANNELS });
 
@@ -38,7 +36,6 @@ const j = (obj, status = 200) => new Response(JSON.stringify(obj), { status, hea
 const now = () => Math.floor(Date.now() / 1000);
 const bannedResp = row => ({ ok: false, error: (row && row.ban_reason) ? row.ban_reason : 'You are banned', locked: true });
 
-/* Atomic statement runner — returns number of changed rows */
 async function run(env, sql, params) {
   const res = await env.DB.prepare(sql).bind.apply(env.DB.prepare(sql), params).run();
   return (res && res.meta && typeof res.meta.changes === 'number') ? res.meta.changes : 0;
@@ -57,7 +54,6 @@ function initDb(env) {
         referred_by INTEGER, invited INTEGER NOT NULL DEFAULT 0,
         device_id TEXT, banned INTEGER NOT NULL DEFAULT 0, ban_reason TEXT,
         ads_watched INTEGER NOT NULL DEFAULT 0, ads_today INTEGER NOT NULL DEFAULT 0, ad_day TEXT, last_ad INTEGER NOT NULL DEFAULT 0,
-        spins INTEGER NOT NULL DEFAULT 0, last_spin INTEGER NOT NULL DEFAULT 0,
         req_ads INTEGER NOT NULL DEFAULT 0, req_friends INTEGER NOT NULL DEFAULT 0, req_spins INTEGER NOT NULL DEFAULT 0,
         welcome INTEGER NOT NULL DEFAULT 0, migrated INTEGER NOT NULL DEFAULT 0, channel_ok INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
@@ -91,9 +87,12 @@ function initDb(env) {
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, message TEXT NOT NULL,
         stars INTEGER NOT NULL DEFAULT 5, created_at INTEGER NOT NULL
       )`).run();
-      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS spin_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
-        bet INTEGER NOT NULL, mult REAL NOT NULL, payout INTEGER NOT NULL, created_at INTEGER NOT NULL
+      /* Code 4: TanveXo registration submissions */
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS tx_registrations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, name TEXT,
+        contact TEXT NOT NULL, screenshot TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at INTEGER NOT NULL, processed_at INTEGER
       )`).run();
       const alters = [
         'ALTER TABLE users ADD COLUMN device_id TEXT',
@@ -228,16 +227,14 @@ async function reviewsOf(env) {
   const { results } = await env.DB.prepare('SELECT id, name, message, stars, created_at FROM reviews ORDER BY id DESC LIMIT 15').all();
   return (results || []).map(r => ({ id: r.id, name: r.name, message: r.message, stars: r.stars, ts: r.created_at * 1000 }));
 }
-async function spinHistoryOf(env, id) {
-  const { results } = await env.DB.prepare('SELECT bet, mult, payout, created_at FROM spin_history WHERE user_id = ? ORDER BY id DESC LIMIT 12').bind(id).all();
-  return (results || []).map(r => ({ bet: r.bet, mult: r.mult, payout: r.payout, ts: r.created_at * 1000 }));
+async function txMineOf(env, uid) {
+  const r = await env.DB.prepare('SELECT id, contact, status, created_at, processed_at FROM tx_registrations WHERE user_id = ? ORDER BY id DESC LIMIT 1').bind(uid).first();
+  return r ? { id: r.id, contact: r.contact, status: r.status, ts: r.created_at * 1000 } : null;
 }
-/* Code 3: probabilistic prune — keeps tables bounded without extra writes every call */
 async function pruneUser(env, uid) {
-  if (Math.random() > 0.05) return; /* ~5% of writes trigger cleanup */
+  if (Math.random() > 0.05) return;
   try {
     await env.DB.prepare('DELETE FROM activities WHERE user_id = ? AND id NOT IN (SELECT id FROM activities WHERE user_id = ? ORDER BY id DESC LIMIT 30)').bind(uid, uid).run();
-    await env.DB.prepare('DELETE FROM spin_history WHERE user_id = ? AND id NOT IN (SELECT id FROM spin_history WHERE user_id = ? ORDER BY id DESC LIMIT 20)').bind(uid, uid).run();
   } catch (e) {}
 }
 async function logAct(env, uid, type, title, amount) {
@@ -251,23 +248,23 @@ async function saveRow(env, row) {
     daily_streak=?, last_daily=?, daily_claims=?, invited=?,
     device_id=?, banned=?, ban_reason=?,
     ads_watched=?, ads_today=?, ad_day=?, last_ad=?,
-    spins=?, last_spin=?, req_ads=?, req_friends=?, req_spins=?, welcome=?, updated_at=? WHERE user_id=?`)
+    req_ads=?, req_friends=?, req_spins=?, welcome=?, updated_at=? WHERE user_id=?`)
     .bind(row.name, row.username, row.balance, row.total_earned,
       row.daily_streak, row.last_daily, row.daily_claims, row.invited,
       row.device_id || null, row.banned ? 1 : 0, row.ban_reason || null,
       row.ads_watched || 0, row.ads_today || 0, row.ad_day || null, row.last_ad || 0,
-      row.spins || 0, row.last_spin || 0, row.req_ads || 0, row.req_friends || 0, row.req_spins || 0, row.welcome ? 1 : 0,
+      row.req_ads || 0, row.req_friends || 0, row.req_spins || 0, row.welcome ? 1 : 0,
       now(), row.user_id).run();
 }
-function toClient(row, friends, claimed) {
+function toClient(row, friends, claimed, txMine) {
   return {
     balance: row.balance, totalEarned: row.total_earned,
     referrals: row.invited, friends: friends || [],
     dailyStreak: row.daily_streak, lastDaily: row.last_daily * 1000, dailyClaims: row.daily_claims,
     tasksClaimed: claimed || [],
     adsWatched: row.ads_watched || 0, adsToday: row.ads_today || 0, lastAd: (row.last_ad || 0) * 1000,
-    spins: row.spins || 0, lastSpin: (row.last_spin || 0) * 1000,
     reqAds: row.req_ads || 0, reqFriends: row.req_friends || 0,
+    txRegistration: txMine || null,
     activities: row._acts || []
   };
 }
@@ -289,7 +286,6 @@ async function ensureUser(env, u, refId, dev) {
       lockDev ? 1 : 0,
       lockDev ? 'Device limit reached — max ' + MAX_ACCOUNTS_PER_DEVICE + ' accounts per device' : null, t, t).run();
   row = await getRow(env, u.id);
-  /* referral recorded as PENDING — credited only after the mandatory channel gate */
   if (row && !row.banned && refId && refId !== u.id) {
     const exists = await env.DB.prepare('SELECT user_id FROM referrals WHERE user_id = ?').bind(u.id).first();
     if (!exists && !row.referred_by) {
@@ -306,27 +302,23 @@ async function ensureUser(env, u, refId, dev) {
   return row;
 }
 
-/* Code 3: atomic referral claim — the status flip IS the lock, no double-credit possible */
+/* atomic referral claim (pending→verified IS the lock) */
 async function verifyReferral(env, friendId) {
   const row = await getRow(env, friendId);
   if (!row || !row.referred_by) return { ok: true, nothing: true };
-  /* claim first (atomic) — only ONE concurrent call can flip pending→verified */
   const claimed = await run(env, "UPDATE referrals SET status='verified' WHERE user_id = ? AND status = 'pending'", [friendId]);
   if (claimed === 0) return { ok: true, already: true };
-  /* now verify the gate; if it fails, revert the claim so the user can retry after joining */
   const gate = await joinedAllChannels(env, friendId);
   if (!gate.ok) {
     await run(env, "UPDATE referrals SET status='pending' WHERE user_id = ?", [friendId]);
     return { ok: false, channel: gate.channel };
   }
-  /* atomic referrer credit (no lost updates even if referrer is spinning concurrently) */
   await run(env,
     `UPDATE users SET balance = balance + ?, total_earned = total_earned + ?,
        invited = invited + 1, req_friends = req_friends + 1, updated_at = ?
      WHERE user_id = ?`,
     [REFERRAL_REWARD, REFERRAL_REWARD, now(), row.referred_by]);
   await logAct(env, row.referred_by, 'ref', 'Friend joined: ' + row.name, REFERRAL_REWARD);
-  /* atomic welcome bonus (welcome flag = one-time guard) */
   const w = await run(env,
     `UPDATE users SET balance = balance + ?, total_earned = total_earned + ?, welcome = 1, updated_at = ?
      WHERE user_id = ? AND welcome = 0`,
@@ -335,7 +327,6 @@ async function verifyReferral(env, friendId) {
   return { ok: true };
 }
 
-/* pass the mandatory channel gate + credit any pending referral */
 async function passGate(env, userId) {
   const gate = await joinedAllChannels(env, userId);
   if (!gate.ok) return { ok: false, channel: gate.channel };
@@ -351,14 +342,13 @@ async function apiInit(env, tgUser, body) {
   let row = await ensureUser(env, tgUser, ref, dev);
   if (!row) return { ok: false, error: 'Could not create user' };
   if (row.banned) return bannedResp(row);
-  /* MANDATORY channel gate — every user, once, no skip */
   if (!row.channel_ok) {
     const g = await passGate(env, tgUser.id);
     if (!g.ok) return gateErr();
     row = await getRow(env, tgUser.id);
   }
   row._acts = await actsOf(env, tgUser.id);
-  return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
+  return { ok: true, txLink: TX_APP_LINK, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await txMineOf(env, tgUser.id)) };
 }
 
 async function apiVerifyChannels(env, tgUser) {
@@ -371,7 +361,7 @@ async function apiVerifyChannels(env, tgUser) {
     row = await getRow(env, tgUser.id);
   }
   row._acts = await actsOf(env, tgUser.id);
-  return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
+  return { ok: true, txLink: TX_APP_LINK, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await txMineOf(env, tgUser.id)) };
 }
 
 async function apiSync(env, tgUser) {
@@ -381,15 +371,13 @@ async function apiSync(env, tgUser) {
   if (!row.channel_ok) return gateErr();
   const day = new Date().toISOString().slice(0, 10);
   if (row.ad_day !== day) {
-    /* Code 3: persist the rollover atomically (was memory-only before) */
     await run(env, 'UPDATE users SET ads_today = 0, ad_day = ? WHERE user_id = ? AND (ad_day IS NULL OR ad_day != ?)', [day, tgUser.id, day]);
     row.ads_today = 0; row.ad_day = day;
   }
   row._acts = await actsOf(env, tgUser.id);
-  return { ok: true, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
+  return { ok: true, txLink: TX_APP_LINK, state: toClient(row, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await txMineOf(env, tgUser.id)) };
 }
 
-/* Code 3: atomic daily claim — optimistic lock on last_daily value */
 async function apiDaily(env, tgUser) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
@@ -400,7 +388,6 @@ async function apiDaily(env, tgUser) {
   const newStreak = (row.last_daily > 0 && t - row.last_daily < 2 * DAY)
     ? (row.daily_streak >= STREAK_REWARDS.length ? 1 : row.daily_streak + 1) : 1;
   const reward = STREAK_REWARDS[newStreak - 1];
-  /* optimistic lock: only succeeds if last_daily is still the value we read */
   const changes = await run(env,
     `UPDATE users SET balance = balance + ?, total_earned = total_earned + ?,
        daily_streak = ?, daily_claims = daily_claims + 1, last_daily = ?, updated_at = ?
@@ -410,7 +397,7 @@ async function apiDaily(env, tgUser) {
   await logAct(env, tgUser.id, 'daily', 'Daily check-in — day ' + newStreak, reward);
   const fresh = await getRow(env, tgUser.id);
   fresh._acts = await actsOf(env, tgUser.id);
-  return { ok: true, reward, state: toClient(fresh, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
+  return { ok: true, reward, state: toClient(fresh, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await txMineOf(env, tgUser.id)) };
 }
 
 function dynProgress(row, t) {
@@ -458,62 +445,18 @@ async function apiTask(env, tgUser, body) {
     return { ok: false, error: 'Task not finished yet' };
   }
 
-  /* Code 3: the claim INSERT is the atomic gate — INSERT OR IGNORE changes=0 means already claimed */
   const ins = await run(env, 'INSERT OR IGNORE INTO task_claims (user_id, task_id, claimed_at) VALUES (?,?,?)', [tgUser.id, id, now()]);
   if (ins === 0) return { ok: false, error: 'Already claimed' };
-  /* atomic credit */
   await run(env,
     'UPDATE users SET balance = balance + ?, total_earned = total_earned + ?, updated_at = ? WHERE user_id = ?',
     [t.reward, t.reward, now(), tgUser.id]);
   await logAct(env, tgUser.id, 'task', t.title, t.reward);
   const fresh = await getRow(env, tgUser.id);
   fresh._acts = await actsOf(env, tgUser.id);
-  return { ok: true, reward: t.reward, state: toClient(fresh, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
+  return { ok: true, reward: t.reward, state: toClient(fresh, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await txMineOf(env, tgUser.id)) };
 }
 
-/* Code 3: atomic spin — bet deduct + payout + counters in ONE conditional UPDATE */
-function spinMult(){ let r = Math.random() * 100; if (r < 55) return 0; if (r < 80) return 1.5; if (r < 92) return 2; return 3; }
-async function apiSpin(env, tgUser, body) {
-  const row = await getRow(env, tgUser.id);
-  if (!row) return { ok: false, error: 'User not found' };
-  if (row.banned) return bannedResp(row);
-  if (!row.channel_ok) return gateErr();
-  const bet = Math.floor(parseInt(body && body.bet, 10) || 0);
-  if (bet < SPIN_MIN_BET || bet > SPIN_MAX_BET) return { ok: false, error: 'Bet must be ' + SPIN_MIN_BET + '–' + SPIN_MAX_BET + ' ETB' };
-  const m = spinMult();
-  const payout = Math.floor(bet * m);   /* 50 × 3 = 150 — exact */
-  const profit = payout - bet;          /* may be negative */
-  const t = now();
-  /* one atomic statement: WHERE balance >= bet makes insufficient funds impossible, even under concurrency */
-  const changes = await run(env,
-    `UPDATE users SET
-       balance = balance - ? + ?,
-       total_earned = total_earned + MAX(0, ?),
-       spins = spins + 1,
-       updated_at = ?
-     WHERE user_id = ? AND balance >= ?`,
-    [bet, payout, profit, t, tgUser.id, bet]);
-  if (changes === 0) return { ok: false, error: 'Not enough ETB for that bet' };
-  await env.DB.prepare('INSERT INTO spin_history (user_id, bet, mult, payout, created_at) VALUES (?,?,?,?,?)')
-    .bind(tgUser.id, bet, m, payout, t).run();
-  if (m === 0) await logAct(env, tgUser.id, 'game', 'Lucky Wheel — bet lost (' + bet + ' ETB)', -bet);
-  else await logAct(env, tgUser.id, 'game', 'Lucky Wheel ×' + m + ' — ' + bet + ' → ' + payout + ' ETB', profit);
-  pruneUser(env, tgUser.id);
-  const fresh = await getRow(env, tgUser.id);
-  fresh._acts = await actsOf(env, tgUser.id);
-  return { ok: true, mult: m, payout: payout, bet: bet,
-    spinHistory: await spinHistoryOf(env, tgUser.id),
-    state: toClient(fresh, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
-}
-
-async function apiSpinHistory(env, tgUser) {
-  const row = await getRow(env, tgUser.id);
-  if (!row) return { ok: false, error: 'User not found' };
-  if (row.banned) return bannedResp(row);
-  return { ok: true, history: await spinHistoryOf(env, tgUser.id) };
-}
-
-/* Code 3: atomic ad claim — day rollover + conditional UPDATE, races cannot over-pay */
+/* Code 3 atomic ad claim — unchanged */
 async function apiAd(env, tgUser) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
@@ -521,9 +464,7 @@ async function apiAd(env, tgUser) {
   if (!row.channel_ok) return gateErr();
   const t = now();
   const day = new Date().toISOString().slice(0, 10);
-  /* idempotent day rollover */
   await run(env, 'UPDATE users SET ads_today = 0, ad_day = ? WHERE user_id = ? AND (ad_day IS NULL OR ad_day != ?)', [day, tgUser.id, day]);
-  /* conditional claim: daily cap AND cooldown enforced inside SQL */
   const changes = await run(env,
     `UPDATE users SET
        balance = balance + ?, total_earned = total_earned + ?,
@@ -532,7 +473,6 @@ async function apiAd(env, tgUser) {
      WHERE user_id = ? AND ads_today < ? AND (? - COALESCE(last_ad, 0)) >= ?`,
     [AD_REWARD, AD_REWARD, t, t, tgUser.id, AD_MAX_PER_DAY, t, AD_COOLDOWN]);
   if (changes === 0) {
-    /* figure out the accurate reason */
     const fresh = await getRow(env, tgUser.id);
     if (fresh.ads_today >= AD_MAX_PER_DAY)
       return { ok: false, error: 'Daily ad limit reached (' + AD_MAX_PER_DAY + '/day) — come back tomorrow' };
@@ -542,14 +482,50 @@ async function apiAd(env, tgUser) {
   await logAct(env, tgUser.id, 'ad', 'Ad Watch Reward', AD_REWARD);
   const fresh = await getRow(env, tgUser.id);
   fresh._acts = await actsOf(env, tgUser.id);
-  return { ok: true, reward: AD_REWARD, state: toClient(fresh, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
+  return { ok: true, reward: AD_REWARD, state: toClient(fresh, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await txMineOf(env, tgUser.id)) };
 }
 
 async function apiReviews(env) {
   return { ok: true, reviews: await reviewsOf(env) };
 }
 
-/* Code 3: atomic withdraw — D1 batch transaction (deduct + insert roll back together) */
+/* ================= TANVEXO REGISTRATION (Code 4) ================= */
+/* validate contact: email OR phone (7-15 digits) */
+function validContact(s) {
+  const v = String(s || '').trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return v;                 /* email */
+  const digits = v.replace(/[^\d]/g, '');
+  if (digits.length >= 7 && digits.length <= 15) return v;               /* phone */
+  return null;
+}
+async function apiTxRegister(env, tgUser, body) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  if (!row.channel_ok) return gateErr();
+  const contact = validContact(body.contact);
+  const screenshot = String(body.screenshot || '').trim();
+  /* server-side validation — empty/invalid = nothing stored, nothing sent */
+  if (!contact) return { ok: false, error: 'Please enter a valid email or phone number', field: 'contact' };
+  if (!screenshot || screenshot.length < 10) return { ok: false, error: 'Please attach the registration screenshot', field: 'screenshot' };
+  /* rate limit: max 1 pending submission at a time */
+  const open = await env.DB.prepare("SELECT id FROM tx_registrations WHERE user_id = ? AND status = 'pending'").bind(tgUser.id).first();
+  if (open) return { ok: false, error: 'You already have a pending submission — wait for review' };
+  const t = now();
+  const r = await env.DB.prepare('INSERT INTO tx_registrations (user_id, name, contact, screenshot, status, created_at) VALUES (?,?,?,?, \'pending\', ?)')
+    .bind(tgUser.id, row.name, contact, screenshot, t).run();
+  if (!r || !r.meta || !r.meta.last_row_id) return { ok: false, error: 'Could not submit — try again' };
+  await logAct(env, tgUser.id, 'tx', 'TanveXo registration submitted', 0);
+  return { ok: true, txRegistration: { id: r.meta.last_row_id, contact, status: 'pending', ts: t * 1000 } };
+}
+async function apiTxMine(env, tgUser) {
+  const row = await getRow(env, tgUser.id);
+  if (!row) return { ok: false, error: 'User not found' };
+  if (row.banned) return bannedResp(row);
+  return { ok: true, txRegistration: await txMineOf(env, tgUser.id) };
+}
+
+/* ================= WITHDRAW ================= */
 async function apiWithdraw(env, tgUser, body) {
   const row = await getRow(env, tgUser.id);
   if (!row) return { ok: false, error: 'User not found' };
@@ -565,7 +541,6 @@ async function apiWithdraw(env, tgUser, body) {
   if ((row.req_ads || 0) < WD_REQ_ADS || (row.req_friends || 0) < WD_REQ_FRIENDS)
     return { ok: false, error: 'Withdrawals locked — meet the requirements first (Wallet)' };
   const t = now();
-  /* atomic deduct — balance + both requirements checked inside SQL, so double-tap can never double-spend */
   const deduct = env.DB.prepare(
     `UPDATE users SET balance = balance - ?,
        req_ads = MAX(0, req_ads - ?), req_friends = MAX(0, req_friends - ?), updated_at = ?
@@ -574,10 +549,9 @@ async function apiWithdraw(env, tgUser, body) {
   const ins = env.DB.prepare(
     "INSERT INTO withdrawals (user_id, name, amount, method, address, status, created_at) VALUES (?,?,?,?,?, 'pending', ?)"
   ).bind(tgUser.id, row.name, amount, method, address, t);
-  const results = await env.DB.batch([deduct, ins]); /* atomic transaction */
+  const results = await env.DB.batch([deduct, ins]);
   const okChanges = results && results[0] && results[0].meta && results[0].meta.changes === 1;
   if (!okChanges) {
-    /* rare race — produce the accurate message */
     const fresh = await getRow(env, tgUser.id);
     if (!fresh) return { ok: false, error: 'User not found' };
     if (amount > fresh.balance) return { ok: false, error: 'Not enough ETB' };
@@ -586,7 +560,7 @@ async function apiWithdraw(env, tgUser, body) {
   await logAct(env, tgUser.id, 'wd', 'Withdrawal — ' + method, -amount);
   const fresh = await getRow(env, tgUser.id);
   fresh._acts = await actsOf(env, tgUser.id);
-  return { ok: true, state: toClient(fresh, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id)) };
+  return { ok: true, state: toClient(fresh, await friendsOf(env, tgUser.id), await claimsOf(env, tgUser.id), await txMineOf(env, tgUser.id)) };
 }
 async function apiWithdrawals(env, tgUser) {
   const row = await getRow(env, tgUser.id);
@@ -612,7 +586,7 @@ async function handleWebhook(env, update) {
         await botCall(env, 'answerCallbackQuery', { callback_query_id: cq.id, text: '✅ Verified! Welcome to TanveXo' });
         if (cq.message && cq.message.chat) {
           await reply(env, cq.message.chat.id,
-            '✅ <b>Verified!</b>\n\nWelcome to TanveXo — let\'s earn together!\n(Invited friends: your welcome bonus is in the app)',
+            '✅ <b>Verified!</b>\n\nWelcome to TanveXo — let\'s earn together!',
             [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
         }
       } else {
@@ -639,7 +613,7 @@ async function handleWebhook(env, update) {
         return;
       }
       await reply(env, chatId,
-        '👋 Welcome to <b>TanveXo</b>!\n\n👥 Invite friends — earn <b>' + REFERRAL_REWARD + ' ETB</b> each\n📺 Watch ads · ✅ Tasks · 🎯 Lucky Wheel · 💸 Withdraw\n\nTap below to start!',
+        '👋 Welcome to <b>TanveXo</b>!\n\n👥 Invite friends — earn <b>' + REFERRAL_REWARD + ' ETB</b> each\n📺 Watch ads · ✅ Tasks · 💸 Withdraw\n\nTap below to start!',
         [[{ text: '🎮 Open TanveXo', url: APP_LINK }]]);
     } else if (cmd === '/balance') {
       const row = await getRow(env, msg.from.id);
@@ -667,12 +641,37 @@ async function adminStats(env) {
   const wds = await env.DB.prepare("SELECT * FROM withdrawals ORDER BY (status = 'pending') DESC, created_at DESC LIMIT 50").all();
   const pend = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(amount),0) AS amt FROM withdrawals WHERE status = 'pending'").first();
   const revs = await env.DB.prepare('SELECT * FROM reviews ORDER BY id DESC LIMIT 20').all();
+  const txs = await env.DB.prepare("SELECT * FROM tx_registrations ORDER BY (status = 'pending') DESC, created_at DESC LIMIT 50").all();
+  const txPend = await env.DB.prepare("SELECT COUNT(*) AS n FROM tx_registrations WHERE status = 'pending'").first();
   return { ok: true,
     stats: { users: agg.users, coins: agg.coins, earned: agg.earned, taps: agg.ads || 0, invites: agg.invites, new24: nd ? nd.n : 0 },
     pendingWd: { n: pend ? pend.n : 0, amt: pend ? pend.amt : 0 },
+    pendingTx: txPend ? txPend.n : 0,
     top: top.results || [], recent: recent.results || [],
     tasks: tasks.results || [], withdrawals: wds.results || [],
-    reviews: revs.results || [] };
+    reviews: revs.results || [],
+    txRegistrations: txs.results || [] };
+}
+async function adminTxAction(env, body) {
+  const id = parseInt(body.id, 10);
+  if (!id) return { ok: false, error: 'Registration id required' };
+  const r = await env.DB.prepare('SELECT * FROM tx_registrations WHERE id = ?').bind(id).first();
+  if (!r) return { ok: false, error: 'Submission not found' };
+  if (r.status !== 'pending') return { ok: false, error: 'Already processed' };
+  const t = now();
+  if (body.action === 'paid') {
+    await env.DB.prepare("UPDATE tx_registrations SET status = 'paid', processed_at = ? WHERE id = ?").bind(t, id).run();
+    return { ok: true, result: 'paid' };
+  }
+  if (body.action === 'reject') {
+    await env.DB.prepare("UPDATE tx_registrations SET status = 'rejected', processed_at = ? WHERE id = ?").bind(t, id).run();
+    return { ok: true, result: 'rejected' };
+  }
+  if (body.action === 'delete') {
+    await env.DB.prepare('DELETE FROM tx_registrations WHERE id = ?').bind(id).run();
+    return { ok: true, result: 'deleted' };
+  }
+  return { ok: false, error: 'Unknown action' };
 }
 async function adminReviewAction(env, body) {
   const t = now();
@@ -730,7 +729,6 @@ async function adminWdAction(env, body) {
     return { ok: true, result: 'paid' };
   }
   if (body.action === 'reject') {
-    /* refund must be atomic too */
     await env.DB.prepare("UPDATE withdrawals SET status = 'rejected', processed_at = ? WHERE id = ?").bind(t, id).run();
     await run(env, 'UPDATE users SET balance = balance + ? WHERE user_id = ?', [w.amount, w.user_id]);
     return { ok: true, result: 'rejected + refunded ' + w.amount + ' ETB' };
@@ -759,7 +757,7 @@ export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url = new URL(request.url).pathname;
-    if (url === '/') return j({ ok: true, msg: 'TanveXo API v14 (Code 3) is running' });
+    if (url === '/') return j({ ok: true, msg: 'TanveXo API v15 (Code 4) is running' });
     let body = {};
     if (request.method === 'POST') { try { body = await request.json(); } catch (e) {} }
     try {
@@ -775,6 +773,7 @@ export default {
       if (url === '/api/admin/task_action')  { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminTaskAction(env, body)); }
       if (url === '/api/admin/wd_action')    { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminWdAction(env, body)); }
       if (url === '/api/admin/review_action'){ if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminReviewAction(env, body)); }
+      if (url === '/api/admin/tx_action')    { if (!adminOk(request, env)) return j({ ok: false, error: 'Unauthorized' }, 401); await initDb(env); return j(await adminTxAction(env, body)); }
       if (request.method !== 'POST') return j({ ok: false, error: 'Use POST' }, 405);
       await initDb(env);
       const initData = request.headers.get('X-Telegram-Init-Data') || '';
@@ -787,10 +786,10 @@ export default {
         case '/api/daily':           return j(await apiDaily(env, tgUser));
         case '/api/tasks':           return j(await apiTasks(env, tgUser));
         case '/api/task':            return j(await apiTask(env, tgUser, body));
-        case '/api/spin':            return j(await apiSpin(env, tgUser, body));
-        case '/api/spin_history':    return j(await apiSpinHistory(env, tgUser));
         case '/api/ad':              return j(await apiAd(env, tgUser));
         case '/api/reviews':         return j(await apiReviews(env));
+        case '/api/tx_register':     return j(await apiTxRegister(env, tgUser, body));
+        case '/api/tx_my':           return j(await apiTxMine(env, tgUser));
         case '/api/withdraw':        return j(await apiWithdraw(env, tgUser, body));
         case '/api/withdrawals':     return j(await apiWithdrawals(env, tgUser));
       }
