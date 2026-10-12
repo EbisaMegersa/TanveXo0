@@ -10,7 +10,7 @@
 <script src='//libtl.com/sdk.js' data-zone='10937696' data-sdk='show_10937696'></script>
 <style>
 /* ============================================================
-   iOS 27 LIQUID GLASS — TOKENS
+   iOS 27 LIQUID GLASS — TOKENS (blue light / green dark)
    ============================================================ */
 :root{
   color-scheme: light;
@@ -104,7 +104,7 @@ body.gated #app, body.gated .topnav, body.gated nav.tabbar{ display:none!importa
 svg{display:block}
 
 /* ============================================================
-   LIQUID GLASS — MORPHISM
+   LIQUID GLASS — MORPHISM (chrome only)
    ============================================================ */
 .lg{position:relative;
   background:var(--glass);
@@ -323,9 +323,9 @@ h2.sec .sic .ic{width:20px;height:20px}
   box-shadow:0 14px 34px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.4);
   color:#fff;font-weight:800;font-size:2rem;letter-spacing:-.03em;user-select:none}
 .tx-logo small{display:block;font-size:.55rem;font-weight:700;letter-spacing:.14em;opacity:.9;margin-top:2px}
-.tx-steps{counter-reset:tx; text-align:left; margin:4px 0 0; padding:0}
 .tx-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0;counter-increment:tx}
 .tx-step + .tx-step{border-top:.5px solid var(--sep)}
+.tx-steps{counter-reset:tx; text-align:left; margin:4px 0 0; padding:0}
 .tx-step::before{content:counter(tx);width:26px;height:26px;border-radius:50%;flex-shrink:0;
   background:var(--accent-tint);color:var(--accent);font-weight:700;font-size:.8rem;
   display:grid;place-items:center;margin-top:1px}
@@ -381,13 +381,13 @@ input.wd-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3p
 .hist-amt{font-weight:600;font-size:.92rem;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 
 /* ============================================================
-   TAB BAR — 4 tabs (spin removed)
+   TAB BAR — 5 tabs, ONE ROW (Code 5 fix)
    ============================================================ */
 nav.tabbar{
   position:fixed;bottom:calc(var(--tg-bot) + 10px);left:50%;
   transform:translateX(-50%);
   width:min(440px,calc(100% - 24px));
-  display:grid;grid-template-columns:repeat(4,1fr);padding:6px;
+  display:grid;grid-template-columns:repeat(5,1fr);padding:6px;
   border-radius:var(--r-xl);z-index:60;
 }
 .nav-btn{background:none;border:none;color:var(--label2);font-family:inherit;font-weight:600;
@@ -427,7 +427,7 @@ nav.tabbar{
 .g-err{color:var(--red);font-size:.82rem;margin-top:12px;min-height:20px;font-weight:600}
 
 /* ============================================================
-   BANNED
+   BANNED — "You're banned"
    ============================================================ */
 #banScreen{position:fixed;inset:0;background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   z-index:130;display:none;align-items:center;justify-content:center;padding:28px}
@@ -483,6 +483,7 @@ nav.tabbar{
   <p><b>Advertisement</b><br>Your reward unlocks when the ad finishes.</p>
 </div>
 
+<!-- Liquid Glass: collapsible top nav -->
 <div class="topnav lg" id="topnav">
   <b>TanveXo</b>
   <button class="icon-glass" id="menuBtn2" aria-label="Menu">
@@ -566,7 +567,7 @@ nav.tabbar{
       </div>
     </section>
 
-    <!-- TANVEXO (replaces Game) -->
+    <!-- TANVEXO -->
     <section class="page" id="page-tanvexo">
       <div class="card" style="text-align:center">
         <div class="tx-logo">TX<small>TANVEXO</small></div>
@@ -581,13 +582,13 @@ nav.tabbar{
       <div class="card">
         <div class="ct"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4 12 14l-3-3"/></svg> <span data-i18n="tx_proof_h">Send registration proof</span></div>
         <div class="lbl2" data-i18n="tx_contact_lbl">EMAIL OR PHONE</div>
-        <input class="wd-input" id="txContact" data-tx-ph="contact" placeholder="Email or phone number">
+        <input class="wd-input" id="txContact" placeholder="Email or phone number">
         <div class="lbl2" data-i18n="tx_shot_lbl">REGISTRATION SCREENSHOT</div>
         <div class="tx-shot" id="txShotBox">
           <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="12" cy="12" r="3.2"/><path d="M7 5l1.2-2h7.6L17 5"/></svg>
           <div style="flex:1;min-width:0">
-            <b id="txShotTitle" data-i18n="tx_attach">Attach screenshot</b>
-            <small id="txShotName" data-i18n="tx_none">No file selected</small>
+            <b id="txShotTitle">Attach screenshot</b>
+            <small id="txShotName">No file selected</small>
           </div>
         </div>
         <input type="file" id="txShotInput" accept="image/*">
@@ -660,6 +661,7 @@ nav.tabbar{
     </section>
   </main>
 
+  <!-- Liquid Glass: floating tab bar — 5 tabs, one row -->
   <nav class="tabbar lg" id="tabbar">
     <button class="nav-btn active" data-page="home"><span class="nv-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/></svg></span><span data-i18n="nav_home">Home</span></button>
     <button class="nav-btn" data-page="tasks"><span class="nv-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-5.5"/></svg></span><span data-i18n="nav_tasks">Tasks</span></button>
@@ -669,6 +671,7 @@ nav.tabbar{
   </nav>
 </div>
 
+<!-- Liquid Glass: ⋯ dropdown menu -->
 <div id="menuOverlay">
   <div class="menu lg" id="menuPanel">
     <div class="menu-status"><i id="menuDot"></i><span id="menuStatus">PREVIEW</span></div>
@@ -686,11 +689,11 @@ nav.tabbar{
         </span>
       </span>
     </div>
-    <div class="menu-info">TanveXo • Code 4</div>
+    <div class="menu-info">TanveXo • Code 5</div>
   </div>
 </div>
 
-<!-- CHANNEL GATE -->
+<!-- CHANNEL GATE — popup card, no skip -->
 <div id="gateWrap">
   <div class="gate-card">
     <div class="g-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l14-6v14L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></div>
@@ -703,7 +706,7 @@ nav.tabbar{
   </div>
 </div>
 
-<!-- BANNED -->
+<!-- BANNED — "You're banned" -->
 <div id="banScreen">
   <div class="alert">
     <div class="ban-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg></div>
@@ -713,6 +716,7 @@ nav.tabbar{
   </div>
 </div>
 
+<!-- Toast -->
 <div id="toast"><span class="t-ic" id="toastIc"></span><span id="toastText"></span></div>
 
 <script>
@@ -773,7 +777,7 @@ document.getElementById('clockIc').innerHTML = ic('clock', 20);
 document.getElementById('starIc').innerHTML = ic('star', 20);
 
 /* ============================================================
-   TELEGRAM HEADER FIX
+   TELEGRAM HEADER FIX — real insets as CSS vars
    ============================================================ */
 const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 let tgUser = null;
@@ -886,9 +890,9 @@ const STR = {
     tx_has:"Screenshot ready",
     tx_send:"Send to Admin",
     tx_fine:"We review manually and update your status here.",
-    tx_st_pend:"⏳ Submitted — waiting for review",
-    tx_st_paid:"✅ Approved! Your reward is on the way",
-    tx_st_rej:"❌ Rejected — please submit again with a valid proof",
+    tx_st_pend:"Submitted — waiting for review",
+    tx_st_paid:"Approved! Your reward is on the way",
+    tx_st_rej:"Rejected — please submit again with a valid proof",
     t_claimed:"+{r} ETB claimed!", t_copied:"Invite link copied!", t_join_back:"Visit the link, come back and tap Verify",
     t_submitted:"Submitted to admin! We'll review it shortly.",
     t_please_contact:"Please enter your email or phone",
@@ -936,9 +940,9 @@ const STR = {
     tx_has:"ስክሪንሾት ዝግጁ ነው",
     tx_send:"ለአስተዳዳሪ ይላኩ",
     tx_fine:"በእጅ እንመረመራለን — ሁኔታዎ እዚህ ይታያል።",
-    tx_st_pend:"⏳ ተልኳል — በጥናት ላይ",
-    tx_st_paid:"✅ ጸድቋል! ሽልማትዎ በመንገድ ላይ ነው",
-    tx_st_rej:"❌ ውድቅ ደርሷል — ትክክለኛ ማረጋገጫ አቅርበው እንደገና ይላኩ",
+    tx_st_pend:"ተልኳል — በጥናት ላይ",
+    tx_st_paid:"ጸድቋል! ሽልማትዎ በመንገድ ላይ ነው",
+    tx_st_rej:"ውድቅ ደርሷል — ትክክለኛ ማረጋገጫ አቅርበው እንደገና ይላኩ",
     t_claimed:"+{r} ETB ተቀብለዋል!", t_copied:"ሊንክ ተቀድቷል!", t_join_back:"ሊንኩን ይጎብኙ፣ ተመለስተው አረጋግጥ ይንኩ",
     t_submitted:"ለአስተዳዳሪ ተልኳል! በቅርቡ እንመረምራለን።",
     t_please_contact:"እባክዎ ኢሜይል ወይም ስልክ ያስገቡ",
@@ -978,7 +982,7 @@ function setSeg(){
 function switchLang(l){
   LANG = l;
   try { localStorage.setItem('tx_lang', LANG); } catch(e){}
-  applyStatic(); renderAll(); renderTasksPage(); renderReviews();
+  applyStatic(); renderAll(); renderTasksPage(); renderReviews(); renderTx();
   haptic('light');
 }
 document.getElementById('segEnM').addEventListener('click', function(e){ e.stopPropagation(); switchLang('en'); });
@@ -1286,7 +1290,7 @@ function renderHome(){ renderActivity(); renderEarn(); }
  $('#qaInvite').addEventListener('click', function(){ haptic('light'); go('friends'); });
  $('#qaAd').addEventListener('click', function(){ haptic('light'); watchAd(); });
 
-/* ================= ADS ================= */
+/* ================= ADS — Monetag ================= */
 let adShowing = false;
 async function showRealAd(){
   for (let i = 0; i < 60; i++){
@@ -1476,7 +1480,7 @@ function renderTasksPage(){ renderStreak(); renderTasksList(); }
 });
 
 /* ============================================================
-   TANVEXO TAB — link + proof submission
+   TANVEXO TAB — link + screenshot proof → Telegram photo to admin
    ============================================================ */
 let txShotFile = null, txShotB64 = '';
 function validContactLocal(s){
@@ -1488,8 +1492,7 @@ function validContactLocal(s){
 function renderTx(){
   /* link button */
   const link = state.txLink || CONFIG.txAppLink;
-  const open = $('#txOpenBtn');
-  open.href = link;
+  $('#txOpenBtn').href = link;
   /* screenshot picker state */
   const box = $('#txShotBox');
   box.classList.toggle('has', !!txShotFile);
@@ -1537,7 +1540,8 @@ function renderTx(){
     state.activities.unshift({ type:'tx', title:'TanveXo registration submitted', amount:0, ts:Date.now() });
     dirty = true; save();
     confetti(); hNotify('success');
-    toast(t('t_submitted'));
+    if (r.delivered) toast(t('t_submitted'));
+    else toast(t('t_submitted'));
     renderTx(); renderActivity();
   } catch(e){
     if (e && e.locked){ showBanScreen(e.message); }
